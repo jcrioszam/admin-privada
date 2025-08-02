@@ -1,0 +1,311 @@
+import React, { useState } from 'react';
+import { useQuery } from 'react-query';
+import { MagnifyingGlassIcon, FilterIcon } from '@heroicons/react/24/outline';
+import api from '../services/api';
+import LoadingSpinner from '../components/LoadingSpinner';
+import toast from 'react-hot-toast';
+
+const HistorialPagos = () => {
+  const [selectedVivienda, setSelectedVivienda] = useState('');
+  const [filterEstado, setFilterEstado] = useState('todos');
+  const [filterFecha, setFilterFecha] = useState('todos');
+
+  // Obtener viviendas
+  const { data: viviendas, isLoading: loadingViviendas } = useQuery(
+    'viviendas',
+    () => api.get('/viviendas').then(res => res.data)
+  );
+
+  // Obtener historial de pagos
+  const { data: historial, isLoading: loadingHistorial } = useQuery(
+    ['historial-pagos', selectedVivienda, filterEstado, filterFecha],
+    () => {
+      if (!selectedVivienda) return Promise.resolve([]);
+      
+      let url = `/pagos/historial/${selectedVivienda}`;
+      const params = new URLSearchParams();
+      
+      if (filterEstado !== 'todos') params.append('estado', filterEstado);
+      if (filterFecha !== 'todos') params.append('fecha', filterFecha);
+      
+      if (params.toString()) url += `?${params.toString()}`;
+      
+      return api.get(url).then(res => res.data);
+    },
+    {
+      enabled: !!selectedVivienda
+    }
+  );
+
+  const handleViviendaChange = (e) => {
+    setSelectedVivienda(e.target.value);
+  };
+
+  const getEstadoBadge = (estado) => {
+    const badges = {
+      'Pagado': 'badge-success',
+      'Pagado con excedente': 'badge-success',
+      'Pendiente': 'badge-warning',
+      'Parcial': 'badge-info',
+      'Vencido': 'badge-danger'
+    };
+    return badges[estado] || 'badge-secondary';
+  };
+
+  const formatFecha = (fecha) => {
+    return new Date(fecha).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const calcularRecargo = (pago) => {
+    if (pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente') return 0;
+    
+    const fechaLimite = new Date(pago.fechaLimite);
+    const hoy = new Date();
+    const diasAtraso = hoy > fechaLimite ? Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24)) : 0;
+    
+    return diasAtraso > 0 ? (pago.monto * 0.10) * Math.ceil(diasAtraso / 30) : 0;
+  };
+
+  if (loadingViviendas) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Historial de Pagos</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Consulta el historial completo de pagos por vivienda
+        </p>
+      </div>
+
+      {/* Filtros */}
+      <div className="card">
+        <div className="card-body">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Selección de Vivienda */}
+            <div>
+              <label className="form-label">Vivienda</label>
+              <select
+                value={selectedVivienda}
+                onChange={handleViviendaChange}
+                className="input"
+              >
+                <option value="">Seleccionar vivienda</option>
+                {viviendas?.map((vivienda) => (
+                  <option key={vivienda._id} value={vivienda._id}>
+                    {vivienda.numero}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filtro por Estado */}
+            <div>
+              <label className="form-label">Estado</label>
+              <select
+                value={filterEstado}
+                onChange={(e) => setFilterEstado(e.target.value)}
+                className="input"
+              >
+                <option value="todos">Todos los estados</option>
+                <option value="Pagado">Pagado</option>
+                <option value="Pagado con excedente">Pagado con excedente</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Parcial">Parcial</option>
+                <option value="Vencido">Vencido</option>
+              </select>
+            </div>
+
+            {/* Filtro por Fecha */}
+            <div>
+              <label className="form-label">Período</label>
+              <select
+                value={filterFecha}
+                onChange={(e) => setFilterFecha(e.target.value)}
+                className="input"
+              >
+                <option value="todos">Todos los períodos</option>
+                <option value="ultimo_mes">Último mes</option>
+                <option value="ultimos_3_meses">Últimos 3 meses</option>
+                <option value="ultimos_6_meses">Últimos 6 meses</option>
+                <option value="ultimo_año">Último año</option>
+              </select>
+            </div>
+
+            {/* Botón de búsqueda */}
+            <div className="flex items-end">
+              <button
+                onClick={() => {
+                  if (!selectedVivienda) {
+                    toast.error('Por favor selecciona una vivienda');
+                    return;
+                  }
+                  toast.success('Consultando historial...');
+                }}
+                className="btn-primary w-full"
+                disabled={!selectedVivienda}
+              >
+                                        <MagnifyingGlassIcon className="w-4 h-4 mr-2" />
+                Consultar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Resultados */}
+      {selectedVivienda && (
+        <div className="card">
+          <div className="card-body">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">
+                Historial de Pagos
+                {viviendas?.find(v => v._id === selectedVivienda) && (
+                  <span className="text-gray-500 ml-2">
+                    - {viviendas.find(v => v._id === selectedVivienda).numero}
+                  </span>
+                )}
+              </h3>
+              {historial && (
+                <span className="text-sm text-gray-500">
+                  {historial.length} registro{historial.length !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+
+            {loadingHistorial ? (
+              <div className="flex justify-center items-center h-32">
+                <LoadingSpinner size="md" />
+              </div>
+            ) : historial && historial.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="table">
+                  <thead className="table-header">
+                    <tr>
+                      <th className="table-header-cell">Período</th>
+                      <th className="table-header-cell">Monto</th>
+                      <th className="table-header-cell">Pagado</th>
+                      <th className="table-header-cell">Saldo</th>
+                      <th className="table-header-cell">Recargo</th>
+                      <th className="table-header-cell">Estado</th>
+                      <th className="table-header-cell">Fecha Pago</th>
+                      <th className="table-header-cell">Método</th>
+                    </tr>
+                  </thead>
+                  <tbody className="table-body">
+                    {historial.map((pago) => {
+                      const recargo = calcularRecargo(pago);
+                      const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+                      
+                      return (
+                        <tr key={pago._id} className="table-row">
+                          <td className="table-cell">
+                            <div className="text-sm">
+                              <div className="font-medium">
+                                {pago.mes}/{pago.año}
+                              </div>
+                              {pago.fechaInicioPeriodo && pago.fechaFinPeriodo && (
+                                <div className="text-xs text-gray-500">
+                                  {formatFecha(pago.fechaInicioPeriodo)} - {formatFecha(pago.fechaFinPeriodo)}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="table-cell">
+                            ${pago.monto?.toLocaleString()}
+                          </td>
+                          <td className="table-cell">
+                            ${(pago.montoPagado || 0).toLocaleString()}
+                          </td>
+                          <td className="table-cell">
+                            <span className={`font-medium ${
+                              saldoPendiente > 0 ? 'text-red-600' : 'text-green-600'
+                            }`}>
+                              ${saldoPendiente.toLocaleString()}
+                            </span>
+                          </td>
+                          <td className="table-cell">
+                            {recargo > 0 ? (
+                              <span className="text-red-600 font-medium">
+                                ${recargo.toLocaleString()}
+                              </span>
+                            ) : (
+                              <span className="text-green-600">$0</span>
+                            )}
+                          </td>
+                          <td className="table-cell">
+                            <span className={`badge ${getEstadoBadge(pago.estado)}`}>
+                              {pago.estado}
+                            </span>
+                          </td>
+                          <td className="table-cell">
+                            {pago.fechaPago ? (
+                              formatFecha(pago.fechaPago)
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+                          <td className="table-cell">
+                            {pago.metodoPago || '-'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="text-gray-500">
+                  {selectedVivienda ? 'No se encontraron pagos para esta vivienda' : 'Selecciona una vivienda para ver su historial'}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Estadísticas */}
+      {historial && historial.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white p-4 rounded-lg shadow">
+            <div className="text-sm text-gray-500">Total Pagado</div>
+            <div className="text-2xl font-bold text-green-600">
+              ${historial.reduce((sum, pago) => sum + (pago.montoPagado || 0), 0).toLocaleString()}
+            </div>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow">
+            <div className="text-sm text-gray-500">Pagos Completos</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {historial.filter(p => p.estado === 'Pagado' || p.estado === 'Pagado con excedente').length}
+            </div>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow">
+            <div className="text-sm text-gray-500">Pagos Pendientes</div>
+            <div className="text-2xl font-bold text-yellow-600">
+              {historial.filter(p => p.estado === 'Pendiente' || p.estado === 'Parcial' || p.estado === 'Vencido').length}
+            </div>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow">
+            <div className="text-sm text-gray-500">Total Recargos</div>
+            <div className="text-2xl font-bold text-red-600">
+              ${historial.reduce((sum, pago) => sum + calcularRecargo(pago), 0).toLocaleString()}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default HistorialPagos; 
