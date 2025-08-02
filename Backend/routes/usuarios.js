@@ -22,6 +22,42 @@ const verificarToken = (req, res, next) => {
   }
 };
 
+// Crear usuario administrador inicial (solo si no existe ningún usuario)
+router.post('/crear-admin-inicial', async (req, res) => {
+  try {
+    // Verificar si ya existe algún usuario
+    const usuarioExistente = await Usuario.findOne();
+    if (usuarioExistente) {
+      return res.status(400).json({ message: 'Ya existe un usuario en el sistema' });
+    }
+    
+    // Crear usuario administrador
+    const usuario = new Usuario({
+      nombre: 'Administrador',
+      apellidos: 'Sistema',
+      email: 'admin@admin.com',
+      password: 'admin123',
+      rol: 'Administrador',
+      permisos: ['viviendas', 'residentes', 'pagos', 'usuarios', 'configuracion'],
+      activo: true
+    });
+    
+    await usuario.save();
+    
+    res.status(201).json({ 
+      message: 'Usuario administrador creado exitosamente',
+      usuario: {
+        id: usuario._id,
+        nombre: usuario.nombre,
+        email: usuario.email,
+        rol: usuario.rol
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Login
 router.post('/login', [
   body('email').isEmail().withMessage('Email inválido'),
