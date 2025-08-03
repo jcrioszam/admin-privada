@@ -16,8 +16,8 @@ const Pagos = () => {
     'pagos',
     () => api.get('/api/pagos').then(res => res.data),
     {
-      refetchInterval: 3000, // Refrescar cada 3 segundos
-      staleTime: 0, // Siempre considerar datos obsoletos
+      refetchInterval: 30000, // Refrescar cada 30 segundos
+      staleTime: 10000, // Considerar datos frescos por 10 segundos
       refetchOnWindowFocus: true, // Refrescar al enfocar la ventana
       refetchOnMount: true // Refrescar al montar el componente
     }

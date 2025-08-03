@@ -12,10 +12,10 @@ const CorteDiario = () => {
   // Obtener pagos del día seleccionado
   const { data: pagosDelDia, isLoading } = useQuery(
     ['pagos-corte', fechaSeleccionada],
-    () => api.get(`/pagos/corte-diario/${fechaSeleccionada}`).then(res => res.data),
+    () => api.get(`/api/pagos/corte-diario/${fechaSeleccionada}`).then(res => res.data),
     {
-      refetchInterval: 5000,
-      staleTime: 0
+      refetchInterval: 30000, // Refrescar cada 30 segundos en lugar de 5
+      staleTime: 10000 // Considerar datos frescos por 10 segundos
     }
   );
 
