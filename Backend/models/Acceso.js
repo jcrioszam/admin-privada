@@ -16,17 +16,9 @@ const accesoSchema = new mongoose.Schema({
     enum: ['Tarjeta RFID', 'Código PIN', 'Huella Digital', 'Reconocimiento Facial', 'Llave Física', 'Control Remoto'],
     required: true
   },
-  codigoAcceso: {
-    type: String,
-    required: true,
-    trim: true
-  },
   fechaAsignacion: {
     type: Date,
     default: Date.now
-  },
-  fechaVencimiento: {
-    type: Date
   },
   activo: {
     type: Boolean,
@@ -70,12 +62,10 @@ accesoSchema.index({ residente: 1 });
 accesoSchema.index({ vivienda: 1 });
 accesoSchema.index({ activo: 1 });
 accesoSchema.index({ tipoAcceso: 1 });
-accesoSchema.index({ codigoAcceso: 1 });
 
-// Método para verificar si el acceso está activo y no vencido
+// Método para verificar si el acceso está activo
 accesoSchema.methods.esValido = function() {
-  const ahora = new Date();
-  return this.activo && (!this.fechaVencimiento || this.fechaVencimiento > ahora);
+  return this.activo;
 };
 
 module.exports = mongoose.model('Acceso', accesoSchema); 

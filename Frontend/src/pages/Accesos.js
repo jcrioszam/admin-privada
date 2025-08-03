@@ -13,22 +13,22 @@ const Accesos = () => {
   // Obtener accesos
   const { data: accesos, isLoading } = useQuery(
     'accesos',
-    () => api.get('/accesos').then(res => res.data)
+    () => api.get('/api/accesos').then(res => res.data)
   );
 
   // Obtener residentes para el select
   const { data: residentes } = useQuery(
     'residentes',
-    () => api.get('/residentes').then(res => res.data)
+    () => api.get('/api/residentes').then(res => res.data)
   );
 
   // Crear/Actualizar acceso
   const mutation = useMutation(
     (data) => {
       if (editingAcceso) {
-        return api.put(`/accesos/${editingAcceso._id}`, data);
+        return api.put(`/api/accesos/${editingAcceso._id}`, data);
       }
-      return api.post('/accesos', data);
+      return api.post('/api/accesos', data);
     },
     {
       onSuccess: () => {
@@ -45,7 +45,7 @@ const Accesos = () => {
 
   // Activar/Desactivar acceso
   const toggleAccesoMutation = useMutation(
-    ({ id, activo }) => api.put(`/accesos/${id}/${activo ? 'activar' : 'desactivar'}`),
+    ({ id, activo }) => api.put(`/api/accesos/${id}/${activo ? 'activar' : 'desactivar'}`),
     {
       onSuccess: () => {
         queryClient.invalidateQueries('accesos');
@@ -59,7 +59,7 @@ const Accesos = () => {
 
   // Eliminar acceso
   const deleteMutation = useMutation(
-    (id) => api.delete(`/accesos/${id}`),
+    (id) => api.delete(`/api/accesos/${id}`),
     {
       onSuccess: () => {
         queryClient.invalidateQueries('accesos');
@@ -130,17 +130,16 @@ const Accesos = () => {
         <div className="card-body">
           <div className="overflow-x-auto">
             <table className="table">
-              <thead className="table-header">
-                <tr>
-                  <th className="table-header-cell">Residente</th>
-                  <th className="table-header-cell">Vivienda</th>
-                  <th className="table-header-cell">Tipo</th>
-                  <th className="table-header-cell">Código</th>
-                  <th className="table-header-cell">Estado</th>
-                  <th className="table-header-cell">Asignación</th>
-                  <th className="table-header-cell">Acciones</th>
-                </tr>
-              </thead>
+                             <thead className="table-header">
+                 <tr>
+                   <th className="table-header-cell">Residente</th>
+                   <th className="table-header-cell">Vivienda</th>
+                   <th className="table-header-cell">Tipo</th>
+                   <th className="table-header-cell">Estado</th>
+                   <th className="table-header-cell">Asignación</th>
+                   <th className="table-header-cell">Acciones</th>
+                 </tr>
+               </thead>
               <tbody className="table-body">
                 {accesos?.map((acceso) => (
                   <tr key={acceso._id} className="table-row">
@@ -150,11 +149,8 @@ const Accesos = () => {
                     <td className="table-cell">
                       {acceso.vivienda?.numero} - {acceso.vivienda?.calle}
                     </td>
-                    <td className="table-cell">{acceso.tipoAcceso}</td>
-                    <td className="table-cell font-mono text-sm">
-                      {acceso.codigoAcceso}
-                    </td>
-                    <td className="table-cell">
+                                         <td className="table-cell">{acceso.tipoAcceso}</td>
+                     <td className="table-cell">
                       <span className={`badge ${
                         acceso.activo ? 'badge-success' : 'badge-danger'
                       }`}>
@@ -217,8 +213,6 @@ const AccesoModal = ({ acceso, residentes, onSubmit, onClose, isLoading }) => {
     residente: acceso?.residente?._id || '',
     vivienda: acceso?.vivienda?._id || '',
     tipoAcceso: acceso?.tipoAcceso || 'Tarjeta RFID',
-    codigoAcceso: acceso?.codigoAcceso || '',
-    fechaVencimiento: acceso?.fechaVencimiento ? new Date(acceso.fechaVencimiento).toISOString().split('T')[0] : '',
     activo: acceso?.activo ?? true,
     observaciones: acceso?.observaciones || '',
   });
@@ -282,41 +276,16 @@ const AccesoModal = ({ acceso, residentes, onSubmit, onClose, isLoading }) => {
             </div>
 
             <div>
-              <label className="form-label">Código de Acceso</label>
-              <input
-                type="text"
-                name="codigoAcceso"
-                value={formData.codigoAcceso}
+              <label className="form-label">Estado</label>
+              <select
+                name="activo"
+                value={formData.activo}
                 onChange={handleChange}
                 className="input"
-                required
-                placeholder="Código, número de tarjeta, etc."
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="form-label">Estado</label>
-                <select
-                  name="activo"
-                  value={formData.activo}
-                  onChange={handleChange}
-                  className="input"
-                >
-                  <option value={true}>Activo</option>
-                  <option value={false}>Inactivo</option>
-                </select>
-              </div>
-              <div>
-                <label className="form-label">Fecha Vencimiento</label>
-                <input
-                  type="date"
-                  name="fechaVencimiento"
-                  value={formData.fechaVencimiento}
-                  onChange={handleChange}
-                  className="input"
-                />
-              </div>
+              >
+                <option value={true}>Activo</option>
+                <option value={false}>Inactivo</option>
+              </select>
             </div>
 
             <div>
