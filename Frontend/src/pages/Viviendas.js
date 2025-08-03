@@ -13,16 +13,16 @@ const Viviendas = () => {
   // Obtener viviendas
   const { data: viviendas, isLoading } = useQuery(
     'viviendas',
-    () => api.get('/viviendas').then(res => res.data)
+    () => api.get('/api/viviendas').then(res => res.data)
   );
 
   // Crear/Actualizar vivienda
   const mutation = useMutation(
     (data) => {
       if (editingVivienda) {
-        return api.put(`/viviendas/${editingVivienda._id}`, data);
+        return api.put(`/api/viviendas/${editingVivienda._id}`, data);
       }
-      return api.post('/viviendas', data);
+      return api.post('/api/viviendas', data);
     },
     {
       onSuccess: () => {
@@ -39,7 +39,7 @@ const Viviendas = () => {
 
   // Eliminar vivienda
   const deleteMutation = useMutation(
-    (id) => api.delete(`/viviendas/${id}`),
+    (id) => api.delete(`/api/viviendas/${id}`),
     {
       onSuccess: () => {
         queryClient.invalidateQueries('viviendas');

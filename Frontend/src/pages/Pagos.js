@@ -14,7 +14,7 @@ const Pagos = () => {
   // Obtener pagos
   const { data: pagos, isLoading } = useQuery(
     'pagos',
-    () => api.get('/pagos').then(res => res.data),
+    () => api.get('/api/pagos').then(res => res.data),
     {
       refetchInterval: 3000, // Refrescar cada 3 segundos
       staleTime: 0, // Siempre considerar datos obsoletos

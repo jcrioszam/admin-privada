@@ -16,25 +16,25 @@ const Dashboard = () => {
   // Obtener estadísticas de viviendas
   const { data: viviendasStats, isLoading: loadingViviendas } = useQuery(
     'viviendas-stats',
-    () => api.get('/viviendas/estadisticas/resumen').then(res => res.data)
+    () => api.get('/api/viviendas/estadisticas/resumen').then(res => res.data)
   );
 
   // Obtener estadísticas de residentes
   const { data: residentesStats, isLoading: loadingResidentes } = useQuery(
     'residentes-stats',
-    () => api.get('/residentes/estadisticas/resumen').then(res => res.data)
+    () => api.get('/api/residentes/estadisticas/resumen').then(res => res.data)
   );
 
   // Obtener estadísticas de pagos
   const { data: pagosStats, isLoading: loadingPagos } = useQuery(
     'pagos-stats',
-    () => api.get('/pagos/estadisticas/resumen').then(res => res.data)
+    () => api.get('/api/pagos/estadisticas/resumen').then(res => res.data)
   );
 
   // Obtener estadísticas de accesos
   const { data: accesosStats, isLoading: loadingAccesos } = useQuery(
     'accesos-stats',
-    () => api.get('/accesos/estadisticas/resumen').then(res => res.data)
+    () => api.get('/api/accesos/estadisticas/resumen').then(res => res.data)
   );
 
   const isLoading = loadingViviendas || loadingResidentes || loadingPagos || loadingAccesos;
