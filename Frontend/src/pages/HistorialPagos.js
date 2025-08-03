@@ -70,6 +70,25 @@ const HistorialPagos = () => {
     return diasAtraso > 0 ? (pago.monto * 0.10) * Math.ceil(diasAtraso / 30) : 0;
   };
 
+  // Ordenar viviendas por número de manera ascendente
+  const viviendasOrdenadas = React.useMemo(() => {
+    if (!viviendas) return [];
+    
+    return [...viviendas].sort((a, b) => {
+      // Convertir a números si es posible, sino ordenar alfabéticamente
+      const numA = parseInt(a.numero) || 0;
+      const numB = parseInt(b.numero) || 0;
+      
+      if (numA !== 0 && numB !== 0) {
+        // Si ambos son números, ordenar numéricamente
+        return numA - numB;
+      } else {
+        // Si alguno no es número, ordenar alfabéticamente
+        return a.numero.localeCompare(b.numero);
+      }
+    });
+  }, [viviendas]);
+
   if (loadingViviendas) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -101,7 +120,7 @@ const HistorialPagos = () => {
                 className="input"
               >
                 <option value="">Seleccionar vivienda</option>
-                {viviendas?.map((vivienda) => (
+                {viviendasOrdenadas?.map((vivienda) => (
                   <option key={vivienda._id} value={vivienda._id}>
                     {vivienda.numero}
                   </option>
@@ -170,9 +189,9 @@ const HistorialPagos = () => {
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-gray-900">
                 Historial de Pagos
-                {viviendas?.find(v => v._id === selectedVivienda) && (
+                {viviendasOrdenadas?.find(v => v._id === selectedVivienda) && (
                   <span className="text-gray-500 ml-2">
-                    - {viviendas.find(v => v._id === selectedVivienda).numero}
+                    - {viviendasOrdenadas.find(v => v._id === selectedVivienda).numero}
                   </span>
                 )}
               </h3>

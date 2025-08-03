@@ -77,6 +77,25 @@ const Residentes = () => {
     setEditingResidente(null);
   };
 
+  // Ordenar viviendas por número de manera ascendente
+  const viviendasOrdenadas = React.useMemo(() => {
+    if (!viviendas) return [];
+    
+    return [...viviendas].sort((a, b) => {
+      // Convertir a números si es posible, sino ordenar alfabéticamente
+      const numA = parseInt(a.numero) || 0;
+      const numB = parseInt(b.numero) || 0;
+      
+      if (numA !== 0 && numB !== 0) {
+        // Si ambos son números, ordenar numéricamente
+        return numA - numB;
+      } else {
+        // Si alguno no es número, ordenar alfabéticamente
+        return a.numero.localeCompare(b.numero);
+      }
+    });
+  }, [viviendas]);
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -236,7 +255,7 @@ const ResidenteModal = ({ residente, viviendas, onSubmit, onClose, isLoading }) 
                 required
               >
                 <option value="">Seleccionar vivienda</option>
-                {viviendas?.map((vivienda) => (
+                {viviendasOrdenadas?.map((vivienda) => (
                   <option key={vivienda._id} value={vivienda._id}>
                     {vivienda.numero} - {vivienda.calle}
                   </option>
