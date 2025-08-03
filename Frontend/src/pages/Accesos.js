@@ -217,12 +217,24 @@ const AccesoModal = ({ acceso, residentes, onSubmit, onClose, isLoading }) => {
     observaciones: acceso?.observaciones || '',
   });
 
+  // Actualizar vivienda cuando se selecciona un residente
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    if (name === 'residente') {
+      // Buscar el residente seleccionado para obtener su vivienda
+      const residenteSeleccionado = residentes?.find(r => r._id === value);
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        vivienda: residenteSeleccionado?.vivienda?._id || ''
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleSubmit = (e) => {
