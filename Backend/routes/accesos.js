@@ -49,9 +49,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', [
   body('residente').isMongoId().withMessage('Residente inválido'),
   body('vivienda').isMongoId().withMessage('Vivienda inválida'),
-  body('tipoAcceso').isIn(['Tarjeta RFID', 'Código PIN', 'Huella Digital', 'Reconocimiento Facial', 'Llave Física', 'Control Remoto']).withMessage('Tipo de acceso inválido'),
-  body('codigoAcceso').notEmpty().withMessage('El código de acceso es requerido'),
-  body('fechaVencimiento').optional().isISO8601().withMessage('Fecha de vencimiento inválida')
+  body('tipoAcceso').isIn(['Tarjeta RFID', 'Código PIN', 'Huella Digital', 'Reconocimiento Facial', 'Llave Física', 'Control Remoto']).withMessage('Tipo de acceso inválido')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -103,8 +101,6 @@ router.post('/', [
 // Actualizar acceso
 router.put('/:id', [
   body('tipoAcceso').optional().isIn(['Tarjeta RFID', 'Código PIN', 'Huella Digital', 'Reconocimiento Facial', 'Llave Física', 'Control Remoto']).withMessage('Tipo de acceso inválido'),
-  body('codigoAcceso').optional().notEmpty().withMessage('El código de acceso no puede estar vacío'),
-  body('fechaVencimiento').optional().isISO8601().withMessage('Fecha de vencimiento inválida'),
   body('activo').optional().isBoolean().withMessage('El estado activo debe ser booleano')
 ], async (req, res) => {
   try {
