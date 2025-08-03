@@ -13,7 +13,7 @@ const HistorialPagos = () => {
   // Obtener viviendas
   const { data: viviendas, isLoading: loadingViviendas } = useQuery(
     'viviendas',
-    () => api.get('/viviendas').then(res => res.data)
+    () => api.get('/api/viviendas').then(res => res.data)
   );
 
   // Obtener historial de pagos
@@ -22,7 +22,7 @@ const HistorialPagos = () => {
     () => {
       if (!selectedVivienda) return Promise.resolve([]);
       
-      let url = `/pagos/historial/${selectedVivienda}`;
+      let url = `/api/pagos/historial/${selectedVivienda}`;
       const params = new URLSearchParams();
       
       if (filterEstado !== 'todos') params.append('estado', filterEstado);
