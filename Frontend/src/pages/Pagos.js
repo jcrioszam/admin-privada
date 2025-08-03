@@ -36,20 +36,27 @@ const Pagos = () => {
   const pagosAgrupados = React.useMemo(() => {
     if (!pagos) return [];
     
-
+    // Filtrar pagos que tienen vivienda válida
+    const pagosConVivienda = pagos.filter(pago => {
+      if (!pago.vivienda) {
+        console.warn('⚠️ Pago sin vivienda encontrado:', pago._id);
+        return false;
+      }
+      return true;
+    });
     
     // Filtrar pagos según el estado
     let pagosFiltrados = [];
     switch (filter) {
              case 'pendientes':
-         pagosFiltrados = pagos.filter(pago => {
+         pagosFiltrados = pagosConVivienda.filter(pago => {
            const saldoPendiente = pago.monto - (pago.montoPagado || 0);
            // Solo mostrar pagos con saldo pendiente Y que no estén completamente pagados
            return saldoPendiente > 0 && pago.estado !== 'Pagado' && pago.estado !== 'Pagado con excedente';
          });
         break;
              case 'vencidos':
-         pagosFiltrados = pagos.filter(pago => {
+         pagosFiltrados = pagosConVivienda.filter(pago => {
            // Solo mostrar pagos que realmente están vencidos
            const fechaLimite = new Date(pago.fechaLimite);
            const hoy = new Date();
@@ -61,18 +68,18 @@ const Pagos = () => {
            return diasAtraso > 0 && saldoPendiente > 0 && pago.estado !== 'Pagado' && pago.estado !== 'Pagado con excedente';
          });
         break;
-             case 'todos':
-         // Para "todos" mostrar solo pagos con saldo pendiente
-         pagosFiltrados = pagos.filter(pago => {
+                          case 'todos':
+          // Para "todos" mostrar solo pagos con saldo pendiente
+          pagosFiltrados = pagosConVivienda.filter(pago => {
            const saldoPendiente = pago.monto - (pago.montoPagado || 0);
            return saldoPendiente > 0;
          });
          break;
-       case 'actual':
-         // Para "mes actual" mostrar solo pagos del mes actual con saldo pendiente
-         const mesActual = new Date().getMonth() + 1;
-         const añoActual = new Date().getFullYear();
-         pagosFiltrados = pagos.filter(pago => {
+               case 'actual':
+          // Para "mes actual" mostrar solo pagos del mes actual con saldo pendiente
+          const mesActual = new Date().getMonth() + 1;
+          const añoActual = new Date().getFullYear();
+          pagosFiltrados = pagosConVivienda.filter(pago => {
            const saldoPendiente = pago.monto - (pago.montoPagado || 0);
            return pago.mes === mesActual && pago.año === añoActual && saldoPendiente > 0;
          });
@@ -141,9 +148,9 @@ const Pagos = () => {
       });
       grupo.totalAdeudo = grupo.totalSaldo + grupo.totalRecargo;
       
-      // Para el filtro "todos", contar períodos pendientes basado en TODOS los pagos de la vivienda
-      if (filter === 'todos') {
-        const todosLosPagosDeLaVivienda = pagos.filter(p => p.vivienda._id === grupo.vivienda._id);
+             // Para el filtro "todos", contar períodos pendientes basado en TODOS los pagos de la vivienda
+       if (filter === 'todos') {
+         const todosLosPagosDeLaVivienda = pagosConVivienda.filter(p => p.vivienda._id === grupo.vivienda._id);
         grupo.periodosPendientes = todosLosPagosDeLaVivienda.filter(p => 
           p.estado === 'Pendiente' || p.estado === 'Parcial' || p.estado === 'Vencido'
         ).length;
@@ -423,6 +430,12 @@ const Pagos = () => {
               </thead>
                              <tbody className="table-body">
                  {pagosAgrupados?.map((grupo) => {
+                   // Validación adicional para evitar errores
+                   if (!grupo.vivienda || !grupo.pagos || grupo.pagos.length === 0) {
+                     console.warn('⚠️ Grupo inválido encontrado:', grupo);
+                     return null;
+                   }
+                   
                    const primerPago = grupo.pagos[0];
                    const tienePagosVencidos = grupo.periodosVencidos > 0;
                    
