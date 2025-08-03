@@ -13,16 +13,16 @@ const Usuarios = () => {
   // Obtener usuarios
   const { data: usuarios, isLoading } = useQuery(
     'usuarios',
-    () => api.get('/usuarios').then(res => res.data)
+    () => api.get('/api/usuarios').then(res => res.data)
   );
 
   // Crear/Actualizar usuario
   const mutation = useMutation(
     (data) => {
       if (editingUsuario) {
-        return api.put(`/usuarios/${editingUsuario._id}`, data);
+        return api.put(`/api/usuarios/${editingUsuario._id}`, data);
       }
-      return api.post('/usuarios', data);
+      return api.post('/api/usuarios', data);
     },
     {
       onSuccess: () => {
@@ -39,7 +39,7 @@ const Usuarios = () => {
 
   // Eliminar usuario
   const deleteMutation = useMutation(
-    (id) => api.delete(`/usuarios/${id}`),
+    (id) => api.delete(`/api/usuarios/${id}`),
     {
       onSuccess: () => {
         queryClient.invalidateQueries('usuarios');
