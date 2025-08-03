@@ -12,9 +12,18 @@ const Pagos = () => {
   const queryClient = useQueryClient();
 
   // Obtener pagos
-  const { data: pagos, isLoading } = useQuery(
+  const { data: pagos, isLoading, error } = useQuery(
     'pagos',
-    () => api.get('/api/pagos').then(res => res.data),
+    () => {
+      console.log('🔍 Obteniendo pagos...');
+      return api.get('/api/pagos').then(res => {
+        console.log('✅ Pagos obtenidos:', res.data);
+        return res.data;
+      }).catch(err => {
+        console.error('❌ Error obteniendo pagos:', err);
+        throw err;
+      });
+    },
     {
       refetchInterval: 30000, // Refrescar cada 30 segundos
       staleTime: 10000, // Considerar datos frescos por 10 segundos
@@ -257,6 +266,28 @@ const Pagos = () => {
     return (
       <div className="flex justify-center items-center h-64">
         <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    console.error('❌ Error en componente Pagos:', error);
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="text-red-600 text-lg font-semibold mb-2">
+            Error al cargar los pagos
+          </div>
+          <div className="text-gray-600 text-sm">
+            {error.message || 'Error desconocido'}
+          </div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Reintentar
+          </button>
+        </div>
       </div>
     );
   }
