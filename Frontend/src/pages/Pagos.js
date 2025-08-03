@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { PlusIcon, CreditCardIcon, CheckIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
@@ -33,7 +33,7 @@ const Pagos = () => {
   );
 
   // Agrupar pagos por vivienda y filtrar según el estado seleccionado
-  const pagosAgrupados = React.useMemo(() => {
+  const pagosAgrupados = useMemo(() => {
     if (!pagos) return [];
     
     // Filtrar pagos que tienen vivienda válida

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from 'react-query';
 import { CalendarIcon, CurrencyDollarIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
@@ -20,7 +20,7 @@ const CorteDiario = () => {
   );
 
   // Calcular totales
-  const totales = React.useMemo(() => {
+  const totales = useMemo(() => {
     if (!pagosDelDia) return { total: 0, porMetodo: {} };
 
     const total = pagosDelDia.reduce((sum, pago) => sum + (pago.montoPagado || 0), 0);
@@ -34,7 +34,7 @@ const CorteDiario = () => {
   }, [pagosDelDia]);
 
   // Filtrar pagos por método de pago
-  const pagosFiltrados = React.useMemo(() => {
+  const pagosFiltrados = useMemo(() => {
     if (!pagosDelDia) return [];
     
     if (filtroMetodo === 'todos') {
