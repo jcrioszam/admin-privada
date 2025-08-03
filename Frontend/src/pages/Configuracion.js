@@ -21,7 +21,7 @@ const Configuracion = () => {
   // Obtener configuración actual
   const { data: configuracion, isLoading } = useQuery(
     'configuracion',
-    () => api.get('/configuracion').then(res => res.data),
+    () => api.get('/api/configuracion').then(res => res.data),
     {
       onSuccess: (data) => {
         setFormData(data);
@@ -31,7 +31,7 @@ const Configuracion = () => {
 
   // Mutación para actualizar configuración
   const updateConfigMutation = useMutation(
-    (data) => api.put('/configuracion', data),
+    (data) => api.put('/api/configuracion', data),
     {
       onSuccess: () => {
         toast.success('Configuración actualizada correctamente');
