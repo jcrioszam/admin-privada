@@ -4,9 +4,10 @@ const Acceso = require('../models/Acceso');
 const Residente = require('../models/Residente');
 const Vivienda = require('../models/Vivienda');
 const { body, validationResult } = require('express-validator');
+const auth = require('../middleware/auth');
 
 // Obtener todos los accesos
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
     const { residente, vivienda, activo, tipoAcceso } = req.query;
     let filtro = {};
@@ -29,7 +30,7 @@ router.get('/', async (req, res) => {
 });
 
 // Obtener un acceso específico
-router.get('/:id', async (req, res) => {
+router.get('/:id', auth, async (req, res) => {
   try {
     const acceso = await Acceso.findById(req.params.id)
       .populate('residente', 'nombre apellidos email telefono')
@@ -46,7 +47,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Crear nuevo acceso
-router.post('/', [
+router.post('/', auth, [
   body('residente').isMongoId().withMessage('Residente inválido'),
   body('vivienda').isMongoId().withMessage('Vivienda inválida'),
   body('tipoAcceso').isIn(['Tarjeta RFID', 'Código PIN', 'Huella Digital', 'Reconocimiento Facial', 'Llave Física', 'Control Remoto']).withMessage('Tipo de acceso inválido')
@@ -83,7 +84,7 @@ router.post('/', [
 
     const acceso = new Acceso({
       ...req.body,
-      registradoPor: req.body.registradoPor || '64f1a2b3c4d5e6f7g8h9i0j1' // ID temporal
+      registradoPor: req.usuario.id
     });
     
     const nuevoAcceso = await acceso.save();
@@ -99,7 +100,7 @@ router.post('/', [
 });
 
 // Actualizar acceso
-router.put('/:id', [
+router.put('/:id', auth, [
   body('tipoAcceso').optional().isIn(['Tarjeta RFID', 'Código PIN', 'Huella Digital', 'Reconocimiento Facial', 'Llave Física', 'Control Remoto']).withMessage('Tipo de acceso inválido'),
   body('activo').optional().isBoolean().withMessage('El estado activo debe ser booleano')
 ], async (req, res) => {
@@ -127,7 +128,7 @@ router.put('/:id', [
 });
 
 // Desactivar acceso
-router.put('/:id/desactivar', async (req, res) => {
+router.put('/:id/desactivar', auth, async (req, res) => {
   try {
     const acceso = await Acceso.findByIdAndUpdate(
       req.params.id,
@@ -147,7 +148,7 @@ router.put('/:id/desactivar', async (req, res) => {
 });
 
 // Activar acceso
-router.put('/:id/activar', async (req, res) => {
+router.put('/:id/activar', auth, async (req, res) => {
   try {
     const acceso = await Acceso.findByIdAndUpdate(
       req.params.id,
@@ -167,7 +168,7 @@ router.put('/:id/activar', async (req, res) => {
 });
 
 // Eliminar acceso
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   try {
     const acceso = await Acceso.findByIdAndDelete(req.params.id);
     if (!acceso) {
@@ -180,7 +181,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // Obtener accesos por residente
-router.get('/residente/:residenteId', async (req, res) => {
+router.get('/residente/:residenteId', auth, async (req, res) => {
   try {
     const accesos = await Acceso.find({ 
       residente: req.params.residenteId,
@@ -195,7 +196,7 @@ router.get('/residente/:residenteId', async (req, res) => {
 });
 
 // Obtener accesos por vivienda
-router.get('/vivienda/:viviendaId', async (req, res) => {
+router.get('/vivienda/:viviendaId', auth, async (req, res) => {
   try {
     const accesos = await Acceso.find({ 
       vivienda: req.params.viviendaId,
@@ -210,7 +211,7 @@ router.get('/vivienda/:viviendaId', async (req, res) => {
 });
 
 // Obtener accesos vencidos
-router.get('/vencidos/listado', async (req, res) => {
+router.get('/vencidos/listado', auth, async (req, res) => {
   try {
     const accesosVencidos = await Acceso.find({
       fechaVencimiento: { $lt: new Date() },
@@ -226,7 +227,7 @@ router.get('/vencidos/listado', async (req, res) => {
 });
 
 // Obtener estadísticas de accesos
-router.get('/estadisticas/resumen', async (req, res) => {
+router.get('/estadisticas/resumen', auth, async (req, res) => {
   try {
     const estadisticas = await Acceso.aggregate([
       {
