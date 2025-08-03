@@ -5,6 +5,7 @@ import {
   UsersIcon,
   CreditCardIcon,
   KeyIcon,
+  BanknotesIcon,
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
 } from '@heroicons/react/24/outline';
@@ -37,7 +38,13 @@ const Dashboard = () => {
     () => api.get('/api/accesos/estadisticas/resumen').then(res => res.data)
   );
 
-  const isLoading = loadingViviendas || loadingResidentes || loadingPagos || loadingAccesos;
+  // Obtener estadísticas de gastos
+  const { data: gastosStats, isLoading: loadingGastos } = useQuery(
+    'gastos-stats',
+    () => api.get('/api/gastos/estadisticas/resumen').then(res => res.data)
+  );
+
+  const isLoading = loadingViviendas || loadingResidentes || loadingPagos || loadingAccesos || loadingGastos;
 
   if (isLoading) {
     return (
@@ -71,6 +78,14 @@ const Dashboard = () => {
       change: '-8%',
       changeType: 'negative',
       color: 'bg-yellow-500',
+    },
+    {
+      name: 'Balance Gastos',
+      value: gastosStats?.balance || 0,
+      icon: BanknotesIcon,
+      change: gastosStats?.balance >= 0 ? '+$' + gastosStats?.balance?.toLocaleString() : '-$' + Math.abs(gastosStats?.balance || 0).toLocaleString(),
+      changeType: gastosStats?.balance >= 0 ? 'positive' : 'negative',
+      color: gastosStats?.balance >= 0 ? 'bg-green-500' : 'bg-red-500',
     },
     {
       name: 'Accesos Activos',

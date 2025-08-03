@@ -37,6 +37,7 @@ app.use('/api/pagos', require('./routes/pagos'));
 app.use('/api/accesos', require('./routes/accesos'));
 app.use('/api/usuarios', require('./routes/usuarios'));
 app.use('/api/configuracion', require('./routes/configuracion'));
+app.use('/api/gastos', require('./routes/gastos'));
 
 // Ruta de prueba
 app.get('/', (req, res) => {

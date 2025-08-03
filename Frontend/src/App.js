@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Viviendas from './pages/Viviendas';
 import Residentes from './pages/Residentes';
 import Pagos from './pages/Pagos';
+import Gastos from './pages/Gastos';
 import HistorialPagos from './pages/HistorialPagos';
 import CorteDiario from './pages/CorteDiario';
 import Accesos from './pages/Accesos';
@@ -37,6 +38,7 @@ function App() {
         <Route path="/viviendas" element={<Viviendas />} />
         <Route path="/residentes" element={<Residentes />} />
         <Route path="/pagos" element={<Pagos />} />
+        <Route path="/gastos" element={<Gastos />} />
         <Route path="/historial" element={<HistorialPagos />} />
         <Route path="/corte-diario" element={<CorteDiario />} />
         <Route path="/accesos" element={<Accesos />} />

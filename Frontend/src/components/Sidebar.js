@@ -12,6 +12,7 @@ import {
   Cog6ToothIcon,
   ClockIcon,
   CurrencyDollarIcon,
+  BanknotesIcon,
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -19,6 +20,7 @@ const navigation = [
   { name: 'Viviendas', href: '/viviendas', icon: BuildingOfficeIcon },
   { name: 'Residentes', href: '/residentes', icon: UsersIcon },
   { name: 'Pagos', href: '/pagos', icon: CreditCardIcon },
+  { name: 'Gastos', href: '/gastos', icon: BanknotesIcon },
   { name: 'Corte Diario', href: '/corte-diario', icon: CurrencyDollarIcon },
   { name: 'Historial', href: '/historial', icon: ClockIcon },
   { name: 'Accesos', href: '/accesos', icon: KeyIcon },
