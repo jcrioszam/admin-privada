@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from 'react-query';
 import { MagnifyingGlassIcon, FilterIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
@@ -71,7 +71,7 @@ const HistorialPagos = () => {
   };
 
   // Ordenar viviendas por número de manera ascendente
-  const viviendasOrdenadas = React.useMemo(() => {
+  const viviendasOrdenadas = useMemo(() => {
     if (!viviendas) return [];
     
     return [...viviendas].sort((a, b) => {
