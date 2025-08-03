@@ -109,59 +109,57 @@ const Residentes = () => {
         <div className="card-body">
           <div className="overflow-x-auto">
             <table className="table">
-              <thead className="table-header">
-                <tr>
-                  <th className="table-header-cell">Nombre</th>
-                  <th className="table-header-cell">Email</th>
-                  <th className="table-header-cell">Teléfono</th>
-                  <th className="table-header-cell">Tipo</th>
-                  <th className="table-header-cell">Vivienda</th>
-                  <th className="table-header-cell">Estado</th>
-                  <th className="table-header-cell">Acciones</th>
-                </tr>
-              </thead>
+                             <thead className="table-header">
+                 <tr>
+                   <th className="table-header-cell">Nombre</th>
+                   <th className="table-header-cell">Teléfono</th>
+                   <th className="table-header-cell">Tipo</th>
+                   <th className="table-header-cell">Vivienda</th>
+                   <th className="table-header-cell">Estado</th>
+                   <th className="table-header-cell">Acciones</th>
+                 </tr>
+               </thead>
               <tbody className="table-body">
                 {residentes?.map((residente) => (
-                  <tr key={residente._id} className="table-row">
-                    <td className="table-cell font-medium">
-                      {residente.nombre} {residente.apellidos}
-                    </td>
-                    <td className="table-cell">{residente.email}</td>
-                    <td className="table-cell">{residente.telefono}</td>
-                    <td className="table-cell">
-                      <span className={`badge ${
-                        residente.tipo === 'Dueño' ? 'badge-success' : 'badge-secondary'
-                      }`}>
-                        {residente.tipo}
-                      </span>
-                    </td>
-                    <td className="table-cell">
-                      {residente.vivienda?.numero} - {residente.vivienda?.calle}
-                    </td>
-                    <td className="table-cell">
-                      <span className={`badge ${
-                        residente.activo ? 'badge-success' : 'badge-danger'
-                      }`}>
-                        {residente.activo ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </td>
-                    <td className="table-cell">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => openModal(residente)}
-                          className="text-primary-600 hover:text-primary-900"
-                        >
-                          <PencilIcon className="h-5 w-5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(residente._id)}
-                          className="text-danger-600 hover:text-danger-900"
-                        >
-                          <TrashIcon className="h-5 w-5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                                     <tr key={residente._id} className="table-row">
+                     <td className="table-cell font-medium">
+                       {residente.nombre} {residente.apellidos}
+                     </td>
+                     <td className="table-cell">{residente.telefono}</td>
+                     <td className="table-cell">
+                       <span className={`badge ${
+                         residente.tipo === 'Dueño' ? 'badge-success' : 'badge-secondary'
+                       }`}>
+                         {residente.tipo}
+                       </span>
+                     </td>
+                     <td className="table-cell">
+                       {residente.vivienda?.numero} - {residente.vivienda?.calle}
+                     </td>
+                     <td className="table-cell">
+                       <span className={`badge ${
+                         residente.activo ? 'badge-success' : 'badge-danger'
+                       }`}>
+                         {residente.activo ? 'Activo' : 'Inactivo'}
+                       </span>
+                     </td>
+                     <td className="table-cell">
+                       <div className="flex space-x-2">
+                         <button
+                           onClick={() => openModal(residente)}
+                           className="text-primary-600 hover:text-primary-900"
+                         >
+                           <PencilIcon className="h-5 w-5" />
+                         </button>
+                         <button
+                           onClick={() => handleDelete(residente._id)}
+                           className="text-danger-600 hover:text-danger-900"
+                         >
+                           <TrashIcon className="h-5 w-5" />
+                         </button>
+                       </div>
+                     </td>
+                   </tr>
                 ))}
               </tbody>
             </table>

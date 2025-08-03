@@ -45,10 +45,7 @@ router.post('/', [
   body('tipo').isIn(['Dueño', 'Inquilino']).withMessage('Tipo inválido'),
   body('nombre').notEmpty().withMessage('El nombre es requerido'),
   body('apellidos').notEmpty().withMessage('Los apellidos son requeridos'),
-  body('email').isEmail().withMessage('Email inválido'),
-  body('telefono').notEmpty().withMessage('El teléfono es requerido'),
-  body('documentoIdentidad.tipo').isIn(['INE', 'IFE', 'Pasaporte', 'Otro']).withMessage('Tipo de documento inválido'),
-  body('documentoIdentidad.numero').notEmpty().withMessage('El número de documento es requerido')
+  body('telefono').notEmpty().withMessage('El teléfono es requerido')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -84,10 +81,7 @@ router.put('/:id', [
   body('tipo').optional().isIn(['Dueño', 'Inquilino']).withMessage('Tipo inválido'),
   body('nombre').optional().notEmpty().withMessage('El nombre no puede estar vacío'),
   body('apellidos').optional().notEmpty().withMessage('Los apellidos no pueden estar vacíos'),
-  body('email').optional().isEmail().withMessage('Email inválido'),
-  body('telefono').optional().notEmpty().withMessage('El teléfono no puede estar vacío'),
-  body('documentoIdentidad.tipo').optional().isIn(['INE', 'IFE', 'Pasaporte', 'Otro']).withMessage('Tipo de documento inválido'),
-  body('documentoIdentidad.numero').optional().notEmpty().withMessage('El número de documento no puede estar vacío')
+  body('telefono').optional().notEmpty().withMessage('El teléfono no puede estar vacío')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
