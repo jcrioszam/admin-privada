@@ -38,7 +38,28 @@ router.post('/crear-admin-inicial', async (req, res) => {
       email: 'admin@admin.com',
       password: 'admin123',
       rol: 'Administrador',
-      permisos: ['viviendas', 'residentes', 'pagos', 'usuarios', 'configuracion'],
+      permisos: [
+        {
+          modulo: 'viviendas',
+          acciones: ['crear', 'leer', 'actualizar', 'eliminar', 'exportar']
+        },
+        {
+          modulo: 'residentes',
+          acciones: ['crear', 'leer', 'actualizar', 'eliminar', 'exportar']
+        },
+        {
+          modulo: 'pagos',
+          acciones: ['crear', 'leer', 'actualizar', 'eliminar', 'exportar']
+        },
+        {
+          modulo: 'usuarios',
+          acciones: ['crear', 'leer', 'actualizar', 'eliminar', 'exportar']
+        },
+        {
+          modulo: 'accesos',
+          acciones: ['crear', 'leer', 'actualizar', 'eliminar', 'exportar']
+        }
+      ],
       activo: true
     });
     
