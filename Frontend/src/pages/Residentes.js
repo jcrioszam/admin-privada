@@ -13,22 +13,22 @@ const Residentes = () => {
   // Obtener residentes
   const { data: residentes, isLoading } = useQuery(
     'residentes',
-    () => api.get('/residentes').then(res => res.data)
+    () => api.get('/api/residentes').then(res => res.data)
   );
 
   // Obtener viviendas para el select
   const { data: viviendas } = useQuery(
     'viviendas',
-    () => api.get('/viviendas').then(res => res.data)
+    () => api.get('/api/viviendas').then(res => res.data)
   );
 
   // Crear/Actualizar residente
   const mutation = useMutation(
     (data) => {
       if (editingResidente) {
-        return api.put(`/residentes/${editingResidente._id}`, data);
+        return api.put(`/api/residentes/${editingResidente._id}`, data);
       }
-      return api.post('/residentes', data);
+      return api.post('/api/residentes', data);
     },
     {
       onSuccess: () => {
@@ -45,7 +45,7 @@ const Residentes = () => {
 
   // Eliminar residente
   const deleteMutation = useMutation(
-    (id) => api.delete(`/residentes/${id}`),
+    (id) => api.delete(`/api/residentes/${id}`),
     {
       onSuccess: () => {
         queryClient.invalidateQueries('residentes');
