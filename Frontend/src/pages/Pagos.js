@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { PlusIcon, CreditCardIcon, CheckIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
@@ -601,7 +601,7 @@ const RegistrarPagoModal = ({ pago, onSubmit, onClose, isLoading, obtenerPagosPe
   const [mostrarSeleccion, setMostrarSeleccion] = useState(false);
 
   // Cargar pagos pendientes cuando se abre el modal
-  React.useEffect(() => {
+  useEffect(() => {
     const cargarPagosPendientes = async () => {
       const pagos = await obtenerPagosPendientes(pago.vivienda._id);
       setPagosPendientes(pagos);
