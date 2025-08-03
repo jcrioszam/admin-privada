@@ -151,7 +151,7 @@ const Pagos = () => {
 
   // Registrar pago flexible
   const registerPagoMutation = useMutation(
-    (data) => api.put(`/pagos/${data.id}/registrar-pago-flexible`, data),
+    (data) => api.put(`/api/pagos/${data.id}/registrar-pago-flexible`, data),
     {
       onSuccess: async (response) => {
         // Invalidar y refrescar los datos
@@ -202,7 +202,7 @@ const Pagos = () => {
   // Función para generar próximo pago
   const generarProximoPago = async (viviendaId) => {
     try {
-      const response = await api.get(`/pagos/proximo-pago/${viviendaId}`);
+      const response = await api.get(`/api/pagos/proximo-pago/${viviendaId}`);
       if (response.data) {
         queryClient.invalidateQueries('pagos');
         toast.success(`Próximo pago generado para ${response.data.vivienda.numero}`);
@@ -215,7 +215,7 @@ const Pagos = () => {
   // Función para obtener pagos pendientes de una vivienda
   const obtenerPagosPendientes = async (viviendaId) => {
     try {
-      const response = await api.get(`/pagos/pendientes/${viviendaId}`);
+      const response = await api.get(`/api/pagos/pendientes/${viviendaId}`);
       return response.data;
     } catch (error) {
       console.error('Error obteniendo pagos pendientes:', error);
