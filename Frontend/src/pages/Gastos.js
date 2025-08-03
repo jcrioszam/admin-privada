@@ -100,14 +100,20 @@ const Gastos = () => {
   );
 
   const estadoMutation = useMutation(
-    ({ id, estado }) => api.patch(`/api/gastos/${id}/estado`, { estado }),
+    ({ id, estado }) => {
+      console.log('🔍 Intentando cambiar estado:', { id, estado });
+      return api.patch(`/api/gastos/${id}/estado`, { estado });
+    },
     {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        console.log('✅ Estado actualizado exitosamente:', data);
         queryClient.invalidateQueries('gastos');
         queryClient.invalidateQueries('gastos-estadisticas');
         toast.success('Estado actualizado exitosamente');
       },
       onError: (error) => {
+        console.error('❌ Error actualizando estado:', error);
+        console.error('Detalles del error:', error.response?.data);
         toast.error(error.response?.data?.message || 'Error al actualizar estado');
       }
     }
