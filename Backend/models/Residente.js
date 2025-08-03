@@ -21,31 +21,10 @@ const residenteSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  email: {
-    type: String,
-    required: true,
-    trim: true,
-    lowercase: true
-  },
   telefono: {
     type: String,
     required: true,
     trim: true
-  },
-  fechaNacimiento: {
-    type: Date
-  },
-  documentoIdentidad: {
-    tipo: {
-      type: String,
-      enum: ['INE', 'IFE', 'Pasaporte', 'Otro'],
-      required: true
-    },
-    numero: {
-      type: String,
-      required: true,
-      trim: true
-    }
   },
   fechaIngreso: {
     type: Date,
@@ -81,7 +60,6 @@ const residenteSchema = new mongoose.Schema({
 
 // Índices
 residenteSchema.index({ vivienda: 1 });
-residenteSchema.index({ email: 1 });
 residenteSchema.index({ activo: 1 });
 residenteSchema.index({ tipo: 1 });
 

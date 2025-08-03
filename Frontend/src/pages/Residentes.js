@@ -190,13 +190,7 @@ const ResidenteModal = ({ residente, viviendas, onSubmit, onClose, isLoading }) 
     tipo: residente?.tipo || 'Dueño',
     nombre: residente?.nombre || '',
     apellidos: residente?.apellidos || '',
-    email: residente?.email || '',
     telefono: residente?.telefono || '',
-    fechaNacimiento: residente?.fechaNacimiento ? new Date(residente.fechaNacimiento).toISOString().split('T')[0] : '',
-    documentoIdentidad: {
-      tipo: residente?.documentoIdentidad?.tipo || 'INE',
-      numero: residente?.documentoIdentidad?.numero || '',
-    },
     activo: residente?.activo ?? true,
     observaciones: residente?.observaciones || '',
   });
@@ -277,29 +271,16 @@ const ResidenteModal = ({ residente, viviendas, onSubmit, onClose, isLoading }) 
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="form-label">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="input"
-                  required
-                />
-              </div>
-              <div>
-                <label className="form-label">Teléfono</label>
-                <input
-                  type="tel"
-                  name="telefono"
-                  value={formData.telefono}
-                  onChange={handleChange}
-                  className="input"
-                  required
-                />
-              </div>
+            <div>
+              <label className="form-label">Teléfono</label>
+              <input
+                type="tel"
+                name="telefono"
+                value={formData.telefono}
+                onChange={handleChange}
+                className="input"
+                required
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -329,44 +310,9 @@ const ResidenteModal = ({ residente, viviendas, onSubmit, onClose, isLoading }) 
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="form-label">Tipo Documento</label>
-                <select
-                  name="documentoIdentidad.tipo"
-                  value={formData.documentoIdentidad.tipo}
-                  onChange={handleChange}
-                  className="input"
-                >
-                  <option value="INE">INE</option>
-                  <option value="IFE">IFE</option>
-                  <option value="Pasaporte">Pasaporte</option>
-                  <option value="Otro">Otro</option>
-                </select>
-              </div>
-              <div>
-                <label className="form-label">Número Documento</label>
-                <input
-                  type="text"
-                  name="documentoIdentidad.numero"
-                  value={formData.documentoIdentidad.numero}
-                  onChange={handleChange}
-                  className="input"
-                  required
-                />
-              </div>
-            </div>
 
-            <div>
-              <label className="form-label">Fecha de Nacimiento</label>
-              <input
-                type="date"
-                name="fechaNacimiento"
-                value={formData.fechaNacimiento}
-                onChange={handleChange}
-                className="input"
-              />
-            </div>
+
+
 
             <div>
               <label className="form-label">Observaciones</label>
