@@ -19,6 +19,7 @@ import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
+// Módulo de Control de Gastos - Forzar despliegue
 const Gastos = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingGasto, setEditingGasto] = useState(null);
