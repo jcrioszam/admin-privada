@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { PlusIcon, CreditCardIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, CreditCardIcon, CheckIcon, PrinterIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import toast from 'react-hot-toast';
@@ -323,6 +323,192 @@ const Pagos = () => {
     };
   };
 
+  // Función para imprimir lista de morosos
+  const imprimirMorosos = () => {
+    if (!pagosAgrupados || pagosAgrupados.length === 0) {
+      toast.error('No hay datos para imprimir');
+      return;
+    }
+
+    const morosos = pagosAgrupados.filter(grupo => {
+      const { totalAdeudo } = calcularTotalAdeudoVivienda(grupo.vivienda._id);
+      return totalAdeudo > 0;
+    });
+
+    if (morosos.length === 0) {
+      toast.error('No hay morosos para imprimir');
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Lista de Morosos - ${new Date().toLocaleDateString('es-ES')}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .header h1 { color: #1f2937; margin: 0; }
+          .header p { color: #6b7280; margin: 5px 0; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #d1d5db; padding: 8px; text-align: left; }
+          th { background-color: #f3f4f6; font-weight: bold; }
+          .total { font-weight: bold; background-color: #fef3c7; }
+          .stats { display: flex; justify-content: space-between; margin: 20px 0; }
+          .stat { text-align: center; }
+          .stat-value { font-size: 24px; font-weight: bold; }
+          .stat-label { font-size: 12px; color: #6b7280; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Lista de Morosos</h1>
+          <p>Fecha de impresión: ${new Date().toLocaleDateString('es-ES')}</p>
+          <p>Total de morosos: ${morosos.length}</p>
+        </div>
+        
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-value">${morosos.reduce((sum, grupo) => {
+              const { totalSaldo } = calcularTotalAdeudoVivienda(grupo.vivienda._id);
+              return sum + totalSaldo;
+            }, 0).toLocaleString()}</div>
+            <div class="stat-label">Total Saldo Pendiente</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">${morosos.reduce((sum, grupo) => {
+              const { totalRecargo } = calcularTotalAdeudoVivienda(grupo.vivienda._id);
+              return sum + totalRecargo;
+            }, 0).toLocaleString()}</div>
+            <div class="stat-label">Total Recargos</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">${morosos.reduce((sum, grupo) => {
+              const { totalAdeudo } = calcularTotalAdeudoVivienda(grupo.vivienda._id);
+              return sum + totalAdeudo;
+            }, 0).toLocaleString()}</div>
+            <div class="stat-label">Total Adeudo</div>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Vivienda</th>
+              <th>Residente</th>
+              <th>Saldo Pendiente</th>
+              <th>Recargos</th>
+              <th>Total Adeudo</th>
+              <th>Períodos Vencidos</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${morosos.map((grupo) => {
+              const { totalSaldo, totalRecargo, totalAdeudo } = calcularTotalAdeudoVivienda(grupo.vivienda._id);
+              const primerPago = grupo.pagos[0];
+              const residente = primerPago.residente;
+              
+              return `
+                <tr>
+                  <td>${grupo.vivienda.numero}</td>
+                  <td>${residente ? `${residente.nombre || ''} ${residente.apellidos || ''}`.trim() : 'Sin residente'}</td>
+                  <td>$${totalSaldo.toLocaleString()}</td>
+                  <td>$${totalRecargo.toLocaleString()}</td>
+                  <td class="total">$${totalAdeudo.toLocaleString()}</td>
+                  <td>${grupo.periodosVencidos || 0}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
+  // Función para imprimir lista de al corriente
+  const imprimirAlCorriente = () => {
+    if (!pagosAgrupados || pagosAgrupados.length === 0) {
+      toast.error('No hay datos para imprimir');
+      return;
+    }
+
+    const alCorriente = pagosAgrupados.filter(grupo => {
+      const { totalAdeudo } = calcularTotalAdeudoVivienda(grupo.vivienda._id);
+      return totalAdeudo === 0;
+    });
+
+    if (alCorriente.length === 0) {
+      toast.error('No hay viviendas al corriente para imprimir');
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Lista de Al Corriente - ${new Date().toLocaleDateString('es-ES')}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .header h1 { color: #1f2937; margin: 0; }
+          .header p { color: #6b7280; margin: 5px 0; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #d1d5db; padding: 8px; text-align: left; }
+          th { background-color: #f3f4f6; font-weight: bold; }
+          .stats { display: flex; justify-content: space-between; margin: 20px 0; }
+          .stat { text-align: center; }
+          .stat-value { font-size: 24px; font-weight: bold; }
+          .stat-label { font-size: 12px; color: #6b7280; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Lista de Al Corriente</h1>
+          <p>Fecha de impresión: ${new Date().toLocaleDateString('es-ES')}</p>
+          <p>Total de viviendas al corriente: ${alCorriente.length}</p>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Vivienda</th>
+              <th>Residente</th>
+              <th>Estado</th>
+              <th>Último Pago</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${alCorriente.map((grupo) => {
+              const primerPago = grupo.pagos[0];
+              const residente = primerPago.residente;
+              
+              return `
+                <tr>
+                  <td>${grupo.vivienda.numero}</td>
+                  <td>${residente ? `${residente.nombre || ''} ${residente.apellidos || ''}`.trim() : 'Sin residente'}</td>
+                  <td>Al corriente</td>
+                  <td>${primerPago.fechaPago ? new Date(primerPago.fechaPago).toLocaleDateString('es-ES') : '-'}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -405,6 +591,26 @@ const Pagos = () => {
          >
            Mes Actual
          </button>
+
+         {/* Botones de impresión */}
+         <div className="border-l border-gray-300 pl-4 flex space-x-2">
+           <button
+             onClick={imprimirMorosos}
+             className="px-3 py-2 bg-red-500 text-white rounded-md text-sm font-medium hover:bg-red-600 flex items-center"
+             title="Imprimir lista de morosos"
+           >
+             <PrinterIcon className="w-4 h-4 mr-1" />
+             Morosos
+           </button>
+           <button
+             onClick={imprimirAlCorriente}
+             className="px-3 py-2 bg-green-500 text-white rounded-md text-sm font-medium hover:bg-green-600 flex items-center"
+             title="Imprimir lista de al corriente"
+           >
+             <PrinterIcon className="w-4 h-4 mr-1" />
+             Al Corriente
+           </button>
+         </div>
         
                                                                        <div className="ml-auto flex space-x-2">
              <button

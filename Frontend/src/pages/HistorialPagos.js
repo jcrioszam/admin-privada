@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from 'react-query';
-import { MagnifyingGlassIcon, FilterIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, FilterIcon, PrinterIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import toast from 'react-hot-toast';
@@ -22,7 +22,10 @@ const HistorialPagos = () => {
     () => {
       if (!selectedVivienda) return Promise.resolve([]);
       
-      let url = `/api/pagos/historial/${selectedVivienda}`;
+      let url = selectedVivienda === 'todos' 
+        ? '/api/pagos/historial-todos'
+        : `/api/pagos/historial/${selectedVivienda}`;
+      
       const params = new URLSearchParams();
       
       if (filterEstado !== 'todos') params.append('estado', filterEstado);
@@ -68,6 +71,107 @@ const HistorialPagos = () => {
     const diasAtraso = hoy > fechaLimite ? Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24)) : 0;
     
     return diasAtraso > 0 ? (pago.monto * 0.10) * Math.ceil(diasAtraso / 30) : 0;
+  };
+
+  // Función para imprimir historial
+  const imprimirHistorial = () => {
+    if (!historial || historial.length === 0) {
+      toast.error('No hay datos para imprimir');
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    const viviendaSeleccionada = selectedVivienda === 'todos' 
+      ? 'Todas las viviendas' 
+      : viviendasOrdenadas?.find(v => v._id === selectedVivienda)?.numero;
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Historial de Pagos - ${viviendaSeleccionada}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .header h1 { color: #1f2937; margin: 0; }
+          .header p { color: #6b7280; margin: 5px 0; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #d1d5db; padding: 8px; text-align: left; }
+          th { background-color: #f3f4f6; font-weight: bold; }
+          .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+          .badge-success { background-color: #d1fae5; color: #065f46; }
+          .badge-warning { background-color: #fef3c7; color: #92400e; }
+          .badge-danger { background-color: #fee2e2; color: #991b1b; }
+          .badge-info { background-color: #dbeafe; color: #1e40af; }
+          .stats { display: flex; justify-content: space-between; margin: 20px 0; }
+          .stat { text-align: center; }
+          .stat-value { font-size: 24px; font-weight: bold; }
+          .stat-label { font-size: 12px; color: #6b7280; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Historial de Pagos</h1>
+          <p>Vivienda: ${viviendaSeleccionada}</p>
+          <p>Fecha de impresión: ${new Date().toLocaleDateString('es-ES')}</p>
+        </div>
+        
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-value">${historial.reduce((sum, pago) => sum + (pago.montoPagado || 0), 0).toLocaleString()}</div>
+            <div class="stat-label">Total Pagado</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">${historial.reduce((sum, pago) => sum + calcularRecargo(pago), 0).toLocaleString()}</div>
+            <div class="stat-label">Total Recargos</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">${historial.filter(p => p.estado === 'Pagado' || p.estado === 'Pagado con excedente').length}</div>
+            <div class="stat-label">Pagos Completos</div>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Vivienda</th>
+              <th>Período</th>
+              <th>Monto</th>
+              <th>Pagado</th>
+              <th>Saldo</th>
+              <th>Recargo</th>
+              <th>Estado</th>
+              <th>Fecha Pago</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${historial.map((pago) => {
+              const recargo = calcularRecargo(pago);
+              const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+              const vivienda = viviendasOrdenadas?.find(v => v._id === pago.vivienda);
+              
+              return `
+                <tr>
+                  <td>${vivienda?.numero || 'N/A'}</td>
+                  <td>${pago.mes}/${pago.año}</td>
+                  <td>$${pago.monto?.toLocaleString()}</td>
+                  <td>$${(pago.montoPagado || 0).toLocaleString()}</td>
+                  <td>$${saldoPendiente.toLocaleString()}</td>
+                  <td>$${recargo.toLocaleString()}</td>
+                  <td><span class="badge badge-${getEstadoBadge(pago.estado).replace('badge-', '')}">${pago.estado}</span></td>
+                  <td>${pago.fechaPago ? formatFecha(pago.fechaPago) : '-'}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.print();
   };
 
   // Ordenar viviendas por número de manera ascendente
@@ -120,6 +224,7 @@ const HistorialPagos = () => {
                 className="input"
               >
                 <option value="">Seleccionar vivienda</option>
+                <option value="todos">Todas las viviendas</option>
                 {viviendasOrdenadas?.map((vivienda) => (
                   <option key={vivienda._id} value={vivienda._id}>
                     {vivienda.numero}
@@ -174,7 +279,7 @@ const HistorialPagos = () => {
                 className="btn-primary w-full"
                 disabled={!selectedVivienda}
               >
-                                        <MagnifyingGlassIcon className="w-4 h-4 mr-2" />
+                <MagnifyingGlassIcon className="w-4 h-4 mr-2" />
                 Consultar
               </button>
             </div>
@@ -189,17 +294,31 @@ const HistorialPagos = () => {
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-gray-900">
                 Historial de Pagos
-                {viviendasOrdenadas?.find(v => v._id === selectedVivienda) && (
+                {selectedVivienda === 'todos' ? (
+                  <span className="text-gray-500 ml-2">- Todas las viviendas</span>
+                ) : viviendasOrdenadas?.find(v => v._id === selectedVivienda) && (
                   <span className="text-gray-500 ml-2">
                     - {viviendasOrdenadas.find(v => v._id === selectedVivienda).numero}
                   </span>
                 )}
               </h3>
-              {historial && (
-                <span className="text-sm text-gray-500">
-                  {historial.length} registro{historial.length !== 1 ? 's' : ''}
-                </span>
-              )}
+              <div className="flex items-center space-x-2">
+                {historial && historial.length > 0 && (
+                  <>
+                    <span className="text-sm text-gray-500">
+                      {historial.length} registro{historial.length !== 1 ? 's' : ''}
+                    </span>
+                    <button
+                      onClick={imprimirHistorial}
+                      className="btn-secondary btn-sm"
+                      title="Imprimir historial"
+                    >
+                      <PrinterIcon className="w-4 h-4 mr-1" />
+                      Imprimir
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
 
             {loadingHistorial ? (
@@ -211,6 +330,9 @@ const HistorialPagos = () => {
                 <table className="table">
                   <thead className="table-header">
                     <tr>
+                      {selectedVivienda === 'todos' && (
+                        <th className="table-header-cell">Vivienda</th>
+                      )}
                       <th className="table-header-cell">Período</th>
                       <th className="table-header-cell">Monto</th>
                       <th className="table-header-cell">Pagado</th>
@@ -225,9 +347,15 @@ const HistorialPagos = () => {
                     {historial.map((pago) => {
                       const recargo = calcularRecargo(pago);
                       const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+                      const vivienda = viviendasOrdenadas?.find(v => v._id === pago.vivienda);
                       
                       return (
                         <tr key={pago._id} className="table-row">
+                          {selectedVivienda === 'todos' && (
+                            <td className="table-cell font-medium">
+                              {vivienda?.numero || 'N/A'}
+                            </td>
+                          )}
                           <td className="table-cell">
                             <div className="text-sm">
                               <div className="font-medium">

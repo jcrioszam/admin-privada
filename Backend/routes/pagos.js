@@ -680,6 +680,55 @@ router.get('/historial/:viviendaId', async (req, res) => {
   }
 });
 
+// Obtener historial de pagos de todas las viviendas
+router.get('/historial-todos', async (req, res) => {
+  try {
+    const { estado, fecha } = req.query;
+    
+    let filtros = {};
+    
+    // Filtro por estado
+    if (estado && estado !== 'todos') {
+      filtros.estado = estado;
+    }
+    
+    // Filtro por fecha
+    if (fecha && fecha !== 'todos') {
+      const hoy = new Date();
+      let fechaInicio;
+      
+      switch (fecha) {
+        case 'ultimo_mes':
+          fechaInicio = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+          break;
+        case 'ultimos_3_meses':
+          fechaInicio = new Date(hoy.getFullYear(), hoy.getMonth() - 3, 1);
+          break;
+        case 'ultimos_6_meses':
+          fechaInicio = new Date(hoy.getFullYear(), hoy.getMonth() - 6, 1);
+          break;
+        case 'ultimo_año':
+          fechaInicio = new Date(hoy.getFullYear() - 1, hoy.getMonth(), 1);
+          break;
+      }
+      
+      if (fechaInicio) {
+        filtros.fechaInicioPeriodo = { $gte: fechaInicio };
+      }
+    }
+    
+    const pagos = await Pago.find(filtros)
+      .populate('vivienda', 'numero')
+      .populate('residente', 'nombre apellidos')
+      .sort({ vivienda: 1, fechaInicioPeriodo: -1 });
+    
+    res.json(pagos);
+  } catch (error) {
+    console.error('Error al obtener historial de todas las viviendas:', error);
+    res.status(500).json({ message: 'Error al obtener historial de pagos' });
+  }
+});
+
 // Función para generar automáticamente el próximo pago
 async function generarProximoPagoAutomatico(viviendaId) {
   try {

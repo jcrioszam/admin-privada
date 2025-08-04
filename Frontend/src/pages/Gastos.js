@@ -10,7 +10,8 @@ import {
   CurrencyDollarIcon,
   ChartBarIcon,
   CalendarIcon,
-  FunnelIcon
+  FunnelIcon,
+  PrinterIcon
 } from '@heroicons/react/24/outline';
 import { useForm } from 'react-hook-form';
 import api from '../services/api';
@@ -157,6 +158,95 @@ const Gastos = () => {
       fechaInicio: '',
       fechaFin: ''
     });
+  };
+
+  // Función para imprimir historial de gastos
+  const imprimirHistorialGastos = () => {
+    if (!gastosData || gastosData.length === 0) {
+      toast.error('No hay datos para imprimir');
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Historial de Gastos - ${new Date().toLocaleDateString('es-ES')}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .header h1 { color: #1f2937; margin: 0; }
+          .header p { color: #6b7280; margin: 5px 0; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #d1d5db; padding: 8px; text-align: left; }
+          th { background-color: #f3f4f6; font-weight: bold; }
+          .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+          .badge-pendiente { background-color: #fef3c7; color: #92400e; }
+          .badge-aprobado { background-color: #d1fae5; color: #065f46; }
+          .badge-rechazado { background-color: #fee2e2; color: #991b1b; }
+          .stats { display: flex; justify-content: space-between; margin: 20px 0; }
+          .stat { text-align: center; }
+          .stat-value { font-size: 24px; font-weight: bold; }
+          .stat-label { font-size: 12px; color: #6b7280; }
+          .total { font-weight: bold; background-color: #fef3c7; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Historial de Gastos</h1>
+          <p>Fecha de impresión: ${new Date().toLocaleDateString('es-ES')}</p>
+          <p>Total de gastos: ${gastosData.length}</p>
+        </div>
+        
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-value">${gastosData.reduce((sum, gasto) => sum + (gasto.monto || 0), 0).toLocaleString()}</div>
+            <div class="stat-label">Total Gastos</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">${gastosData.filter(g => g.estado === 'Aprobado').reduce((sum, gasto) => sum + (gasto.monto || 0), 0).toLocaleString()}</div>
+            <div class="stat-label">Total Aprobados</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">${gastosData.filter(g => g.estado === 'Pendiente').length}</div>
+            <div class="stat-label">Pendientes</div>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Categoría</th>
+              <th>Descripción</th>
+              <th>Monto</th>
+              <th>Estado</th>
+              <th>Responsable</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${gastosData.map((gasto) => {
+              return `
+                <tr>
+                  <td>${new Date(gasto.fecha).toLocaleDateString('es-ES')}</td>
+                  <td>${gasto.categoria}</td>
+                  <td>${gasto.descripcion}</td>
+                  <td>$${(gasto.monto || 0).toLocaleString()}</td>
+                  <td><span class="badge badge-${gasto.estado.toLowerCase()}">${gasto.estado}</span></td>
+                  <td>${gasto.responsable || '-'}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.print();
   };
 
   const categorias = [
@@ -321,6 +411,13 @@ const Gastos = () => {
             className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
           >
             Limpiar Filtros
+          </button>
+          <button
+            onClick={imprimirHistorialGastos}
+            className="px-4 py-2 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700"
+          >
+            <PrinterIcon className="h-4 w-4 mr-2" />
+            Imprimir Historial
           </button>
         </div>
       </div>
