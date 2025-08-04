@@ -7,13 +7,7 @@ import toast from 'react-hot-toast';
 
 const Configuracion = () => {
   const [formData, setFormData] = useState({
-    cuotaMantenimientoMensual: 500,
-    nombreFraccionamiento: 'Fraccionamiento Privado',
-    direccionFraccionamiento: '',
-    telefonoContacto: '',
-    emailContacto: '',
-    diasGraciaPago: 5,
-    porcentajeRecargo: 10
+    cuotaMantenimientoMensual: 500
   });
 
   const queryClient = useQueryClient();
@@ -52,13 +46,7 @@ const Configuracion = () => {
     if (configuracion && !isLoading) {
       console.log('✅ Actualizando formData con configuración:', configuracion);
       setFormData({
-        cuotaMantenimientoMensual: configuracion.cuotaMantenimientoMensual || 500,
-        nombreFraccionamiento: configuracion.nombreFraccionamiento || 'Fraccionamiento Privado',
-        direccionFraccionamiento: configuracion.direccionFraccionamiento || '',
-        telefonoContacto: configuracion.telefonoContacto || '',
-        emailContacto: configuracion.emailContacto || '',
-        diasGraciaPago: configuracion.diasGraciaPago || 5,
-        porcentajeRecargo: configuracion.porcentajeRecargo || 10
+        cuotaMantenimientoMensual: configuracion.cuotaMantenimientoMensual || 500
       });
     }
   }, [configuracion, isLoading]);
@@ -142,58 +130,10 @@ const Configuracion = () => {
         </div>
         <div className="card-body">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Información del Fraccionamiento */}
-            <div>
-              <h4 className="text-md font-medium text-gray-900 mb-4">Información del Fraccionamiento</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="form-label">Nombre del Fraccionamiento</label>
-                  <input
-                    type="text"
-                    name="nombreFraccionamiento"
-                    value={formData.nombreFraccionamiento}
-                    onChange={handleInputChange}
-                    className="form-input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="form-label">Dirección</label>
-                  <input
-                    type="text"
-                    name="direccionFraccionamiento"
-                    value={formData.direccionFraccionamiento}
-                    onChange={handleInputChange}
-                    className="form-input"
-                  />
-                </div>
-                <div>
-                  <label className="form-label">Teléfono de Contacto</label>
-                  <input
-                    type="tel"
-                    name="telefonoContacto"
-                    value={formData.telefonoContacto}
-                    onChange={handleInputChange}
-                    className="form-input"
-                  />
-                </div>
-                <div>
-                  <label className="form-label">Email de Contacto</label>
-                  <input
-                    type="email"
-                    name="emailContacto"
-                    value={formData.emailContacto}
-                    onChange={handleInputChange}
-                    className="form-input"
-                  />
-                </div>
-              </div>
-            </div>
-
             {/* Configuración de Pagos */}
             <div>
               <h4 className="text-md font-medium text-gray-900 mb-4">Configuración de Pagos</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="form-label">Cuota Mensual de Mantenimiento ($)</label>
                   <input
@@ -207,31 +147,6 @@ const Configuracion = () => {
                     required
                   />
                 </div>
-                <div>
-                  <label className="form-label">Días de Gracia</label>
-                  <input
-                    type="number"
-                    name="diasGraciaPago"
-                    value={formData.diasGraciaPago}
-                    onChange={handleInputChange}
-                    className="form-input"
-                    min="0"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="form-label">Porcentaje de Recargo (%)</label>
-                  <input
-                    type="number"
-                    name="porcentajeRecargo"
-                    value={formData.porcentajeRecargo}
-                    onChange={handleInputChange}
-                    className="form-input"
-                    min="0"
-                    max="100"
-                    required
-                  />
-                </div>
               </div>
             </div>
 
@@ -242,13 +157,7 @@ const Configuracion = () => {
                 onClick={() => {
                   if (configuracion) {
                     setFormData({
-                      cuotaMantenimientoMensual: configuracion.cuotaMantenimientoMensual || 500,
-                      nombreFraccionamiento: configuracion.nombreFraccionamiento || 'Fraccionamiento Privado',
-                      direccionFraccionamiento: configuracion.direccionFraccionamiento || '',
-                      telefonoContacto: configuracion.telefonoContacto || '',
-                      emailContacto: configuracion.emailContacto || '',
-                      diasGraciaPago: configuracion.diasGraciaPago || 5,
-                      porcentajeRecargo: configuracion.porcentajeRecargo || 10
+                      cuotaMantenimientoMensual: configuracion.cuotaMantenimientoMensual || 500
                     });
                   }
                 }}
