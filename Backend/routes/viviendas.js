@@ -217,6 +217,69 @@ router.post('/asignar-residentes', async (req, res) => {
   }
 });
 
+// Endpoint temporal para actualizar viviendas con residentes existentes
+router.post('/actualizar-con-residentes', async (req, res) => {
+  try {
+    console.log('🔄 Iniciando actualización de viviendas con residentes...');
+    
+    // Obtener todos los residentes
+    const residentes = await Residente.find().populate('vivienda');
+    console.log(`📋 Encontrados ${residentes.length} residentes`);
+    
+    let actualizadas = 0;
+    const resultados = [];
+
+    for (const residente of residentes) {
+      if (residente.vivienda) {
+        // Buscar la vivienda por ID
+        const vivienda = await Vivienda.findById(residente.vivienda._id);
+        
+        if (vivienda) {
+          // Actualizar la vivienda con el residente
+          vivienda.residente = residente._id;
+          await vivienda.save();
+          
+          console.log(`✅ Vivienda ${vivienda.numero} actualizada con residente: ${residente.nombre} ${residente.apellidos}`);
+          actualizadas++;
+          
+          resultados.push({
+            vivienda: vivienda.numero,
+            residente: `${residente.nombre} ${residente.apellidos}`,
+            tipo: residente.tipo
+          });
+        } else {
+          console.log(`❌ No se encontró vivienda para residente: ${residente.nombre} ${residente.apellidos}`);
+        }
+      }
+    }
+
+    // Verificar el resultado
+    const viviendasConResidentes = await Vivienda.find().populate('residente');
+    const totalViviendas = viviendasConResidentes.length;
+    const viviendasConResidentesCount = viviendasConResidentes.filter(v => v.residente).length;
+    const viviendasSinResidentesCount = viviendasConResidentes.filter(v => !v.residente).length;
+
+    console.log('\n📊 RESUMEN:');
+    console.log(`Total de viviendas: ${totalViviendas}`);
+    console.log(`Viviendas con residentes: ${viviendasConResidentesCount}`);
+    console.log(`Viviendas sin residentes: ${viviendasSinResidentesCount}`);
+    console.log(`Viviendas actualizadas: ${actualizadas}`);
+
+    res.json({
+      message: 'Actualización completada',
+      totalViviendas,
+      viviendasConResidentes: viviendasConResidentesCount,
+      viviendasSinResidentes: viviendasSinResidentesCount,
+      viviendasActualizadas: actualizadas,
+      resultados
+    });
+
+  } catch (error) {
+    console.error('❌ Error:', error.message);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Obtener estadísticas de viviendas
 router.get('/estadisticas/resumen', async (req, res) => {
   try {
