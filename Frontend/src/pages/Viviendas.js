@@ -11,19 +11,20 @@ const Viviendas = () => {
   const queryClient = useQueryClient();
 
   // Obtener viviendas
-  const { data: viviendas, isLoading, error } = useQuery(
-    'viviendas',
-    () => {
+  const { data: viviendas, isLoading, error } = useQuery({
+    queryKey: ['viviendas'],
+    queryFn: async () => {
       console.log('🔍 Intentando obtener viviendas...');
-      return api.get('/api/viviendas').then(res => {
-        console.log('✅ Viviendas obtenidas:', res.data);
-        return res.data;
-      }).catch(err => {
+      try {
+        const response = await api.get('/api/viviendas');
+        console.log('✅ Viviendas obtenidas:', response.data);
+        return response.data;
+      } catch (err) {
         console.error('❌ Error obteniendo viviendas:', err);
         throw err;
-      });
+      }
     }
-  );
+  });
 
   // Log para depuración
   console.log('📊 Estado de la consulta:', { isLoading, error, viviendasCount: viviendas?.length });
@@ -38,7 +39,7 @@ const Viviendas = () => {
     },
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('viviendas');
+        queryClient.invalidateQueries(['viviendas']);
         setIsModalOpen(false);
         setEditingVivienda(null);
         toast.success(editingVivienda ? 'Vivienda actualizada' : 'Vivienda creada');
@@ -54,7 +55,7 @@ const Viviendas = () => {
     (id) => api.delete(`/api/viviendas/${id}`),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('viviendas');
+        queryClient.invalidateQueries(['viviendas']);
         toast.success('Vivienda eliminada');
       },
       onError: (error) => {
