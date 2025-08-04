@@ -12,7 +12,7 @@ const HistorialPagos = () => {
 
   // Obtener viviendas con mejor manejo de errores
   const { data: viviendas, isLoading: loadingViviendas, error: errorViviendas } = useQuery(
-    'viviendas',
+    ['viviendas'],
     async () => {
       try {
         console.log('🔍 Intentando obtener viviendas...');

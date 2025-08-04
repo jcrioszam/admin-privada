@@ -12,7 +12,7 @@ const Usuarios = () => {
 
   // Obtener usuarios con mejor manejo de errores
   const { data: usuarios, isLoading, error } = useQuery(
-    'usuarios',
+    ['usuarios'],
     async () => {
       try {
         console.log('🔍 Intentando obtener usuarios...');
@@ -45,7 +45,7 @@ const Usuarios = () => {
     },
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('usuarios');
+        queryClient.invalidateQueries(['usuarios']);
         setIsModalOpen(false);
         setEditingUsuario(null);
         toast.success(editingUsuario ? 'Usuario actualizado' : 'Usuario creado');
@@ -61,7 +61,7 @@ const Usuarios = () => {
     (id) => api.delete(`/api/usuarios/${id}`),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('usuarios');
+        queryClient.invalidateQueries(['usuarios']);
         toast.success('Usuario eliminado');
       },
       onError: (error) => {

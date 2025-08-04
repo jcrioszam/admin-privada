@@ -20,7 +20,7 @@ const Configuracion = () => {
 
   // Obtener configuración actual
   const { data: configuracion, isLoading, error } = useQuery(
-    'configuracion',
+    ['configuracion'],
     async () => {
       try {
         console.log('🔍 Intentando obtener configuración...');
@@ -64,7 +64,7 @@ const Configuracion = () => {
     {
       onSuccess: () => {
         toast.success('Configuración actualizada correctamente');
-        queryClient.invalidateQueries('configuracion');
+        queryClient.invalidateQueries(['configuracion']);
       },
       onError: (error) => {
         toast.error('Error al actualizar la configuración');
