@@ -11,10 +11,22 @@ const Viviendas = () => {
   const queryClient = useQueryClient();
 
   // Obtener viviendas
-  const { data: viviendas, isLoading } = useQuery(
+  const { data: viviendas, isLoading, error } = useQuery(
     'viviendas',
-    () => api.get('/api/viviendas').then(res => res.data)
+    () => {
+      console.log('🔍 Intentando obtener viviendas...');
+      return api.get('/api/viviendas').then(res => {
+        console.log('✅ Viviendas obtenidas:', res.data);
+        return res.data;
+      }).catch(err => {
+        console.error('❌ Error obteniendo viviendas:', err);
+        throw err;
+      });
+    }
   );
+
+  // Log para depuración
+  console.log('📊 Estado de la consulta:', { isLoading, error, viviendasCount: viviendas?.length });
 
   // Crear/Actualizar vivienda
   const mutation = useMutation(
