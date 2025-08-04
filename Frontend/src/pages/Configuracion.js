@@ -65,15 +65,20 @@ const Configuracion = () => {
 
   // Mutación para actualizar configuración
   const updateConfigMutation = useMutation(
-    (data) => api.put('/api/configuracion', data),
+    (data) => {
+      console.log('🔄 Enviando datos para actualizar:', data);
+      return api.put('/api/configuracion', data);
+    },
     {
-      onSuccess: () => {
+      onSuccess: (response) => {
+        console.log('✅ Configuración actualizada exitosamente:', response.data);
         toast.success('Configuración actualizada correctamente');
         queryClient.invalidateQueries(['configuracion']);
       },
       onError: (error) => {
+        console.error('❌ Error actualizando configuración:', error);
+        console.error('❌ Error response:', error.response);
         toast.error('Error al actualizar la configuración');
-        console.error('Error:', error);
       }
     }
   );
@@ -88,6 +93,7 @@ const Configuracion = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log('📝 Enviando formulario con datos:', formData);
     updateConfigMutation.mutate(formData);
   };
 

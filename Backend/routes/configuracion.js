@@ -34,22 +34,30 @@ router.put('/', [
   body('porcentajeRecargo').isNumeric().withMessage('El porcentaje de recargo debe ser un número')
 ], async (req, res) => {
   try {
+    console.log('🔄 Actualizando configuración con datos:', req.body);
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('❌ Errores de validación:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
     let configuracion = await Configuracion.findOne({ activo: true });
+    console.log('📊 Configuración actual encontrada:', configuracion);
     
     if (!configuracion) {
+      console.log('➕ Creando nueva configuración');
       configuracion = new Configuracion(req.body);
     } else {
+      console.log('✏️ Actualizando configuración existente');
       Object.assign(configuracion, req.body);
     }
     
     await configuracion.save();
+    console.log('✅ Configuración guardada:', configuracion);
     res.json(configuracion);
   } catch (error) {
+    console.error('❌ Error actualizando configuración:', error);
     res.status(500).json({ message: error.message });
   }
 });
