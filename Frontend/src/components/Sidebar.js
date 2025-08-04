@@ -13,6 +13,10 @@ import {
   ClockIcon,
   CurrencyDollarIcon,
   BanknotesIcon,
+  ExclamationTriangleIcon,
+  ChartPieIcon,
+  WrenchScrewdriverIcon,
+  HomeModernIcon,
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -28,6 +32,14 @@ const navigation = [
   { name: 'Configuración', href: '/configuracion', icon: Cog6ToothIcon },
 ];
 
+const reportes = [
+  { name: 'Reporte de Morosidad', href: '/reporte-morosidad', icon: ExclamationTriangleIcon },
+  { name: 'Reporte de Flujo de Caja', href: '/reporte-flujo-caja', icon: ChartBarIcon },
+  { name: 'Reporte de Gastos por Categoría', href: '/reporte-gastos-categoria', icon: ChartPieIcon },
+  { name: 'Reporte de Ocupación', href: '/reporte-ocupacion', icon: HomeModernIcon },
+  { name: 'Reporte de Mantenimiento', href: '/reporte-mantenimiento', icon: WrenchScrewdriverIcon },
+];
+
 const Sidebar = ({ open, setOpen }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -35,6 +47,34 @@ const Sidebar = ({ open, setOpen }) => {
   const handleNavigation = (href) => {
     console.log('Sidebar click:', href);
     navigate(href);
+  };
+
+  const renderNavItems = (items) => {
+    return items.map((item) => {
+      const isActive = location.pathname === item.href;
+      return (
+        <button
+          key={item.name}
+          className={`group flex items-center w-full px-2 py-2 text-sm font-medium rounded-md cursor-pointer transition-colors duration-200 ${
+            isActive
+              ? 'bg-primary-100 text-primary-900'
+              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+          }`}
+          onClick={() => {
+            handleNavigation(item.href);
+            setOpen(false);
+          }}
+        >
+          <item.icon
+            className={`mr-3 flex-shrink-0 h-6 w-6 ${
+              isActive ? 'text-primary-500' : 'text-gray-400 group-hover:text-gray-500'
+            }`}
+            aria-hidden="true"
+          />
+          {item.name}
+        </button>
+      );
+    });
   };
 
   return (
@@ -60,31 +100,20 @@ const Sidebar = ({ open, setOpen }) => {
               <h1 className="text-xl font-bold text-gray-900">Admin Privada</h1>
             </div>
             <nav className="mt-5 px-2 space-y-1">
-              {navigation.map((item) => {
-                const isActive = location.pathname === item.href;
-                return (
-                  <button
-                    key={item.name}
-                    className={`group flex items-center w-full px-2 py-2 text-base font-medium rounded-md ${
-                      isActive
-                        ? 'bg-primary-100 text-primary-900'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    }`}
-                    onClick={() => {
-                      handleNavigation(item.href);
-                      setOpen(false);
-                    }}
-                  >
-                    <item.icon
-                      className={`mr-4 flex-shrink-0 h-6 w-6 ${
-                        isActive ? 'text-primary-500' : 'text-gray-400 group-hover:text-gray-500'
-                      }`}
-                      aria-hidden="true"
-                    />
-                    {item.name}
-                  </button>
-                );
-              })}
+              {renderNavItems(navigation)}
+              
+              {/* Separador */}
+              <div className="pt-4 pb-2">
+                <div className="border-t border-gray-200"></div>
+              </div>
+              
+              {/* Reportes */}
+              <div className="px-2 py-1">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Reportes
+                </h3>
+              </div>
+              {renderNavItems(reportes)}
             </nav>
           </div>
         </div>
@@ -98,28 +127,20 @@ const Sidebar = ({ open, setOpen }) => {
               <h1 className="text-xl font-bold text-gray-900">Admin Privada</h1>
             </div>
             <nav className="mt-5 flex-1 px-2 space-y-1">
-              {navigation.map((item) => {
-                const isActive = location.pathname === item.href;
-                return (
-                  <button
-                    key={item.name}
-                    className={`group flex items-center w-full px-2 py-2 text-sm font-medium rounded-md cursor-pointer transition-colors duration-200 ${
-                      isActive
-                        ? 'bg-primary-100 text-primary-900'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    }`}
-                    onClick={() => handleNavigation(item.href)}
-                  >
-                    <item.icon
-                      className={`mr-3 flex-shrink-0 h-6 w-6 ${
-                        isActive ? 'text-primary-500' : 'text-gray-400 group-hover:text-gray-500'
-                      }`}
-                      aria-hidden="true"
-                    />
-                    {item.name}
-                  </button>
-                );
-              })}
+              {renderNavItems(navigation)}
+              
+              {/* Separador */}
+              <div className="pt-4 pb-2">
+                <div className="border-t border-gray-200"></div>
+              </div>
+              
+              {/* Reportes */}
+              <div className="px-2 py-1">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Reportes
+                </h3>
+              </div>
+              {renderNavItems(reportes)}
             </nav>
           </div>
         </div>

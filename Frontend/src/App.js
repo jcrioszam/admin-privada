@@ -12,6 +12,11 @@ import CorteDiario from './pages/CorteDiario';
 import Accesos from './pages/Accesos';
 import Usuarios from './pages/Usuarios';
 import Configuracion from './pages/Configuracion';
+import ReporteMorosidad from './pages/ReporteMorosidad';
+import ReporteFlujoCaja from './pages/ReporteFlujoCaja';
+import ReporteGastosCategoria from './pages/ReporteGastosCategoria';
+import ReporteOcupacion from './pages/ReporteOcupacion';
+import ReporteMantenimiento from './pages/ReporteMantenimiento';
 import Layout from './components/Layout';
 import LoadingSpinner from './components/LoadingSpinner';
 
@@ -44,6 +49,11 @@ function App() {
         <Route path="/accesos" element={<Accesos />} />
         <Route path="/usuarios" element={<Usuarios />} />
         <Route path="/configuracion" element={<Configuracion />} />
+        <Route path="/reporte-morosidad" element={<ReporteMorosidad />} />
+        <Route path="/reporte-flujo-caja" element={<ReporteFlujoCaja />} />
+        <Route path="/reporte-gastos-categoria" element={<ReporteGastosCategoria />} />
+        <Route path="/reporte-ocupacion" element={<ReporteOcupacion />} />
+        <Route path="/reporte-mantenimiento" element={<ReporteMantenimiento />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Layout>
