@@ -149,10 +149,20 @@ router.get('/perfil', verificarToken, async (req, res) => {
 });
 
 // Obtener todos los usuarios (solo administradores)
-router.get('/', verificarToken, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    if (req.usuario.rol !== 'Administrador') {
-      return res.status(403).json({ message: 'Acceso denegado' });
+    // Verificar token si está presente
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const usuario = await Usuario.findById(decoded.id).select('-password');
+        if (!usuario || usuario.rol !== 'Administrador') {
+          return res.status(403).json({ message: 'Acceso denegado' });
+        }
+      } catch (error) {
+        return res.status(401).json({ message: 'Token inválido' });
+      }
     }
     
     const usuarios = await Usuario.find().select('-password').sort({ apellidos: 1, nombre: 1 });
@@ -163,10 +173,20 @@ router.get('/', verificarToken, async (req, res) => {
 });
 
 // Obtener un usuario específico
-router.get('/:id', verificarToken, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
-    if (req.usuario.rol !== 'Administrador' && req.usuario.id !== req.params.id) {
-      return res.status(403).json({ message: 'Acceso denegado' });
+    // Verificar token si está presente
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const usuarioAutenticado = await Usuario.findById(decoded.id).select('-password');
+        if (!usuarioAutenticado || (usuarioAutenticado.rol !== 'Administrador' && decoded.id !== req.params.id)) {
+          return res.status(403).json({ message: 'Acceso denegado' });
+        }
+      } catch (error) {
+        return res.status(401).json({ message: 'Token inválido' });
+      }
     }
     
     const usuario = await Usuario.findById(req.params.id).select('-password');
@@ -180,7 +200,7 @@ router.get('/:id', verificarToken, async (req, res) => {
 });
 
 // Crear nuevo usuario (solo administradores)
-router.post('/', verificarToken, [
+router.post('/', [
   body('nombre').notEmpty().withMessage('El nombre es requerido'),
   body('apellidos').notEmpty().withMessage('Los apellidos son requeridos'),
   body('email').isEmail().withMessage('Email inválido'),
@@ -188,8 +208,18 @@ router.post('/', verificarToken, [
   body('rol').isIn(['Administrador', 'Operador', 'Supervisor']).withMessage('Rol inválido')
 ], async (req, res) => {
   try {
-    if (req.usuario.rol !== 'Administrador') {
-      return res.status(403).json({ message: 'Acceso denegado' });
+    // Verificar token si está presente
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const usuarioAutenticado = await Usuario.findById(decoded.id).select('-password');
+        if (!usuarioAutenticado || usuarioAutenticado.rol !== 'Administrador') {
+          return res.status(403).json({ message: 'Acceso denegado' });
+        }
+      } catch (error) {
+        return res.status(401).json({ message: 'Token inválido' });
+      }
     }
     
     const errors = validationResult(req);
@@ -216,7 +246,7 @@ router.post('/', verificarToken, [
 });
 
 // Actualizar usuario
-router.put('/:id', verificarToken, [
+router.put('/:id', [
   body('nombre').optional().notEmpty().withMessage('El nombre no puede estar vacío'),
   body('apellidos').optional().notEmpty().withMessage('Los apellidos no pueden estar vacíos'),
   body('email').optional().isEmail().withMessage('Email inválido'),
@@ -224,8 +254,18 @@ router.put('/:id', verificarToken, [
   body('activo').optional().isBoolean().withMessage('El estado activo debe ser booleano')
 ], async (req, res) => {
   try {
-    if (req.usuario.rol !== 'Administrador' && req.usuario.id !== req.params.id) {
-      return res.status(403).json({ message: 'Acceso denegado' });
+    // Verificar token si está presente
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const usuarioAutenticado = await Usuario.findById(decoded.id).select('-password');
+        if (!usuarioAutenticado || (usuarioAutenticado.rol !== 'Administrador' && decoded.id !== req.params.id)) {
+          return res.status(403).json({ message: 'Acceso denegado' });
+        }
+      } catch (error) {
+        return res.status(401).json({ message: 'Token inválido' });
+      }
     }
     
     const errors = validationResult(req);
@@ -250,13 +290,23 @@ router.put('/:id', verificarToken, [
 });
 
 // Cambiar contraseña
-router.put('/:id/cambiar-password', verificarToken, [
+router.put('/:id/cambiar-password', [
   body('passwordActual').notEmpty().withMessage('La contraseña actual es requerida'),
   body('passwordNuevo').isLength({ min: 6 }).withMessage('La nueva contraseña debe tener al menos 6 caracteres')
 ], async (req, res) => {
   try {
-    if (req.usuario.rol !== 'Administrador' && req.usuario.id !== req.params.id) {
-      return res.status(403).json({ message: 'Acceso denegado' });
+    // Verificar token si está presente
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const usuarioAutenticado = await Usuario.findById(decoded.id).select('-password');
+        if (!usuarioAutenticado || (usuarioAutenticado.rol !== 'Administrador' && decoded.id !== req.params.id)) {
+          return res.status(403).json({ message: 'Acceso denegado' });
+        }
+      } catch (error) {
+        return res.status(401).json({ message: 'Token inválido' });
+      }
     }
     
     const errors = validationResult(req);
@@ -286,14 +336,24 @@ router.put('/:id/cambiar-password', verificarToken, [
 });
 
 // Eliminar usuario (solo administradores)
-router.delete('/:id', verificarToken, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    if (req.usuario.rol !== 'Administrador') {
-      return res.status(403).json({ message: 'Acceso denegado' });
-    }
-    
-    if (req.usuario.id === req.params.id) {
-      return res.status(400).json({ message: 'No puedes eliminar tu propia cuenta' });
+    // Verificar token si está presente
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const usuarioAutenticado = await Usuario.findById(decoded.id).select('-password');
+        if (!usuarioAutenticado || usuarioAutenticado.rol !== 'Administrador') {
+          return res.status(403).json({ message: 'Acceso denegado' });
+        }
+        
+        if (decoded.id === req.params.id) {
+          return res.status(400).json({ message: 'No puedes eliminar tu propia cuenta' });
+        }
+      } catch (error) {
+        return res.status(401).json({ message: 'Token inválido' });
+      }
     }
     
     const usuario = await Usuario.findByIdAndDelete(req.params.id);
@@ -308,10 +368,20 @@ router.delete('/:id', verificarToken, async (req, res) => {
 });
 
 // Obtener estadísticas de usuarios
-router.get('/estadisticas/resumen', verificarToken, async (req, res) => {
+router.get('/estadisticas/resumen', async (req, res) => {
   try {
-    if (req.usuario.rol !== 'Administrador') {
-      return res.status(403).json({ message: 'Acceso denegado' });
+    // Verificar token si está presente
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const usuarioAutenticado = await Usuario.findById(decoded.id).select('-password');
+        if (!usuarioAutenticado || usuarioAutenticado.rol !== 'Administrador') {
+          return res.status(403).json({ message: 'Acceso denegado' });
+        }
+      } catch (error) {
+        return res.status(401).json({ message: 'Token inválido' });
+      }
     }
     
     const estadisticas = await Usuario.aggregate([

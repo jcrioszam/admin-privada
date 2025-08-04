@@ -10,15 +10,29 @@ const HistorialPagos = () => {
   const [filterEstado, setFilterEstado] = useState('todos');
   const [filterFecha, setFilterFecha] = useState('todos');
 
-  // Obtener viviendas
-  const { data: viviendas, isLoading: loadingViviendas } = useQuery(
+  // Obtener viviendas con mejor manejo de errores
+  const { data: viviendas, isLoading: loadingViviendas, error: errorViviendas } = useQuery(
     'viviendas',
-    () => api.get('/api/viviendas').then(res => res.data)
+    async () => {
+      try {
+        const response = await api.get('/api/viviendas');
+        return response.data;
+      } catch (error) {
+        console.error('Error cargando viviendas:', error);
+        toast.error('Error al cargar las viviendas');
+        return [];
+      }
+    },
+    {
+      retry: 3,
+      retryDelay: 1000,
+      staleTime: 5 * 60 * 1000, // 5 minutos
+    }
   );
 
   // Ordenar viviendas por número de manera ascendente
   const viviendasOrdenadas = useMemo(() => {
-    if (!viviendas) return [];
+    if (!viviendas || !Array.isArray(viviendas)) return [];
     
     return [...viviendas].sort((a, b) => {
       // Convertir a números si es posible, sino ordenar alfabéticamente
@@ -38,24 +52,33 @@ const HistorialPagos = () => {
   // Obtener historial de pagos
   const { data: historial, isLoading: loadingHistorial } = useQuery(
     ['historial-pagos', selectedVivienda, filterEstado, filterFecha],
-    () => {
-      if (!selectedVivienda) return Promise.resolve([]);
+    async () => {
+      if (!selectedVivienda) return [];
       
-      let url = selectedVivienda === 'todos' 
-        ? '/api/pagos/historial-todos'
-        : `/api/pagos/historial/${selectedVivienda}`;
-      
-      const params = new URLSearchParams();
-      
-      if (filterEstado !== 'todos') params.append('estado', filterEstado);
-      if (filterFecha !== 'todos') params.append('fecha', filterFecha);
-      
-      if (params.toString()) url += `?${params.toString()}`;
-      
-      return api.get(url).then(res => res.data);
+      try {
+        let url = selectedVivienda === 'todos' 
+          ? '/api/pagos/historial-todos'
+          : `/api/pagos/historial/${selectedVivienda}`;
+        
+        const params = new URLSearchParams();
+        
+        if (filterEstado !== 'todos') params.append('estado', filterEstado);
+        if (filterFecha !== 'todos') params.append('fecha', filterFecha);
+        
+        if (params.toString()) url += `?${params.toString()}`;
+        
+        const response = await api.get(url);
+        return response.data;
+      } catch (error) {
+        console.error('Error cargando historial:', error);
+        toast.error('Error al cargar el historial de pagos');
+        return [];
+      }
     },
     {
-      enabled: !!selectedVivienda
+      enabled: !!selectedVivienda,
+      retry: 2,
+      retryDelay: 1000,
     }
   );
 
@@ -197,6 +220,17 @@ const HistorialPagos = () => {
     return (
       <div className="flex justify-center items-center h-64">
         <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (errorViviendas) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="text-red-600 text-lg font-medium mb-2">Error al cargar viviendas</div>
+          <div className="text-gray-500">No se pudieron cargar las viviendas. Intenta recargar la página.</div>
+        </div>
       </div>
     );
   }

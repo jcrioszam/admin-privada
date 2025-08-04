@@ -1,28 +1,45 @@
 const mongoose = require('mongoose');
-const Usuario = require('./models/Usuario');
-require('dotenv').config({ path: './config.env' });
+const bcrypt = require('bcryptjs');
+const dotenv = require('dotenv');
 
-async function createAdminUser() {
+// Cargar variables de entorno
+dotenv.config({ path: './config.env' });
+
+// Importar el modelo de Usuario
+const Usuario = require('./models/Usuario');
+
+const crearAdminInicial = async () => {
   try {
     // Conectar a MongoDB
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('Conectado a MongoDB');
+    await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log('✅ Conectado a MongoDB');
 
-    // Verificar si ya existe un usuario administrador
-    const existingAdmin = await Usuario.findOne({ rol: 'Administrador' });
-    if (existingAdmin) {
-      console.log('Ya existe un usuario administrador:', existingAdmin.email);
-      process.exit(0);
+    // Verificar si ya existe algún usuario
+    const usuarioExistente = await Usuario.findOne();
+    if (usuarioExistente) {
+      console.log('ℹ️ Ya existe un usuario en el sistema');
+      console.log('Usuario existente:', {
+        nombre: usuarioExistente.nombre,
+        email: usuarioExistente.email,
+        rol: usuarioExistente.rol
+      });
+      return;
     }
 
+    // Crear hash de la contraseña
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash('admin123', saltRounds);
+
     // Crear usuario administrador
-    const adminUser = new Usuario({
+    const adminUsuario = new Usuario({
       nombre: 'Administrador',
       apellidos: 'Sistema',
-      email: 'admin@fraccionamiento.com',
-      password: 'admin123',
+      email: 'admin@admin.com',
+      password: hashedPassword,
       rol: 'Administrador',
-      activo: true,
       permisos: [
         {
           modulo: 'viviendas',
@@ -37,28 +54,35 @@ async function createAdminUser() {
           acciones: ['crear', 'leer', 'actualizar', 'eliminar', 'exportar']
         },
         {
+          modulo: 'usuarios',
+          acciones: ['crear', 'leer', 'actualizar', 'eliminar', 'exportar']
+        },
+        {
           modulo: 'accesos',
           acciones: ['crear', 'leer', 'actualizar', 'eliminar', 'exportar']
         },
         {
-          modulo: 'usuarios',
-          acciones: ['crear', 'leer', 'actualizar', 'eliminar', 'exportar']
+          modulo: 'configuracion',
+          acciones: ['leer', 'actualizar']
         }
-      ]
+      ],
+      activo: true,
+      ultimoAcceso: new Date()
     });
 
-    await adminUser.save();
+    await adminUsuario.save();
     console.log('✅ Usuario administrador creado exitosamente');
-    console.log('📧 Email: admin@fraccionamiento.com');
+    console.log('📧 Email: admin@admin.com');
     console.log('🔑 Contraseña: admin123');
-    console.log('⚠️  IMPORTANTE: Cambia la contraseña después del primer login');
+    console.log('⚠️ IMPORTANTE: Cambia la contraseña después del primer inicio de sesión');
 
   } catch (error) {
     console.error('❌ Error creando usuario administrador:', error.message);
   } finally {
-    await mongoose.disconnect();
-    process.exit(0);
+    await mongoose.connection.close();
+    console.log('✅ Conexión a MongoDB cerrada');
   }
-}
+};
 
-createAdminUser(); 
+// Ejecutar el script
+crearAdminInicial(); 

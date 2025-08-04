@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
@@ -19,15 +19,39 @@ const Configuracion = () => {
   const queryClient = useQueryClient();
 
   // Obtener configuración actual
-  const { data: configuracion, isLoading } = useQuery(
+  const { data: configuracion, isLoading, error } = useQuery(
     'configuracion',
-    () => api.get('/api/configuracion').then(res => res.data),
-    {
-      onSuccess: (data) => {
-        setFormData(data);
+    async () => {
+      try {
+        const response = await api.get('/api/configuracion');
+        return response.data;
+      } catch (error) {
+        console.error('Error cargando configuración:', error);
+        toast.error('Error al cargar la configuración');
+        return null;
       }
+    },
+    {
+      retry: 3,
+      retryDelay: 1000,
+      staleTime: 5 * 60 * 1000, // 5 minutos
     }
   );
+
+  // Actualizar formData solo cuando se carga la configuración por primera vez
+  useEffect(() => {
+    if (configuracion && !isLoading) {
+      setFormData({
+        cuotaMantenimientoMensual: configuracion.cuotaMantenimientoMensual || 500,
+        nombreFraccionamiento: configuracion.nombreFraccionamiento || 'Fraccionamiento Privado',
+        direccionFraccionamiento: configuracion.direccionFraccionamiento || '',
+        telefonoContacto: configuracion.telefonoContacto || '',
+        emailContacto: configuracion.emailContacto || '',
+        diasGraciaPago: configuracion.diasGraciaPago || 5,
+        porcentajeRecargo: configuracion.porcentajeRecargo || 10
+      });
+    }
+  }, [configuracion, isLoading]);
 
   // Mutación para actualizar configuración
   const updateConfigMutation = useMutation(
@@ -61,6 +85,17 @@ const Configuracion = () => {
     return (
       <div className="flex justify-center items-center h-64">
         <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="text-red-600 text-lg font-medium mb-2">Error al cargar configuración</div>
+          <div className="text-gray-500">No se pudo cargar la configuración. Intenta recargar la página.</div>
+        </div>
       </div>
     );
   }
@@ -184,7 +219,19 @@ const Configuracion = () => {
             <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
               <button
                 type="button"
-                onClick={() => setFormData(configuracion)}
+                onClick={() => {
+                  if (configuracion) {
+                    setFormData({
+                      cuotaMantenimientoMensual: configuracion.cuotaMantenimientoMensual || 500,
+                      nombreFraccionamiento: configuracion.nombreFraccionamiento || 'Fraccionamiento Privado',
+                      direccionFraccionamiento: configuracion.direccionFraccionamiento || '',
+                      telefonoContacto: configuracion.telefonoContacto || '',
+                      emailContacto: configuracion.emailContacto || '',
+                      diasGraciaPago: configuracion.diasGraciaPago || 5,
+                      porcentajeRecargo: configuracion.porcentajeRecargo || 10
+                    });
+                  }
+                }}
                 className="btn-secondary"
               >
                 Cancelar

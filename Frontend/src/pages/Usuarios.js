@@ -10,10 +10,24 @@ const Usuarios = () => {
   const [editingUsuario, setEditingUsuario] = useState(null);
   const queryClient = useQueryClient();
 
-  // Obtener usuarios
-  const { data: usuarios, isLoading } = useQuery(
+  // Obtener usuarios con mejor manejo de errores
+  const { data: usuarios, isLoading, error } = useQuery(
     'usuarios',
-    () => api.get('/api/usuarios').then(res => res.data)
+    async () => {
+      try {
+        const response = await api.get('/api/usuarios');
+        return response.data;
+      } catch (error) {
+        console.error('Error cargando usuarios:', error);
+        toast.error('Error al cargar los usuarios');
+        return [];
+      }
+    },
+    {
+      retry: 3,
+      retryDelay: 1000,
+      staleTime: 2 * 60 * 1000, // 2 minutos
+    }
   );
 
   // Crear/Actualizar usuario
@@ -75,6 +89,17 @@ const Usuarios = () => {
     return (
       <div className="flex justify-center items-center h-64">
         <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="text-red-600 text-lg font-medium mb-2">Error al cargar usuarios</div>
+          <div className="text-gray-500">No se pudieron cargar los usuarios. Verifica tu conexión.</div>
+        </div>
       </div>
     );
   }
