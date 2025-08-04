@@ -653,6 +653,15 @@ async function generarProximoPagoAutomatico(viviendaId) {
       throw new Error('No hay configuración activa');
     }
 
+    // Obtener la vivienda y su residente
+    const vivienda = await Vivienda.findById(viviendaId);
+    if (!vivienda) {
+      throw new Error('Vivienda no encontrada');
+    }
+
+    // Obtener el residente de la vivienda
+    const residente = await Residente.findOne({ vivienda: viviendaId });
+    
     // Obtener el último pago de la vivienda
     const ultimoPago = await Pago.findOne({ vivienda: viviendaId })
       .sort({ año: -1, mes: -1 });
@@ -688,6 +697,7 @@ async function generarProximoPagoAutomatico(viviendaId) {
 
     const nuevoPago = new Pago({
       vivienda: viviendaId,
+      residente: residente?._id, // Asignar el residente si existe
       mes: proximoMes,
       año: proximoAño,
       monto: configuracion.cuotaMantenimientoMensual,
