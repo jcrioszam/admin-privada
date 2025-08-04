@@ -28,10 +28,7 @@ router.get('/', async (req, res) => {
 
 // Actualizar configuración
 router.put('/', [
-  body('cuotaMantenimientoMensual').isNumeric().withMessage('La cuota debe ser un número'),
-  body('nombreFraccionamiento').notEmpty().withMessage('El nombre del fraccionamiento es requerido'),
-  body('diasGraciaPago').isNumeric().withMessage('Los días de gracia deben ser un número'),
-  body('porcentajeRecargo').isNumeric().withMessage('El porcentaje de recargo debe ser un número')
+  body('cuotaMantenimientoMensual').isNumeric().withMessage('La cuota debe ser un número')
 ], async (req, res) => {
   try {
     console.log('🔄 Actualizando configuración con datos:', req.body);
@@ -47,10 +44,16 @@ router.put('/', [
     
     if (!configuracion) {
       console.log('➕ Creando nueva configuración');
-      configuracion = new Configuracion(req.body);
+      configuracion = new Configuracion({
+        cuotaMantenimientoMensual: req.body.cuotaMantenimientoMensual,
+        nombreFraccionamiento: 'Fraccionamiento Privado',
+        diasGraciaPago: 0,
+        porcentajeRecargo: 0,
+        activo: true
+      });
     } else {
       console.log('✏️ Actualizando configuración existente');
-      Object.assign(configuracion, req.body);
+      configuracion.cuotaMantenimientoMensual = req.body.cuotaMantenimientoMensual;
     }
     
     await configuracion.save();
