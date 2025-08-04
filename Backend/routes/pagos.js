@@ -594,6 +594,42 @@ router.get('/pendientes/:viviendaId', async (req, res) => {
   }
 });
 
+// Actualizar residentes en pagos existentes
+router.post('/actualizar-residentes', async (req, res) => {
+  try {
+    // Obtener todos los pagos que no tienen residente asignado
+    const pagosSinResidente = await Pago.find({ residente: { $exists: false } });
+    
+    let actualizados = 0;
+    let errores = 0;
+
+    for (const pago of pagosSinResidente) {
+      try {
+        // Buscar el residente de la vivienda
+        const residente = await Residente.findOne({ vivienda: pago.vivienda });
+        
+        if (residente) {
+          // Actualizar el pago con el residente
+          await Pago.findByIdAndUpdate(pago._id, { residente: residente._id });
+          actualizados++;
+        } else {
+          errores++;
+        }
+      } catch (error) {
+        errores++;
+      }
+    }
+
+    res.json({
+      message: `Actualización completada: ${actualizados} pagos actualizados, ${errores} errores`,
+      actualizados,
+      errores
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Obtener historial de pagos de una vivienda
 router.get('/historial/:viviendaId', async (req, res) => {
   try {

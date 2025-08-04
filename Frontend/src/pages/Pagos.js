@@ -170,28 +170,29 @@ const Pagos = () => {
   const registerPagoMutation = useMutation(
     (data) => api.put(`/api/pagos/${data.id}/registrar-pago-flexible`, data),
     {
-      onSuccess: async (response) => {
-        // Invalidar y refrescar los datos
-        await queryClient.invalidateQueries('pagos');
-        
-        setIsModalOpen(false);
-        setSelectedPago(null);
-        
-        // Mostrar mensaje de éxito
-        let mensaje = 'Pago registrado exitosamente';
-        if (response.data.excedente > 0 && response.data.aplicadoAMesesFuturos) {
-          mensaje = `Pago registrado exitosamente. Excedente de $${response.data.excedente.toLocaleString()} aplicado a meses futuros.`;
-        } else if (response.data.excedente > 0) {
-          mensaje = `Pago registrado exitosamente. Excedente de $${response.data.excedente.toLocaleString()} disponible.`;
-        }
-        
-        toast.success(mensaje);
-        
-        // Si el pago se completó completamente, mostrar el próximo pago
-        if (response.data.pago.estado === 'Pagado' || response.data.pago.estado === 'Pagado con excedente') {
-          toast.success(`Pago completado. El próximo pago se generará automáticamente.`);
-        }
-      },
+             onSuccess: async (response) => {
+         // Invalidar y refrescar los datos
+         await queryClient.invalidateQueries('pagos');
+         
+         setIsModalOpen(false);
+         setSelectedPago(null);
+         setSelectedPagos([]); // Limpiar selección después del pago
+         
+         // Mostrar mensaje de éxito
+         let mensaje = 'Pago registrado exitosamente';
+         if (response.data.excedente > 0 && response.data.aplicadoAMesesFuturos) {
+           mensaje = `Pago registrado exitosamente. Excedente de $${response.data.excedente.toLocaleString()} aplicado a meses futuros.`;
+         } else if (response.data.excedente > 0) {
+           mensaje = `Pago registrado exitosamente. Excedente de $${response.data.excedente.toLocaleString()} disponible.`;
+         }
+         
+         toast.success(mensaje);
+         
+         // Si el pago se completó completamente, mostrar el próximo pago
+         if (response.data.pago.estado === 'Pagado' || response.data.pago.estado === 'Pagado con excedente') {
+           toast.success(`Pago completado. El próximo pago se generará automáticamente.`);
+         }
+       },
       onError: (error) => {
         toast.error(error.response?.data?.message || 'Error al registrar pago');
       },
@@ -236,6 +237,23 @@ const Pagos = () => {
     if (primerPagoSeleccionado) {
       handleRegisterPago(primerPagoSeleccionado.pagos[0]);
     }
+  };
+
+  const actualizarResidentesMutation = useMutation(
+    () => api.post('/api/pagos/actualizar-residentes'),
+    {
+      onSuccess: async (response) => {
+        await queryClient.invalidateQueries('pagos');
+        toast.success(response.data.message);
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.message || 'Error al actualizar residentes');
+      }
+    }
+  );
+
+  const handleActualizarResidentes = () => {
+    actualizarResidentesMutation.mutate();
   };
 
   const handleSubmitPago = (formData) => {
@@ -388,26 +406,33 @@ const Pagos = () => {
            Mes Actual
          </button>
         
-                                   <div className="ml-auto flex space-x-2">
-            {selectedPagos.length > 0 && (
-              <button
-                onClick={handlePagarSeleccionados}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700"
-              >
-                💳 Pagar Seleccionados ({selectedPagos.length})
-              </button>
-            )}
-            <button
-              onClick={() => {
-                queryClient.invalidateQueries('pagos');
-                queryClient.refetchQueries('pagos');
-                toast.success('Lista actualizada');
-              }}
-              className="px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700"
-            >
-              🔄 Actualizar
-            </button>
-          </div>
+                                                                       <div className="ml-auto flex space-x-2">
+             <button
+               onClick={handleActualizarResidentes}
+               disabled={actualizarResidentesMutation.isLoading}
+               className="px-4 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 disabled:opacity-50"
+             >
+               {actualizarResidentesMutation.isLoading ? '🔄 Actualizando...' : '👥 Actualizar Residentes'}
+             </button>
+             {selectedPagos.length > 0 && (
+               <button
+                 onClick={handlePagarSeleccionados}
+                 className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700"
+               >
+                 💳 Pagar Seleccionados ({selectedPagos.length})
+               </button>
+             )}
+             <button
+               onClick={() => {
+                 queryClient.invalidateQueries('pagos');
+                 queryClient.refetchQueries('pagos');
+                 toast.success('Lista actualizada');
+               }}
+               className="px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700"
+             >
+               🔄 Actualizar
+             </button>
+           </div>
       </div>
 
       {/* Estadísticas rápidas */}
