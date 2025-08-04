@@ -2,8 +2,9 @@ services:
   - type: web
     name: admin-privada-frontend
     env: static
-    buildCommand: npm ci && npm run build
+    buildCommand: npm run build
     staticPublishPath: ./build
-    envVars:
-      - key: REACT_APP_API_URL
-        value: https://admin-privada.onrender.com 
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html 
