@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../services/api';
+import api from '../services/api';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -221,7 +221,7 @@ const ReporteMorosidad = () => {
               <option value="todos">Todos</option>
               <option value="alto">Alto (>$5,000)</option>
               <option value="medio">Medio ($2,000-$5,000)</option>
-              <option value="bajo">Bajo (<$2,000)</option>
+              <option value="bajo">Bajo (&lt;$2,000)</option>
             </select>
           </div>
         </div>

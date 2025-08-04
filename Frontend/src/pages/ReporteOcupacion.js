@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../services/api';
+import api from '../services/api';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
