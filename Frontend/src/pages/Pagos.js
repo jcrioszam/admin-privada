@@ -325,15 +325,48 @@ const Pagos = () => {
 
   // Función para imprimir lista de morosos
   const imprimirMorosos = () => {
-    if (!pagosAgrupados || pagosAgrupados.length === 0) {
+    if (!pagos || pagos.length === 0) {
       toast.error('No hay datos para imprimir');
       return;
     }
 
-    const morosos = pagosAgrupados.filter(grupo => {
-      const { totalAdeudo } = calcularTotalAdeudoVivienda(grupo.vivienda._id);
-      return totalAdeudo > 0;
+    // Filtrar pagos vencidos con saldo pendiente
+    const pagosVencidos = pagos.filter(pago => {
+      if (!pago.vivienda) return false;
+      
+      const fechaLimite = new Date(pago.fechaLimite);
+      const hoy = new Date();
+      const diasAtraso = pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente' || 
+                         hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
+      
+      const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+      return diasAtraso > 0 && saldoPendiente > 0;
     });
+
+    // Agrupar por vivienda
+    const morososPorVivienda = {};
+    pagosVencidos.forEach(pago => {
+      const viviendaId = pago.vivienda._id;
+      if (!morososPorVivienda[viviendaId]) {
+        morososPorVivienda[viviendaId] = {
+          vivienda: pago.vivienda,
+          pagos: [],
+          totalSaldo: 0,
+          totalRecargo: 0,
+          totalAdeudo: 0
+        };
+      }
+      
+      const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+      const recargo = pago.recargo || 0;
+      
+      morososPorVivienda[viviendaId].pagos.push(pago);
+      morososPorVivienda[viviendaId].totalSaldo += saldoPendiente;
+      morososPorVivienda[viviendaId].totalRecargo += recargo;
+      morososPorVivienda[viviendaId].totalAdeudo += saldoPendiente + recargo;
+    });
+
+    const morosos = Object.values(morososPorVivienda);
 
     if (morosos.length === 0) {
       toast.error('No hay morosos para imprimir');
@@ -370,24 +403,15 @@ const Pagos = () => {
         
         <div class="stats">
           <div class="stat">
-            <div class="stat-value">${morosos.reduce((sum, grupo) => {
-              const { totalSaldo } = calcularTotalAdeudoVivienda(grupo.vivienda._id);
-              return sum + totalSaldo;
-            }, 0).toLocaleString()}</div>
+            <div class="stat-value">${morosos.reduce((sum, grupo) => sum + grupo.totalSaldo, 0).toLocaleString()}</div>
             <div class="stat-label">Total Saldo Pendiente</div>
           </div>
           <div class="stat">
-            <div class="stat-value">${morosos.reduce((sum, grupo) => {
-              const { totalRecargo } = calcularTotalAdeudoVivienda(grupo.vivienda._id);
-              return sum + totalRecargo;
-            }, 0).toLocaleString()}</div>
+            <div class="stat-value">${morosos.reduce((sum, grupo) => sum + grupo.totalRecargo, 0).toLocaleString()}</div>
             <div class="stat-label">Total Recargos</div>
           </div>
           <div class="stat">
-            <div class="stat-value">${morosos.reduce((sum, grupo) => {
-              const { totalAdeudo } = calcularTotalAdeudoVivienda(grupo.vivienda._id);
-              return sum + totalAdeudo;
-            }, 0).toLocaleString()}</div>
+            <div class="stat-value">${morosos.reduce((sum, grupo) => sum + grupo.totalAdeudo, 0).toLocaleString()}</div>
             <div class="stat-label">Total Adeudo</div>
           </div>
         </div>
@@ -405,7 +429,6 @@ const Pagos = () => {
           </thead>
           <tbody>
             ${morosos.map((grupo) => {
-              const { totalSaldo, totalRecargo, totalAdeudo } = calcularTotalAdeudoVivienda(grupo.vivienda._id);
               const primerPago = grupo.pagos[0];
               const residente = primerPago.residente;
               
@@ -413,10 +436,10 @@ const Pagos = () => {
                 <tr>
                   <td>${grupo.vivienda.numero}</td>
                   <td>${residente ? `${residente.nombre || ''} ${residente.apellidos || ''}`.trim() : 'Sin residente'}</td>
-                  <td>$${totalSaldo.toLocaleString()}</td>
-                  <td>$${totalRecargo.toLocaleString()}</td>
-                  <td class="total">$${totalAdeudo.toLocaleString()}</td>
-                  <td>${grupo.periodosVencidos || 0}</td>
+                  <td>$${grupo.totalSaldo.toLocaleString()}</td>
+                  <td>$${grupo.totalRecargo.toLocaleString()}</td>
+                  <td class="total">$${grupo.totalAdeudo.toLocaleString()}</td>
+                  <td>${grupo.pagos.length}</td>
                 </tr>
               `;
             }).join('')}
@@ -433,15 +456,40 @@ const Pagos = () => {
 
   // Función para imprimir lista de al corriente
   const imprimirAlCorriente = () => {
-    if (!pagosAgrupados || pagosAgrupados.length === 0) {
+    if (!pagos || pagos.length === 0) {
       toast.error('No hay datos para imprimir');
       return;
     }
 
-    const alCorriente = pagosAgrupados.filter(grupo => {
-      const { totalAdeudo } = calcularTotalAdeudoVivienda(grupo.vivienda._id);
-      return totalAdeudo === 0;
+    // Filtrar viviendas que no tienen pagos vencidos
+    const viviendasConPagos = {};
+    pagos.forEach(pago => {
+      if (!pago.vivienda) return;
+      
+      const viviendaId = pago.vivienda._id;
+      if (!viviendasConPagos[viviendaId]) {
+        viviendasConPagos[viviendaId] = {
+          vivienda: pago.vivienda,
+          pagos: [],
+          tieneVencidos: false
+        };
+      }
+      
+      const fechaLimite = new Date(pago.fechaLimite);
+      const hoy = new Date();
+      const diasAtraso = pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente' || 
+                         hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
+      
+      const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+      
+      if (diasAtraso > 0 && saldoPendiente > 0) {
+        viviendasConPagos[viviendaId].tieneVencidos = true;
+      }
+      
+      viviendasConPagos[viviendaId].pagos.push(pago);
     });
+
+    const alCorriente = Object.values(viviendasConPagos).filter(grupo => !grupo.tieneVencidos);
 
     if (alCorriente.length === 0) {
       toast.error('No hay viviendas al corriente para imprimir');
