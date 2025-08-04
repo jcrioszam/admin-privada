@@ -412,20 +412,20 @@ const Pagos = () => {
            </div>
           
           <div className="overflow-x-auto">
-            <table className="table">
+            <table className="table min-w-full">
               <thead className="table-header">
                                  <tr>
-                   <th className="table-header-cell">Vivienda</th>
-                   <th className="table-header-cell">Residente</th>
-                   <th className="table-header-cell">Período</th>
-                   <th className="table-header-cell">Monto</th>
-                   <th className="table-header-cell">Pagado</th>
-                   <th className="table-header-cell">Saldo Pendiente</th>
-                   <th className="table-header-cell">Total Adeudo</th>
-                   <th className="table-header-cell">Períodos Pendientes</th>
-                   <th className="table-header-cell">Estado</th>
-                   <th className="table-header-cell">Vencimiento</th>
-                   <th className="table-header-cell">Acciones</th>
+                   <th className="table-header-cell w-20">Vivienda</th>
+                   <th className="table-header-cell w-32">Residente</th>
+                   <th className="table-header-cell w-40">Período</th>
+                   <th className="table-header-cell w-24">Monto</th>
+                   <th className="table-header-cell w-24">Pagado</th>
+                   <th className="table-header-cell w-28">Saldo</th>
+                   <th className="table-header-cell w-32">Total</th>
+                   <th className="table-header-cell w-28">Pendientes</th>
+                   <th className="table-header-cell w-20">Estado</th>
+                   <th className="table-header-cell w-28">Vencimiento</th>
+                   <th className="table-header-cell w-24">Acciones</th>
                  </tr>
               </thead>
                              <tbody className="table-body">
@@ -444,8 +444,10 @@ const Pagos = () => {
                        <td className="table-cell font-medium">
                          {grupo.vivienda?.numero}
                        </td>
-                       <td className="table-cell">
-                         {primerPago.residente?.nombre} {primerPago.residente?.apellidos}
+                       <td className="table-cell text-sm">
+                         <div className="truncate max-w-32">
+                           {primerPago.residente?.nombre} {primerPago.residente?.apellidos}
+                         </div>
                        </td>
                                                <td className="table-cell text-sm">
                           {(() => {
@@ -456,9 +458,9 @@ const Pagos = () => {
                               const fechaFin = new Date(pago.fechaFinPeriodo || new Date(pago.año, pago.mes - 1, 0));
                               
                               return (
-                                <div>
+                                <div className="text-xs">
                                   <div className="font-medium">
-                                    {fechaInicio.toLocaleDateString()} - {fechaFin.toLocaleDateString()}
+                                    {fechaInicio.toLocaleDateString('es-MX', { month: 'short', day: 'numeric' })} - {fechaFin.toLocaleDateString('es-MX', { month: 'short', day: 'numeric' })}
                                   </div>
                                   <div className="text-xs text-gray-500">
                                     ({pago.mes}/{pago.año})
@@ -481,9 +483,9 @@ const Pagos = () => {
                             const fechaFin = new Date(ultimoMes.fechaFinPeriodo || new Date(ultimoMes.año, ultimoMes.mes - 1, 0));
                             
                             return (
-                              <div>
+                              <div className="text-xs">
                                 <div className="font-medium">
-                                  {fechaInicio.toLocaleDateString()} - {fechaFin.toLocaleDateString()}
+                                  {fechaInicio.toLocaleDateString('es-MX', { month: 'short', day: 'numeric' })} - {fechaFin.toLocaleDateString('es-MX', { month: 'short', day: 'numeric' })}
                                 </div>
                                 <div className="text-xs text-gray-500">
                                   ({grupo.pagos.length} mes{grupo.pagos.length > 1 ? 'es' : ''})
@@ -492,68 +494,76 @@ const Pagos = () => {
                             );
                           })()}
                         </td>
-                       <td className="table-cell">
-                         {grupo.esPagoIndividual ? 
-                           `$${grupo.pagos[0].monto.toLocaleString()}` : 
-                           `$${(grupo.totalSaldo / grupo.pagos.length).toLocaleString()} por mes`
-                         }
+                       <td className="table-cell text-sm">
+                         <div className="font-medium">
+                           {grupo.esPagoIndividual ? 
+                             `$${grupo.pagos[0].monto.toLocaleString()}` : 
+                             `$${(grupo.totalSaldo / grupo.pagos.length).toLocaleString()}`
+                           }
+                         </div>
                        </td>
-                       <td className="table-cell">
-                         {grupo.esPagoIndividual ? 
-                           `$${(grupo.pagos[0].montoPagado || 0).toLocaleString()}` : 
-                           `$0`
-                         }
+                       <td className="table-cell text-sm">
+                         <div className="text-gray-600">
+                           {grupo.esPagoIndividual ? 
+                             `$${(grupo.pagos[0].montoPagado || 0).toLocaleString()}` : 
+                             `$0`
+                           }
+                         </div>
                        </td>
-                       <td className="table-cell">
+                       <td className="table-cell text-sm">
                          <span className="font-medium text-red-600">
                            ${grupo.totalSaldo.toLocaleString()}
                          </span>
                        </td>
-                                               <td className="table-cell">
-                          {grupo.totalAdeudo > 0 ? (
-                            <div className="text-red-600">
-                              <div className="font-medium">${grupo.totalAdeudo.toLocaleString()}</div>
-                              <div className="text-xs">
-                                {grupo.totalRecargo > 0 && `+$${grupo.totalRecargo.toLocaleString()} recargo total`}
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-green-600">$0</span>
-                          )}
+                                                                                               <td className="table-cell text-sm">
+                           {grupo.totalAdeudo > 0 ? (
+                             <div className="text-red-600">
+                               <div className="font-medium">${grupo.totalAdeudo.toLocaleString()}</div>
+                               {grupo.totalRecargo > 0 && (
+                                 <div className="text-xs">
+                                   +${grupo.totalRecargo.toLocaleString()}
+                                 </div>
+                               )}
+                             </div>
+                           ) : (
+                             <span className="text-green-600">$0</span>
+                           )}
+                         </td>
+                                                <td className="table-cell text-sm">
+                           {grupo.esPagoIndividual ? (
+                             <span className="text-red-600 font-medium text-xs">
+                               1 mes
+                             </span>
+                           ) : grupo.periodosPendientes > 0 ? (
+                             <span className="text-red-600 font-medium text-xs">
+                               {grupo.periodosPendientes} mes{grupo.periodosPendientes > 1 ? 'es' : ''}
+                             </span>
+                           ) : (
+                             <span className="text-green-600 text-xs">Al día</span>
+                           )}
+                         </td>
+                        <td className="table-cell text-sm">
+                          <span className={`badge text-xs ${
+                            tienePagosVencidos ? 'badge-danger' : 'badge-warning'
+                          }`}>
+                            {tienePagosVencidos ? 'Vencido' : 'Pendiente'}
+                          </span>
                         </td>
-                                               <td className="table-cell">
-                          {grupo.esPagoIndividual ? (
-                            <span className="text-red-600 font-medium">
-                              1 mes pendiente
-                            </span>
-                          ) : grupo.periodosPendientes > 0 ? (
-                            <span className="text-red-600 font-medium">
-                              {grupo.periodosPendientes} mes{grupo.periodosPendientes > 1 ? 'es' : ''} pendiente{grupo.periodosPendientes > 1 ? 's' : ''}
-                            </span>
-                          ) : (
-                            <span className="text-green-600">Al día</span>
-                          )}
+                        <td className="table-cell text-sm">
+                          <div className="text-xs">
+                            {new Date(primerPago.fechaLimite).toLocaleDateString('es-MX', { month: 'short', day: 'numeric' })}
+                          </div>
                         </td>
-                       <td className="table-cell">
-                         <span className={`badge ${
-                           tienePagosVencidos ? 'badge-danger' : 'badge-warning'
-                         }`}>
-                           {tienePagosVencidos ? 'Vencido' : 'Pendiente'}
-                         </span>
-                       </td>
-                       <td className="table-cell">
-                         Último: {new Date(primerPago.fechaLimite).toLocaleDateString()}
-                       </td>
-                       <td className="table-cell">
-                         <div className="flex space-x-2">
-                           <button
-                             onClick={() => handleRegisterPago(primerPago)}
-                             className="btn-primary btn-sm"
-                           >
-                             Registrar Pago
-                           </button>
-                         </div>
-                       </td>
+                                               <td className="table-cell text-sm">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleRegisterPago(primerPago)}
+                              className="btn-primary btn-sm text-xs px-2 py-1"
+                            >
+                              Pagar
+                            </button>
+                          </div>
+                        </td>
                      </tr>
                    );
                  })}
