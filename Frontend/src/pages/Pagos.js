@@ -9,6 +9,7 @@ const Pagos = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPago, setSelectedPago] = useState(null);
   const [filter, setFilter] = useState('pendientes'); // 'todos', 'pendientes', 'vencidos'
+  const [selectedPagos, setSelectedPagos] = useState([]);
   const queryClient = useQueryClient();
 
   // Obtener pagos
@@ -202,6 +203,41 @@ const Pagos = () => {
     setIsModalOpen(true);
   };
 
+  const handleSelectPago = (pagoId) => {
+    setSelectedPagos(prev => {
+      if (prev.includes(pagoId)) {
+        return prev.filter(id => id !== pagoId);
+      } else {
+        return [...prev, pagoId];
+      }
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedPagos.length === pagosAgrupados?.length) {
+      setSelectedPagos([]);
+    } else {
+      const allIds = pagosAgrupados?.map(grupo => grupo.pagos[0]._id) || [];
+      setSelectedPagos(allIds);
+    }
+  };
+
+  const handlePagarSeleccionados = () => {
+    if (selectedPagos.length === 0) {
+      toast.error('Selecciona al menos un pago para registrar');
+      return;
+    }
+    
+    // Por ahora, pagar solo el primero seleccionado
+    const primerPagoSeleccionado = pagosAgrupados?.find(grupo => 
+      grupo.pagos[0]._id === selectedPagos[0]
+    );
+    
+    if (primerPagoSeleccionado) {
+      handleRegisterPago(primerPagoSeleccionado.pagos[0]);
+    }
+  };
+
   const handleSubmitPago = (formData) => {
     const pagoId = formData.pagoId || selectedPago._id;
     registerPagoMutation.mutate({
@@ -352,18 +388,26 @@ const Pagos = () => {
            Mes Actual
          </button>
         
-                 <div className="ml-auto">
-           <button
-             onClick={() => {
-               queryClient.invalidateQueries('pagos');
-               queryClient.refetchQueries('pagos');
-               toast.success('Lista actualizada');
-             }}
-             className="px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700"
-           >
-             🔄 Actualizar
-           </button>
-         </div>
+                                   <div className="ml-auto flex space-x-2">
+            {selectedPagos.length > 0 && (
+              <button
+                onClick={handlePagarSeleccionados}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700"
+              >
+                💳 Pagar Seleccionados ({selectedPagos.length})
+              </button>
+            )}
+            <button
+              onClick={() => {
+                queryClient.invalidateQueries('pagos');
+                queryClient.refetchQueries('pagos');
+                toast.success('Lista actualizada');
+              }}
+              className="px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700"
+            >
+              🔄 Actualizar
+            </button>
+          </div>
       </div>
 
       {/* Estadísticas rápidas */}
@@ -413,21 +457,28 @@ const Pagos = () => {
           
           <div className="overflow-x-auto">
             <table className="table min-w-full">
-              <thead className="table-header">
-                                 <tr>
-                   <th className="table-header-cell w-20">Vivienda</th>
-                   <th className="table-header-cell w-32">Residente</th>
-                   <th className="table-header-cell w-40">Período</th>
-                   <th className="table-header-cell w-24">Monto</th>
-                   <th className="table-header-cell w-24">Pagado</th>
-                   <th className="table-header-cell w-28">Saldo</th>
-                   <th className="table-header-cell w-32">Total</th>
-                   <th className="table-header-cell w-28">Pendientes</th>
-                   <th className="table-header-cell w-20">Estado</th>
-                   <th className="table-header-cell w-28">Vencimiento</th>
-                   <th className="table-header-cell w-24">Acciones</th>
-                 </tr>
-              </thead>
+                             <thead className="table-header">
+                                  <tr>
+                    <th className="table-header-cell w-8">
+                      <input
+                        type="checkbox"
+                        checked={selectedPagos.length === pagosAgrupados?.length && pagosAgrupados?.length > 0}
+                        onChange={handleSelectAll}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </th>
+                    <th className="table-header-cell w-20">Vivienda</th>
+                    <th className="table-header-cell w-32">Residente</th>
+                    <th className="table-header-cell w-40">Período</th>
+                    <th className="table-header-cell w-24">Monto</th>
+                    <th className="table-header-cell w-24">Pagado</th>
+                    <th className="table-header-cell w-28">Saldo</th>
+                    <th className="table-header-cell w-32">Total</th>
+                    <th className="table-header-cell w-28">Pendientes</th>
+                    <th className="table-header-cell w-20">Estado</th>
+                    <th className="table-header-cell w-28">Vencimiento</th>
+                  </tr>
+               </thead>
                              <tbody className="table-body">
                  {pagosAgrupados?.map((grupo) => {
                    // Validación adicional para evitar errores
@@ -439,16 +490,27 @@ const Pagos = () => {
                    const primerPago = grupo.pagos[0];
                    const tienePagosVencidos = grupo.periodosVencidos > 0;
                    
-                   return (
-                     <tr key={grupo.vivienda._id} className="table-row">
-                       <td className="table-cell font-medium">
-                         {grupo.vivienda?.numero}
-                       </td>
-                       <td className="table-cell text-sm">
-                         <div className="truncate max-w-32">
-                           {primerPago.residente?.nombre} {primerPago.residente?.apellidos}
-                         </div>
-                       </td>
+                                       return (
+                      <tr key={grupo.vivienda._id} className="table-row">
+                        <td className="table-cell">
+                          <input
+                            type="checkbox"
+                            checked={selectedPagos.includes(grupo.pagos[0]._id)}
+                            onChange={() => handleSelectPago(grupo.pagos[0]._id)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                        </td>
+                        <td className="table-cell font-medium">
+                          {grupo.vivienda?.numero}
+                        </td>
+                                               <td className="table-cell text-sm">
+                          <div className="truncate max-w-32">
+                            {primerPago.residente ? 
+                              `${primerPago.residente.nombre || ''} ${primerPago.residente.apellidos || ''}`.trim() : 
+                              <span className="text-gray-400 italic">Sin residente</span>
+                            }
+                          </div>
+                        </td>
                                                <td className="table-cell text-sm">
                           {(() => {
                                                          // Si es un pago individual (filtros pendientes o actual), mostrar solo ese período
@@ -549,22 +611,12 @@ const Pagos = () => {
                             {tienePagosVencidos ? 'Vencido' : 'Pendiente'}
                           </span>
                         </td>
-                        <td className="table-cell text-sm">
-                          <div className="text-xs">
-                            {new Date(primerPago.fechaLimite).toLocaleDateString('es-MX', { month: 'short', day: 'numeric' })}
-                          </div>
-                        </td>
-                                               <td className="table-cell text-sm">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleRegisterPago(primerPago)}
-                              className="btn-primary btn-sm text-xs px-2 py-1"
-                            >
-                              Pagar
-                            </button>
-                          </div>
-                        </td>
-                     </tr>
+                                                 <td className="table-cell text-sm">
+                           <div className="text-xs">
+                             {new Date(primerPago.fechaLimite).toLocaleDateString('es-MX', { month: 'short', day: 'numeric' })}
+                           </div>
+                         </td>
+                       </tr>
                    );
                  })}
                </tbody>
