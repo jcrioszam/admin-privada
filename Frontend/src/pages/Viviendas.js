@@ -128,6 +128,7 @@ const Viviendas = () => {
                   <th className="table-header-cell">Tipo</th>
                   <th className="table-header-cell">Estado</th>
                   <th className="table-header-cell">Ocupación</th>
+                  <th className="table-header-cell">Residente</th>
                   <th className="table-header-cell">Observaciones</th>
                   <th className="table-header-cell">Acciones</th>
                 </tr>
@@ -155,6 +156,20 @@ const Viviendas = () => {
                       }`}>
                         {vivienda.tipoOcupacion}
                       </span>
+                    </td>
+                    <td className="table-cell text-sm">
+                      {vivienda.residente ? (
+                        <div>
+                          <div className="font-medium">
+                            {vivienda.residente.nombre} {vivienda.residente.apellidos}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {vivienda.residente.telefono}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">Sin residente</span>
+                      )}
                     </td>
                     <td className="table-cell text-sm text-gray-600">
                       {vivienda.observaciones || '-'}

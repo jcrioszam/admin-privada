@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Vivienda = require('../models/Vivienda');
+const Residente = require('../models/Residente');
 const Pago = require('../models/Pago');
 const Configuracion = require('../models/Configuracion');
 const moment = require('moment');
@@ -18,7 +19,7 @@ router.get('/', async (req, res) => {
     if (tipo) filtro.tipo = tipo;
     if (tipoOcupacion) filtro.tipoOcupacion = tipoOcupacion;
     
-    const viviendas = await Vivienda.find(filtro).sort({ numero: 1 });
+    const viviendas = await Vivienda.find(filtro).populate('residente').sort({ numero: 1 });
     res.json(viviendas);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -28,7 +29,7 @@ router.get('/', async (req, res) => {
 // Obtener una vivienda específica
 router.get('/:id', async (req, res) => {
   try {
-    const vivienda = await Vivienda.findById(req.params.id);
+    const vivienda = await Vivienda.findById(req.params.id).populate('residente');
     if (!vivienda) {
       return res.status(404).json({ message: 'Vivienda no encontrada' });
     }
@@ -143,6 +144,74 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Vivienda no encontrada' });
     }
     res.json({ message: 'Vivienda eliminada correctamente' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Endpoint temporal para asignar residentes
+router.post('/asignar-residentes', async (req, res) => {
+  try {
+    const viviendas = await Vivienda.find().sort({ numero: 1 });
+    const residentesCreados = [];
+
+    const residentesData = [
+      { numero: '1', nombre: 'Faby', apellidos: 'García', telefono: '555-0101', tipo: 'Dueño' },
+      { numero: '2', nombre: 'Samantha', apellidos: 'López', telefono: '555-0102', tipo: 'Inquilino' },
+      { numero: '3', nombre: 'Erica', apellidos: 'Armenta', telefono: '555-0103', tipo: 'Dueño' },
+      { numero: '4', nombre: 'Yadira', apellidos: 'Martínez', telefono: '555-0104', tipo: 'Dueño' },
+      { numero: '5', nombre: 'Vero y Enrique', apellidos: 'Rodríguez', telefono: '555-0105', tipo: 'Dueño' },
+      { numero: '6', nombre: 'Emma y Abel', apellidos: 'Hernández', telefono: '555-0106', tipo: 'Dueño' },
+      { numero: '8', nombre: 'Juan', apellidos: 'Fernández', telefono: '555-0108', tipo: 'Inquilino' },
+      { numero: '9', nombre: 'Anahí', apellidos: 'Sarabia', telefono: '555-0109', tipo: 'Inquilino' },
+      { numero: '10', nombre: 'Asusan', apellidos: 'Castro', telefono: '555-0110', tipo: 'Inquilino' },
+      { numero: '11', nombre: 'Sara Dalia', apellidos: 'Vega', telefono: '555-0111', tipo: 'Inquilino' },
+      { numero: '12', nombre: 'Ramon', apellidos: 'Silva', telefono: '555-0112', tipo: 'Dueño' },
+      { numero: '13', nombre: 'Irinia', apellidos: 'Morales', telefono: '555-0113', tipo: 'Dueño' },
+      { numero: '14', nombre: 'Yuri y Alejandro', apellidos: 'Jiménez', telefono: '555-0114', tipo: 'Dueño' },
+      { numero: '15', nombre: 'Rossy', apellidos: 'Torres', telefono: '555-0115', tipo: 'Dueño' },
+      { numero: '16', nombre: 'Profe Juan', apellidos: 'Díaz', telefono: '555-0116', tipo: 'Dueño' },
+      { numero: '17', nombre: 'Nelly', apellidos: 'Cruz', telefono: '555-0117', tipo: 'Dueño' },
+      { numero: '18', nombre: 'Osmar', apellidos: 'Reyes', telefono: '555-0118', tipo: 'Inquilino' },
+      { numero: '19', nombre: 'LR, Natally', apellidos: 'Moreno', telefono: '555-0119', tipo: 'Inquilino' },
+      { numero: '20', nombre: 'Sergio', apellidos: 'Alvarez', telefono: '555-0120', tipo: 'Inquilino' },
+      { numero: '21', nombre: 'Giny', apellidos: 'Ruiz', telefono: '555-0121', tipo: 'Dueño' },
+      { numero: '22', nombre: 'Mara', apellidos: 'Ortiz', telefono: '555-0122', tipo: 'Dueño' },
+      { numero: '23', nombre: 'Citlali', apellidos: 'Guzmán', telefono: '555-0123', tipo: 'Inquilino' },
+      { numero: '24', nombre: 'Enfermera', apellidos: 'Flores', telefono: '555-0124', tipo: 'Dueño' },
+      { numero: '25', nombre: 'Humberto', apellidos: 'Sánchez', telefono: '555-0125', tipo: 'Dueño' }
+    ];
+
+    for (const residenteData of residentesData) {
+      const vivienda = viviendas.find(v => v.numero === residenteData.numero);
+      
+      if (vivienda) {
+        const residente = new Residente({
+          vivienda: vivienda._id,
+          tipo: residenteData.tipo,
+          nombre: residenteData.nombre,
+          apellidos: residenteData.apellidos,
+          telefono: residenteData.telefono,
+          activo: true
+        });
+
+        await residente.save();
+        vivienda.residente = residente._id;
+        await vivienda.save();
+        
+        residentesCreados.push({
+          vivienda: residenteData.numero,
+          residente: `${residenteData.nombre} ${residenteData.apellidos}`
+        });
+      }
+    }
+
+    res.json({
+      message: 'Residentes asignados correctamente',
+      residentesCreados,
+      total: residentesCreados.length
+    });
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
