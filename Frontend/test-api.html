@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API</title>
+</head>
+<body>
+    <h1>Test API</h1>
+    <button onclick="testUsuarios()">Test Usuarios</button>
+    <button onclick="testConfiguracion()">Test Configuración</button>
+    <button onclick="testViviendas()">Test Viviendas</button>
+    <div id="result"></div>
+
+    <script>
+        const API_BASE_URL = 'https://admin-privada.onrender.com';
+        
+        async function testUsuarios() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/usuarios`);
+                const data = await response.json();
+                document.getElementById('result').innerHTML = '<h3>Usuarios:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = '<h3>Error Usuarios:</h3><pre>' + error.message + '</pre>';
+            }
+        }
+        
+        async function testConfiguracion() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/configuracion`);
+                const data = await response.json();
+                document.getElementById('result').innerHTML = '<h3>Configuración:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = '<h3>Error Configuración:</h3><pre>' + error.message + '</pre>';
+            }
+        }
+        
+        async function testViviendas() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/viviendas`);
+                const data = await response.json();
+                document.getElementById('result').innerHTML = '<h3>Viviendas:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = '<h3>Error Viviendas:</h3><pre>' + error.message + '</pre>';
+            }
+        }
+    </script>
+</body>
+</html> 

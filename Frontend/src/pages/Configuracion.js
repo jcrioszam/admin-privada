@@ -23,12 +23,17 @@ const Configuracion = () => {
     'configuracion',
     async () => {
       try {
+        console.log('🔍 Intentando obtener configuración...');
         const response = await api.get('/api/configuracion');
+        console.log('✅ Configuración obtenida:', response.data);
         return response.data;
       } catch (error) {
-        console.error('Error cargando configuración:', error);
+        console.error('❌ Error cargando configuración:', error);
+        console.error('❌ Error response:', error.response);
+        console.error('❌ Error status:', error.response?.status);
+        console.error('❌ Error data:', error.response?.data);
         toast.error('Error al cargar la configuración');
-        return null;
+        throw error; // Re-lanzar el error para que useQuery lo maneje
       }
     },
     {

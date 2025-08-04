@@ -15,12 +15,17 @@ const HistorialPagos = () => {
     'viviendas',
     async () => {
       try {
+        console.log('🔍 Intentando obtener viviendas...');
         const response = await api.get('/api/viviendas');
+        console.log('✅ Viviendas obtenidas:', response.data);
         return response.data;
       } catch (error) {
-        console.error('Error cargando viviendas:', error);
+        console.error('❌ Error cargando viviendas:', error);
+        console.error('❌ Error response:', error.response);
+        console.error('❌ Error status:', error.response?.status);
+        console.error('❌ Error data:', error.response?.data);
         toast.error('Error al cargar las viviendas');
-        return [];
+        throw error; // Re-lanzar el error para que useQuery lo maneje
       }
     },
     {

@@ -15,12 +15,17 @@ const Usuarios = () => {
     'usuarios',
     async () => {
       try {
+        console.log('🔍 Intentando obtener usuarios...');
         const response = await api.get('/api/usuarios');
+        console.log('✅ Usuarios obtenidos:', response.data);
         return response.data;
       } catch (error) {
-        console.error('Error cargando usuarios:', error);
+        console.error('❌ Error cargando usuarios:', error);
+        console.error('❌ Error response:', error.response);
+        console.error('❌ Error status:', error.response?.status);
+        console.error('❌ Error data:', error.response?.data);
         toast.error('Error al cargar los usuarios');
-        return [];
+        throw error; // Re-lanzar el error para que useQuery lo maneje
       }
     },
     {
