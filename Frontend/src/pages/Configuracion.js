@@ -45,7 +45,12 @@ const Configuracion = () => {
 
   // Actualizar formData solo cuando se carga la configuración por primera vez
   useEffect(() => {
+    console.log('🔄 useEffect ejecutándose...');
+    console.log('📊 configuracion:', configuracion);
+    console.log('⏳ isLoading:', isLoading);
+    
     if (configuracion && !isLoading) {
+      console.log('✅ Actualizando formData con configuración:', configuracion);
       setFormData({
         cuotaMantenimientoMensual: configuracion.cuotaMantenimientoMensual || 500,
         nombreFraccionamiento: configuracion.nombreFraccionamiento || 'Fraccionamiento Privado',
@@ -104,6 +109,10 @@ const Configuracion = () => {
       </div>
     );
   }
+
+  // Log para diagnosticar qué valores se están mostrando
+  console.log('🎯 Render - formData actual:', formData);
+  console.log('🎯 Render - configuracion cargada:', configuracion);
 
   return (
     <div className="space-y-6">
