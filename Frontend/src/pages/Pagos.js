@@ -13,25 +13,24 @@ const Pagos = () => {
   const queryClient = useQueryClient();
 
   // Obtener pagos
-  const { data: pagos, isLoading, error } = useQuery(
-    'pagos',
-    () => {
+  const { data: pagos, isLoading, error } = useQuery({
+    queryKey: ['pagos'],
+    queryFn: async () => {
       console.log('🔍 Obteniendo pagos...');
-      return api.get('/api/pagos').then(res => {
-        console.log('✅ Pagos obtenidos:', res.data);
-        return res.data;
-      }).catch(err => {
+      try {
+        const response = await api.get('/api/pagos');
+        console.log('✅ Pagos obtenidos:', response.data);
+        return response.data;
+      } catch (err) {
         console.error('❌ Error obteniendo pagos:', err);
         throw err;
-      });
+      }
     },
-    {
-      refetchInterval: 30000, // Refrescar cada 30 segundos
-      staleTime: 10000, // Considerar datos frescos por 10 segundos
-      refetchOnWindowFocus: true, // Refrescar al enfocar la ventana
-      refetchOnMount: true // Refrescar al montar el componente
-    }
-  );
+    refetchInterval: 30000, // Refrescar cada 30 segundos
+    staleTime: 10000, // Considerar datos frescos por 10 segundos
+    refetchOnWindowFocus: true, // Refrescar al enfocar la ventana
+    refetchOnMount: true // Refrescar al montar el componente
+  });
 
   // Agrupar pagos por vivienda y filtrar según el estado seleccionado
   const pagosAgrupados = useMemo(() => {

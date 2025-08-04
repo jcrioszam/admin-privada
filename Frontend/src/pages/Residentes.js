@@ -11,16 +11,22 @@ const Residentes = () => {
   const queryClient = useQueryClient();
 
   // Obtener residentes
-  const { data: residentes, isLoading } = useQuery(
-    'residentes',
-    () => api.get('/api/residentes').then(res => res.data)
-  );
+  const { data: residentes, isLoading } = useQuery({
+    queryKey: ['residentes'],
+    queryFn: async () => {
+      const response = await api.get('/api/residentes');
+      return response.data;
+    }
+  });
 
   // Obtener viviendas para el select
-  const { data: viviendas } = useQuery(
-    'viviendas',
-    () => api.get('/api/viviendas').then(res => res.data)
-  );
+  const { data: viviendas } = useQuery({
+    queryKey: ['viviendas'],
+    queryFn: async () => {
+      const response = await api.get('/api/viviendas');
+      return response.data;
+    }
+  });
 
   // Crear/Actualizar residente
   const mutation = useMutation(
@@ -32,7 +38,7 @@ const Residentes = () => {
     },
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('residentes');
+        queryClient.invalidateQueries(['residentes']);
         setIsModalOpen(false);
         setEditingResidente(null);
         toast.success(editingResidente ? 'Residente actualizado' : 'Residente creado');
@@ -48,7 +54,7 @@ const Residentes = () => {
     (id) => api.delete(`/api/residentes/${id}`),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('residentes');
+        queryClient.invalidateQueries(['residentes']);
         toast.success('Residente eliminado');
       },
       onError: (error) => {
