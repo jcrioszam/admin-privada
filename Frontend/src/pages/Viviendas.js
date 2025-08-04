@@ -15,12 +15,15 @@ const Viviendas = () => {
     queryKey: ['viviendas'],
     queryFn: async () => {
       console.log('🔍 Intentando obtener viviendas...');
+      console.log('🌐 API Base URL:', process.env.REACT_APP_API_URL);
+      console.log('🔗 URL completa:', `${process.env.REACT_APP_API_URL}/api/viviendas`);
       try {
         const response = await api.get('/api/viviendas');
         console.log('✅ Viviendas obtenidas:', response.data);
         return response.data;
       } catch (err) {
         console.error('❌ Error obteniendo viviendas:', err);
+        console.error('❌ Error details:', err.response?.config?.url);
         throw err;
       }
     }
