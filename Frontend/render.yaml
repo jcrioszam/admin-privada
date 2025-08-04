@@ -6,4 +6,4 @@ services:
     staticPublishPath: ./build
     envVars:
       - key: REACT_APP_API_URL
-        sync: false 
+        value: https://admin-privada.onrender.com 
