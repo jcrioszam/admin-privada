@@ -103,6 +103,17 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Ruta de ping para mantener el servidor activo
+app.get('/ping', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+  });
+});
+
 // Manejo de errores
 app.use((err, req, res, next) => {
   console.error('❌ Server error:', err.stack);

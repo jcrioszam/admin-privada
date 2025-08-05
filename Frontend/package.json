@@ -1,39 +1,58 @@
 {
-  "name": "fraccionamiento-frontend",
-  "version": "1.0.0",
-  "description": "Frontend para aplicación administrativa de fraccionamiento privado",
+  "name": "admin-privada-frontend",
+  "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@headlessui/react": "^1.7.13",
-    "@heroicons/react": "^2.0.16",
-    "@tanstack/react-query": "^4.40.1",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
     "@testing-library/user-event": "^13.5.0",
-    "autoprefixer": "^10.4.14",
-    "axios": "^1.3.4",
-    "clsx": "^1.2.1",
-    "date-fns": "^2.29.3",
-    "http-proxy-middleware": "^3.0.5",
-    "lucide-react": "^0.263.1",
-    "postcss": "^8.4.21",
+    "axios": "^1.6.0",
     "react": "^18.2.0",
-    "react-datepicker": "^4.11.0",
     "react-dom": "^18.2.0",
-    "react-hook-form": "^7.43.5",
-    "react-hot-toast": "^2.4.0",
     "react-router-dom": "^6.8.1",
     "react-scripts": "5.0.1",
-    "react-select": "^5.7.0",
-    "react-table": "^7.8.0",
-    "recharts": "^2.5.0",
-    "tailwindcss": "^3.2.7"
+    "recharts": "^2.8.0",
+    "web-vitals": "^2.1.4"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "concurrently": "^8.2.2",
+    "wait-on": "^7.2.0"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "electron": "electron .",
+    "electron-dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron-pack": "npm run build && electron-builder",
+    "dist": "npm run build && electron-builder --publish=never"
+  },
+  "main": "public/electron.js",
+  "build": {
+    "appId": "com.adminprivada.app",
+    "productName": "Admin Privada",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "build/**/*",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "public/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "public/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "public/icon.png"
+    }
   },
   "eslintConfig": {
     "extends": [
@@ -52,9 +71,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "devDependencies": {
-    "@types/react": "^18.0.28",
-    "@types/react-dom": "^18.0.11"
   }
 }

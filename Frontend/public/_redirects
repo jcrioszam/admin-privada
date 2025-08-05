@@ -1,1 +1,4 @@
-/*    /index.html   200 
+/*    /index.html   200
+
+# Configuración para SPA (Single Page Application)
+# Redirige todas las rutas a index.html para que React Router las maneje 

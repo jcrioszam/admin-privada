@@ -19,6 +19,7 @@ import ReporteOcupacion from './pages/ReporteOcupacion';
 import ReporteMantenimiento from './pages/ReporteMantenimiento';
 import Layout from './components/Layout';
 import LoadingSpinner from './components/LoadingSpinner';
+import NotFound from './components/NotFound';
 
 function App() {
   const { user, loading } = useAuth();
@@ -54,7 +55,7 @@ function App() {
         <Route path="/reporte-gastos-categoria" element={<ReporteGastosCategoria />} />
         <Route path="/reporte-ocupacion" element={<ReporteOcupacion />} />
         <Route path="/reporte-mantenimiento" element={<ReporteMantenimiento />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>
   );
