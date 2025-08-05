@@ -49,12 +49,22 @@ const ReporteOcupacion = () => {
     console.log('👥 Residentes disponibles:', residentes);
 
     const viviendasConResidentes = viviendas.map(vivienda => {
-      const residente = residentes.find(r => r.vivienda?._id === vivienda._id || r.vivienda === vivienda._id);
+      // Buscar residente que coincida con esta vivienda
+      const residente = residentes.find(r => {
+        // Verificar si el residente tiene vivienda y coincide con la vivienda actual
+        return r.vivienda && (
+          r.vivienda._id === vivienda._id || 
+          r.vivienda === vivienda._id ||
+          (r.vivienda.numero && r.vivienda.numero === vivienda.numero)
+        );
+      });
+      
       console.log(`🏠 Vivienda ${vivienda.numero}:`, { 
         viviendaId: vivienda._id, 
         residenteEncontrado: !!residente,
         residenteId: residente?._id,
-        fechaIngreso: residente?.fechaIngreso
+        fechaIngreso: residente?.fechaIngreso,
+        tipoResidente: residente?.tipo
       });
       
       return {
