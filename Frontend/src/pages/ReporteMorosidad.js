@@ -68,30 +68,63 @@ const ReporteMorosidad = () => {
       diasVencido: pago.pagado ? 0 : Math.floor((new Date() - new Date(pago.fechaLimite)) / (1000 * 60 * 60 * 24))
     }));
 
-    const pagosVencidos = pagosConEstado.filter(pago => pago.vencido);
-    const pagosDentroPlazo = pagosConEstado.filter(pago => pago.dentroDelPlazo);
-    const pagosPendientes = pagosConEstado.filter(pago => !pago.pagado && !pago.vencido);
+    // Agrupar por vivienda para estadísticas únicas
+    const viviendasUnicas = pagosConEstado.reduce((acc, pago) => {
+      const viviendaId = pago.vivienda?._id || pago.vivienda;
+      
+      if (!acc[viviendaId]) {
+        acc[viviendaId] = {
+          vivienda: pago.vivienda,
+          residente: pago.residente,
+          vencido: pago.vencido,
+          dentroDelPlazo: pago.dentroDelPlazo,
+          pagado: pago.pagado,
+          monto: pago.monto,
+          diasVencido: pago.diasVencido
+        };
+      } else {
+        // Si ya existe, tomar el más vencido
+        if (pago.diasVencido > (acc[viviendaId].diasVencido || 0)) {
+          acc[viviendaId] = {
+            vivienda: pago.vivienda,
+            residente: pago.residente,
+            vencido: pago.vencido,
+            dentroDelPlazo: pago.dentroDelPlazo,
+            pagado: pago.pagado,
+            monto: pago.monto,
+            diasVencido: pago.diasVencido
+          };
+        }
+      }
+      
+      return acc;
+    }, {});
 
-    const totalVencido = pagosVencidos.reduce((sum, pago) => sum + (pago.monto || 0), 0);
-    const totalPendiente = pagosPendientes.reduce((sum, pago) => sum + (pago.monto || 0), 0);
+    const viviendasUnicasArray = Object.values(viviendasUnicas);
+    const viviendasVencidas = viviendasUnicasArray.filter(v => v.vencido);
+    const viviendasAlCorriente = viviendasUnicasArray.filter(v => v.dentroDelPlazo);
+    const viviendasPendientes = viviendasUnicasArray.filter(v => !v.pagado && !v.vencido);
+
+    const totalVencido = viviendasVencidas.reduce((sum, v) => sum + (v.monto || 0), 0);
+    const totalPendiente = viviendasPendientes.reduce((sum, v) => sum + (v.monto || 0), 0);
 
     console.log('✅ Estadísticas de morosidad:', {
-      totalPagos: pagos.length,
-      pagosVencidos: pagosVencidos.length,
-      pagosDentroPlazo: pagosDentroPlazo.length,
-      pagosPendientes: pagosPendientes.length,
+      totalViviendas: viviendasUnicasArray.length,
+      viviendasVencidas: viviendasVencidas.length,
+      viviendasAlCorriente: viviendasAlCorriente.length,
+      viviendasPendientes: viviendasPendientes.length,
       totalVencido: totalVencido,
       totalPendiente: totalPendiente
     });
 
     return {
-      totalViviendas: pagos.length,
-      viviendasVencidas: pagosVencidos.length,
-      viviendasAlCorriente: pagosDentroPlazo.length,
-      viviendasPendientes: pagosPendientes.length,
+      totalViviendas: viviendasUnicasArray.length,
+      viviendasVencidas: viviendasVencidas.length,
+      viviendasAlCorriente: viviendasAlCorriente.length,
+      viviendasPendientes: viviendasPendientes.length,
       montoTotalVencido: totalVencido,
       montoTotalPendiente: totalPendiente,
-      porcentajeMorosidad: pagos.length > 0 ? ((pagosVencidos.length / pagos.length) * 100).toFixed(1) : '0.0',
+      porcentajeMorosidad: viviendasUnicasArray.length > 0 ? ((viviendasVencidas.length / viviendasUnicasArray.length) * 100).toFixed(1) : '0.0',
       pagosConEstado
     };
   }, [pagos]);
@@ -122,7 +155,29 @@ const ReporteMorosidad = () => {
       filtrados = filtrados.filter(pago => (pago.monto || 0) < 2000);
     }
 
-    return filtrados.sort((a, b) => {
+    // Agrupar por vivienda y tomar el pago más vencido de cada una
+    const pagosAgrupados = filtrados.reduce((acc, pago) => {
+      const viviendaId = pago.vivienda?._id || pago.vivienda;
+      
+      if (!acc[viviendaId]) {
+        acc[viviendaId] = pago;
+      } else {
+        // Si ya existe un pago para esta vivienda, tomar el más vencido
+        const diasActuales = acc[viviendaId].diasVencido || 0;
+        const diasNuevos = pago.diasVencido || 0;
+        
+        if (diasNuevos > diasActuales) {
+          acc[viviendaId] = pago;
+        }
+      }
+      
+      return acc;
+    }, {});
+
+    // Convertir de vuelta a array
+    const pagosUnicos = Object.values(pagosAgrupados);
+
+    return pagosUnicos.sort((a, b) => {
       // Ordenar por días vencido descendente, luego por monto
       if (a.vencido && b.vencido) {
         const diasA = a.diasVencido || 0;
