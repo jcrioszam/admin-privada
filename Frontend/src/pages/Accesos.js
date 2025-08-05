@@ -12,13 +12,25 @@ const Accesos = () => {
 
   // Obtener accesos
   const { data: accesos, isLoading } = useQuery(
-    'accesos',
-    () => api.get('/api/accesos').then(res => res.data)
+    ['accesos'],
+    async () => {
+      try {
+        console.log('🔍 Intentando obtener accesos...');
+        const response = await api.get('/api/accesos');
+        console.log('✅ Accesos obtenidos:', response.data);
+        return response.data;
+      } catch (error) {
+        console.error('❌ Error cargando accesos:', error);
+        console.error('❌ Error response:', error.response);
+        toast.error('Error al cargar los accesos');
+        throw error;
+      }
+    }
   );
 
   // Obtener residentes para el select
   const { data: residentes } = useQuery(
-    'residentes',
+    ['residentes'],
     () => api.get('/api/residentes').then(res => res.data)
   );
 
@@ -32,7 +44,7 @@ const Accesos = () => {
     },
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('accesos');
+        queryClient.invalidateQueries(['accesos']);
         setIsModalOpen(false);
         setEditingAcceso(null);
         toast.success(editingAcceso ? 'Acceso actualizado' : 'Acceso creado');
@@ -48,7 +60,7 @@ const Accesos = () => {
     ({ id, activo }) => api.put(`/api/accesos/${id}/${activo ? 'activar' : 'desactivar'}`),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('accesos');
+        queryClient.invalidateQueries(['accesos']);
         toast.success('Estado de acceso actualizado');
       },
       onError: (error) => {
@@ -62,7 +74,7 @@ const Accesos = () => {
     (id) => api.delete(`/api/accesos/${id}`),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('accesos');
+        queryClient.invalidateQueries(['accesos']);
         toast.success('Acceso eliminado');
       },
       onError: (error) => {
