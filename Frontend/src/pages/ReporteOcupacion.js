@@ -12,8 +12,15 @@ const ReporteOcupacion = () => {
   const { data: viviendas, isLoading: isLoadingViviendas } = useQuery({
     queryKey: ['viviendas-ocupacion'],
     queryFn: async () => {
-      const response = await api.get('/api/viviendas');
-      return response.data;
+      try {
+        console.log('🔍 Intentando obtener viviendas para reporte de ocupación...');
+        const response = await api.get('/api/viviendas');
+        console.log('✅ Viviendas obtenidas para reporte:', response.data);
+        return response.data;
+      } catch (error) {
+        console.error('❌ Error cargando viviendas para reporte:', error);
+        throw error;
+      }
     }
   });
 
@@ -21,8 +28,15 @@ const ReporteOcupacion = () => {
   const { data: residentes, isLoading: isLoadingResidentes } = useQuery({
     queryKey: ['residentes-ocupacion'],
     queryFn: async () => {
-      const response = await api.get('/api/residentes');
-      return response.data;
+      try {
+        console.log('🔍 Intentando obtener residentes para reporte de ocupación...');
+        const response = await api.get('/api/residentes');
+        console.log('✅ Residentes obtenidos para reporte:', response.data);
+        return response.data;
+      } catch (error) {
+        console.error('❌ Error cargando residentes para reporte:', error);
+        throw error;
+      }
     }
   });
 

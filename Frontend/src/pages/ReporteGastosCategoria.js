@@ -13,8 +13,15 @@ const ReporteGastosCategoria = () => {
   const { data: gastos, isLoading } = useQuery({
     queryKey: ['gastos-categoria'],
     queryFn: async () => {
-      const response = await api.get('/api/gastos');
-      return response.data;
+      try {
+        console.log('🔍 Intentando obtener gastos para reporte de categorías...');
+        const response = await api.get('/api/gastos');
+        console.log('✅ Gastos obtenidos para reporte:', response.data);
+        return response.data;
+      } catch (error) {
+        console.error('❌ Error cargando gastos para reporte:', error);
+        throw error;
+      }
     }
   });
 

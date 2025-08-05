@@ -12,8 +12,16 @@ const ReporteFlujoCaja = () => {
   const { data: pagos, isLoading: isLoadingPagos } = useQuery({
     queryKey: ['pagos-flujo-caja'],
     queryFn: async () => {
-      const response = await api.get('/api/pagos');
-      return response.data.filter(pago => pago.vivienda);
+      try {
+        console.log('🔍 Intentando obtener pagos para reporte de flujo de caja...');
+        const response = await api.get('/api/pagos');
+        const pagosFiltrados = response.data.filter(pago => pago.vivienda);
+        console.log('✅ Pagos obtenidos para reporte:', pagosFiltrados);
+        return pagosFiltrados;
+      } catch (error) {
+        console.error('❌ Error cargando pagos para reporte:', error);
+        throw error;
+      }
     }
   });
 
@@ -21,8 +29,15 @@ const ReporteFlujoCaja = () => {
   const { data: gastos, isLoading: isLoadingGastos } = useQuery({
     queryKey: ['gastos-flujo-caja'],
     queryFn: async () => {
-      const response = await api.get('/api/gastos');
-      return response.data;
+      try {
+        console.log('🔍 Intentando obtener gastos para reporte de flujo de caja...');
+        const response = await api.get('/api/gastos');
+        console.log('✅ Gastos obtenidos para reporte:', response.data);
+        return response.data;
+      } catch (error) {
+        console.error('❌ Error cargando gastos para reporte:', error);
+        throw error;
+      }
     }
   });
 

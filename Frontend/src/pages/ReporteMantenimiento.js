@@ -13,8 +13,15 @@ const ReporteMantenimiento = () => {
   const { data: gastos, isLoading } = useQuery({
     queryKey: ['gastos-mantenimiento'],
     queryFn: async () => {
-      const response = await api.get('/api/gastos');
-      return response.data;
+      try {
+        console.log('🔍 Intentando obtener gastos para reporte de mantenimiento...');
+        const response = await api.get('/api/gastos');
+        console.log('✅ Gastos obtenidos para reporte:', response.data);
+        return response.data;
+      } catch (error) {
+        console.error('❌ Error cargando gastos para reporte:', error);
+        throw error;
+      }
     }
   });
 
@@ -22,8 +29,15 @@ const ReporteMantenimiento = () => {
   const { data: viviendas, isLoading: isLoadingViviendas } = useQuery({
     queryKey: ['viviendas-mantenimiento'],
     queryFn: async () => {
-      const response = await api.get('/api/viviendas');
-      return response.data;
+      try {
+        console.log('🔍 Intentando obtener viviendas para reporte de mantenimiento...');
+        const response = await api.get('/api/viviendas');
+        console.log('✅ Viviendas obtenidas para reporte:', response.data);
+        return response.data;
+      } catch (error) {
+        console.error('❌ Error cargando viviendas para reporte:', error);
+        throw error;
+      }
     }
   });
 
