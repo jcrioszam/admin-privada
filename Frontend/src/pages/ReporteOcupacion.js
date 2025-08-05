@@ -50,21 +50,39 @@ const ReporteOcupacion = () => {
 
     const viviendasConResidentes = viviendas.map(vivienda => {
       // Buscar residente que coincida con esta vivienda
-      const residente = residentes.find(r => {
-        // Verificar si el residente tiene vivienda y coincide con la vivienda actual
-        return r.vivienda && (
-          r.vivienda._id === vivienda._id || 
-          r.vivienda === vivienda._id ||
-          (r.vivienda.numero && r.vivienda.numero === vivienda.numero)
-        );
-      });
+      let residente = null;
+      
+      // Primero buscar por el residente que ya está en la vivienda
+      if (vivienda.residente) {
+        residente = vivienda.residente;
+        console.log(`🏠 Vivienda ${vivienda.numero}: Usando residente existente en vivienda`);
+      } else {
+        // Si no hay residente en la vivienda, buscar en la lista de residentes
+        residente = residentes.find(r => {
+          if (!r.vivienda) return false;
+          
+          // Verificar múltiples formas de coincidencia
+          const coincidePorId = r.vivienda._id === vivienda._id;
+          const coincidePorReferencia = r.vivienda === vivienda._id;
+          const coincidePorNumero = r.vivienda.numero === vivienda.numero;
+          
+          return coincidePorId || coincidePorReferencia || coincidePorNumero;
+        });
+        
+        if (residente) {
+          console.log(`🏠 Vivienda ${vivienda.numero}: Encontrado residente en lista separada`);
+        } else {
+          console.log(`🏠 Vivienda ${vivienda.numero}: No se encontró residente`);
+        }
+      }
       
       console.log(`🏠 Vivienda ${vivienda.numero}:`, { 
         viviendaId: vivienda._id, 
         residenteEncontrado: !!residente,
         residenteId: residente?._id,
         fechaIngreso: residente?.fechaIngreso,
-        tipoResidente: residente?.tipo
+        tipoResidente: residente?.tipo,
+        nombreResidente: residente?.nombre
       });
       
       return {
