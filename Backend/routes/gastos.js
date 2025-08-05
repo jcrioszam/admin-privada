@@ -5,6 +5,19 @@ const Pago = require('../models/Pago');
 const auth = require('../middleware/auth');
 const moment = require('moment');
 
+// Obtener todos los gastos (ruta pública para reportes)
+router.get('/reportes', async (req, res) => {
+  try {
+    const gastos = await Gasto.find({})
+      .populate('registradoPor', 'nombre apellidos')
+      .sort({ fecha: -1 });
+    
+    res.json(gastos);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Obtener todos los gastos
 router.get('/', auth, async (req, res) => {
   try {

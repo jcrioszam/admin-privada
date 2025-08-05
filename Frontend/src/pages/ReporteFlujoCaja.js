@@ -31,7 +31,7 @@ const ReporteFlujoCaja = () => {
     queryFn: async () => {
       try {
         console.log('🔍 Intentando obtener gastos para reporte de flujo de caja...');
-        const response = await api.get('/api/gastos');
+        const response = await api.get('/api/gastos/reportes');
         console.log('✅ Gastos obtenidos para reporte:', response.data);
         return response.data;
       } catch (error) {
