@@ -71,7 +71,18 @@ const ReporteMantenimiento = () => {
            desc.includes('limpieza') ||
            desc.includes('jardín') ||
            desc.includes('jardineria') ||
-           desc.includes('poda');
+           desc.includes('poda') ||
+           desc.includes('pintura') ||
+           desc.includes('material') ||
+           desc.includes('herramienta') ||
+           desc.includes('equipo') ||
+           desc.includes('instalación') ||
+           desc.includes('instalacion') ||
+           desc.includes('construcción') ||
+           desc.includes('construccion') ||
+           desc.includes('mejora') ||
+           desc.includes('renovación') ||
+           desc.includes('renovacion');
   };
 
   // Calcular estadísticas de mantenimiento
@@ -80,12 +91,26 @@ const ReporteMantenimiento = () => {
 
     const { fechaInicio, fechaFin } = fechasPeriodo;
 
+    console.log('🔍 Analizando gastos para reporte de mantenimiento...');
+    console.log('📊 Gastos disponibles:', gastos);
+    console.log('📅 Período:', { fechaInicio, fechaFin });
+
     // Filtrar gastos de mantenimiento del período
     const gastosMantenimiento = gastos.filter(gasto => {
-      if (!gasto.fecha) return false;
+      if (!gasto.fecha) {
+        console.log('❌ Gasto sin fecha:', gasto);
+        return false;
+      }
       const fechaGasto = new Date(gasto.fecha);
-      return fechaGasto >= fechaInicio && fechaGasto <= fechaFin && esMantenimiento(gasto.descripcion || '');
+      const enPeriodo = fechaGasto >= fechaInicio && fechaGasto <= fechaFin;
+      const esMant = esMantenimiento(gasto.descripcion || '');
+      
+      console.log(`🔍 Gasto: "${gasto.descripcion}" - En período: ${enPeriodo} - Es mantenimiento: ${esMant}`);
+      
+      return enPeriodo && esMant;
     });
+
+    console.log('✅ Gastos de mantenimiento filtrados:', gastosMantenimiento);
 
     // Categorizar gastos de mantenimiento
     const gastosPorCategoria = {
@@ -104,6 +129,8 @@ const ReporteMantenimiento = () => {
         gastosPorCategoria['Limpieza'].push(gasto);
       } else if (desc.includes('jardín') || desc.includes('jardineria') || desc.includes('poda')) {
         gastosPorCategoria['Jardinería'].push(gasto);
+      } else if (desc.includes('pintura') || desc.includes('material') || desc.includes('herramienta') || desc.includes('equipo')) {
+        gastosPorCategoria['Mantenimiento General'].push(gasto);
       } else if (desc.includes('mantenimiento') || desc.includes('manten')) {
         gastosPorCategoria['Mantenimiento General'].push(gasto);
       } else {
