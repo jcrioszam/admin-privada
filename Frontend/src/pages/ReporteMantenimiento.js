@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
+import toast from 'react-hot-toast';
 
 const ReporteMantenimiento = () => {
   const [periodoSeleccionado, setPeriodoSeleccionado] = useState('actual');
@@ -36,6 +37,22 @@ const ReporteMantenimiento = () => {
         return response.data;
       } catch (error) {
         console.error('❌ Error cargando viviendas para reporte:', error);
+        throw error;
+      }
+    }
+  });
+
+  // Obtener pagos para impresión
+  const { data: pagos } = useQuery({
+    queryKey: ['pagos-mantenimiento'],
+    queryFn: async () => {
+      try {
+        console.log('🔍 Intentando obtener pagos para reporte de mantenimiento...');
+        const response = await api.get('/api/pagos');
+        console.log('✅ Pagos obtenidos para reporte:', response.data);
+        return response.data;
+      } catch (error) {
+        console.error('❌ Error cargando pagos para reporte:', error);
         throw error;
       }
     }
@@ -299,6 +316,240 @@ const ReporteMantenimiento = () => {
     ventana.print();
   };
 
+  // Función para imprimir lista de morosos
+  const imprimirMorosos = () => {
+    if (!pagos || pagos.length === 0) {
+      toast.error('No hay datos para imprimir');
+      return;
+    }
+
+    // Filtrar pagos vencidos con saldo pendiente
+    const pagosVencidos = pagos.filter(pago => {
+      if (!pago.vivienda) return false;
+      
+      const fechaLimite = new Date(pago.fechaLimite);
+      const hoy = new Date();
+      const diasAtraso = pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente' || 
+                         hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
+      
+      const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+      return diasAtraso > 0 && saldoPendiente > 0;
+    });
+
+    // Agrupar por vivienda
+    const morososPorVivienda = {};
+    pagosVencidos.forEach(pago => {
+      const viviendaId = pago.vivienda._id;
+      if (!morososPorVivienda[viviendaId]) {
+        morososPorVivienda[viviendaId] = {
+          vivienda: pago.vivienda,
+          pagos: [],
+          totalSaldo: 0,
+          totalRecargo: 0,
+          totalAdeudo: 0
+        };
+      }
+      
+      const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+      const recargo = pago.recargo || 0;
+      
+      morososPorVivienda[viviendaId].pagos.push(pago);
+      morososPorVivienda[viviendaId].totalSaldo += saldoPendiente;
+      morososPorVivienda[viviendaId].totalRecargo += recargo;
+      morososPorVivienda[viviendaId].totalAdeudo += saldoPendiente + recargo;
+    });
+
+    const morosos = Object.values(morososPorVivienda);
+
+    if (morosos.length === 0) {
+      toast.error('No hay morosos para imprimir');
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Lista de Morosos - ${new Date().toLocaleDateString('es-ES')}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .header h1 { color: #1f2937; margin: 0; }
+          .header p { color: #6b7280; margin: 5px 0; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #d1d5db; padding: 8px; text-align: left; }
+          th { background-color: #f3f4f6; font-weight: bold; }
+          .total { font-weight: bold; background-color: #fef3c7; }
+          .stats { display: flex; justify-content: space-between; margin: 20px 0; }
+          .stat { text-align: center; }
+          .stat-value { font-size: 24px; font-weight: bold; }
+          .stat-label { font-size: 12px; color: #6b7280; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Lista de Morosos</h1>
+          <p>Fecha de impresión: ${new Date().toLocaleDateString('es-ES')}</p>
+          <p>Total de morosos: ${morosos.length}</p>
+        </div>
+        
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-value">${morosos.reduce((sum, grupo) => sum + grupo.totalSaldo, 0).toLocaleString()}</div>
+            <div class="stat-label">Total Saldo Pendiente</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">${morosos.reduce((sum, grupo) => sum + grupo.totalRecargo, 0).toLocaleString()}</div>
+            <div class="stat-label">Total Recargos</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">${morosos.reduce((sum, grupo) => sum + grupo.totalAdeudo, 0).toLocaleString()}</div>
+            <div class="stat-label">Total Adeudo</div>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Vivienda</th>
+              <th>Residente</th>
+              <th>Saldo Pendiente</th>
+              <th>Recargos</th>
+              <th>Total Adeudo</th>
+              <th>Períodos Vencidos</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${morosos.map((grupo) => {
+              const primerPago = grupo.pagos[0];
+              const residente = primerPago.residente;
+              
+              return `
+                <tr>
+                  <td>${grupo.vivienda.numero}</td>
+                  <td>${residente ? `${residente.nombre || ''} ${residente.apellidos || ''}`.trim() : 'Sin residente'}</td>
+                  <td>$${grupo.totalSaldo.toLocaleString()}</td>
+                  <td>$${grupo.totalRecargo.toLocaleString()}</td>
+                  <td class="total">$${grupo.totalAdeudo.toLocaleString()}</td>
+                  <td>${grupo.pagos.length}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
+  // Función para imprimir lista de al corriente
+  const imprimirAlCorriente = () => {
+    if (!pagos || pagos.length === 0) {
+      toast.error('No hay datos para imprimir');
+      return;
+    }
+
+    // Filtrar viviendas que no tienen pagos vencidos
+    const viviendasConPagos = {};
+    pagos.forEach(pago => {
+      if (!pago.vivienda) return;
+      
+      const viviendaId = pago.vivienda._id;
+      if (!viviendasConPagos[viviendaId]) {
+        viviendasConPagos[viviendaId] = {
+          vivienda: pago.vivienda,
+          pagos: [],
+          tieneVencidos: false
+        };
+      }
+      
+      const fechaLimite = new Date(pago.fechaLimite);
+      const hoy = new Date();
+      const diasAtraso = pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente' || 
+                         hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
+      
+      const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+      
+      if (diasAtraso > 0 && saldoPendiente > 0) {
+        viviendasConPagos[viviendaId].tieneVencidos = true;
+      }
+      
+      viviendasConPagos[viviendaId].pagos.push(pago);
+    });
+
+    const alCorriente = Object.values(viviendasConPagos).filter(grupo => !grupo.tieneVencidos);
+
+    if (alCorriente.length === 0) {
+      toast.error('No hay viviendas al corriente para imprimir');
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Lista de Al Corriente - ${new Date().toLocaleDateString('es-ES')}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .header h1 { color: #1f2937; margin: 0; }
+          .header p { color: #6b7280; margin: 5px 0; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #d1d5db; padding: 8px; text-align: left; }
+          th { background-color: #f3f4f6; font-weight: bold; }
+          .stats { display: flex; justify-content: space-between; margin: 20px 0; }
+          .stat { text-align: center; }
+          .stat-value { font-size: 24px; font-weight: bold; }
+          .stat-label { font-size: 12px; color: #6b7280; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Lista de Al Corriente</h1>
+          <p>Fecha de impresión: ${new Date().toLocaleDateString('es-ES')}</p>
+          <p>Total de viviendas al corriente: ${alCorriente.length}</p>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Vivienda</th>
+              <th>Residente</th>
+              <th>Estado</th>
+              <th>Último Pago</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${alCorriente.map((grupo) => {
+              const primerPago = grupo.pagos[0];
+              const residente = primerPago.residente;
+              
+              return `
+                <tr>
+                  <td>${grupo.vivienda.numero}</td>
+                  <td>${residente ? `${residente.nombre || ''} ${residente.apellidos || ''}`.trim() : 'Sin residente'}</td>
+                  <td>Al corriente</td>
+                  <td>${primerPago.fechaPago ? new Date(primerPago.fechaPago).toLocaleDateString('es-ES') : '-'}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
   if (isLoading || isLoadingViviendas) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -311,15 +562,37 @@ const ReporteMantenimiento = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Reporte de Mantenimiento</h1>
-        <button
-          onClick={imprimirReporte}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-          </svg>
-          Imprimir Reporte
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={imprimirMorosos}
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+            title="Imprimir lista de morosos"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Imprimir Morosos
+          </button>
+          <button
+            onClick={imprimirAlCorriente}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+            title="Imprimir lista de al corriente"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Imprimir Al Corriente
+          </button>
+          <button
+            onClick={imprimirReporte}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Imprimir Reporte
+          </button>
+        </div>
       </div>
 
       {/* Selector de período */}
