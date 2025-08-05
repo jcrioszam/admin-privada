@@ -20,24 +20,24 @@ import {
 } from '@heroicons/react/24/outline';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-  { name: 'Viviendas', href: '/viviendas', icon: BuildingOfficeIcon },
-  { name: 'Residentes', href: '/residentes', icon: UsersIcon },
-  { name: 'Pagos', href: '/pagos', icon: CreditCardIcon },
-  { name: 'Gastos', href: '/gastos', icon: BanknotesIcon },
-  { name: 'Corte Diario', href: '/corte-diario', icon: CurrencyDollarIcon },
-  { name: 'Historial', href: '/historial', icon: ClockIcon },
-  { name: 'Accesos', href: '/accesos', icon: KeyIcon },
-  { name: 'Usuarios', href: '/usuarios', icon: UserGroupIcon },
-  { name: 'Configuración', href: '/configuracion', icon: Cog6ToothIcon },
+  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon, color: 'text-blue-500' },
+  { name: 'Viviendas', href: '/viviendas', icon: BuildingOfficeIcon, color: 'text-indigo-500' },
+  { name: 'Residentes', href: '/residentes', icon: UsersIcon, color: 'text-green-500' },
+  { name: 'Pagos', href: '/pagos', icon: CreditCardIcon, color: 'text-emerald-500' },
+  { name: 'Gastos', href: '/gastos', icon: BanknotesIcon, color: 'text-amber-500' },
+  { name: 'Corte Diario', href: '/corte-diario', icon: CurrencyDollarIcon, color: 'text-yellow-500' },
+  { name: 'Historial', href: '/historial', icon: ClockIcon, color: 'text-purple-500' },
+  { name: 'Accesos', href: '/accesos', icon: KeyIcon, color: 'text-orange-500' },
+  { name: 'Usuarios', href: '/usuarios', icon: UserGroupIcon, color: 'text-teal-500' },
+  { name: 'Configuración', href: '/configuracion', icon: Cog6ToothIcon, color: 'text-gray-500' },
 ];
 
 const reportes = [
-  { name: 'Reporte de Morosidad', href: '/reporte-morosidad', icon: ExclamationTriangleIcon },
-  { name: 'Reporte de Flujo de Caja', href: '/reporte-flujo-caja', icon: ChartBarIcon },
-  { name: 'Reporte de Gastos por Categoría', href: '/reporte-gastos-categoria', icon: ChartPieIcon },
-  { name: 'Reporte de Ocupación', href: '/reporte-ocupacion', icon: HomeModernIcon },
-  { name: 'Reporte de Mantenimiento', href: '/reporte-mantenimiento', icon: WrenchScrewdriverIcon },
+  { name: 'Reporte de Morosidad', href: '/reporte-morosidad', icon: ExclamationTriangleIcon, color: 'text-red-500' },
+  { name: 'Reporte de Flujo de Caja', href: '/reporte-flujo-caja', icon: ChartBarIcon, color: 'text-blue-600' },
+  { name: 'Reporte de Gastos por Categoría', href: '/reporte-gastos-categoria', icon: ChartPieIcon, color: 'text-pink-500' },
+  { name: 'Reporte de Ocupación', href: '/reporte-ocupacion', icon: HomeModernIcon, color: 'text-cyan-500' },
+  { name: 'Reporte de Mantenimiento', href: '/reporte-mantenimiento', icon: WrenchScrewdriverIcon, color: 'text-orange-600' },
 ];
 
 const Sidebar = ({ open, setOpen }) => {
@@ -66,8 +66,10 @@ const Sidebar = ({ open, setOpen }) => {
           }}
         >
           <item.icon
-            className={`mr-3 flex-shrink-0 h-5 w-5 transition-colors duration-200 ${
-              isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-500'
+            className={`mr-3 flex-shrink-0 h-5 w-5 transition-all duration-200 ${
+              isActive 
+                ? 'text-white' 
+                : `${item.color} group-hover:scale-110 group-hover:drop-shadow-sm`
             }`}
             aria-hidden="true"
           />
