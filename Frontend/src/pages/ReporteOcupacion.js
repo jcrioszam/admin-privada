@@ -40,6 +40,44 @@ const ReporteOcupacion = () => {
     }
   });
 
+  // Función para calcular tiempo de ocupación
+  const calcularTiempoOcupacion = (fechaInicio) => {
+    if (!fechaInicio) return null;
+    
+    const inicio = new Date(fechaInicio);
+    const ahora = new Date();
+    const diferencia = ahora - inicio;
+    const dias = Math.floor(diferencia / (1000 * 60 * 60 * 24));
+    
+    if (dias < 30) return `${dias} días`;
+    if (dias < 365) return `${Math.floor(dias / 30)} meses`;
+    return `${Math.floor(dias / 365)} años`;
+  };
+
+  // Función para calcular tiempo promedio de ocupación
+  const calcularTiempoPromedioOcupacion = (viviendasOcupadas) => {
+    const tiempos = viviendasOcupadas
+      .map(v => v.tiempoOcupacion)
+      .filter(tiempo => tiempo !== null);
+    
+    if (tiempos.length === 0) return 'N/A';
+    
+    // Convertir a días para calcular promedio
+    const diasPromedio = tiempos.reduce((sum, tiempo) => {
+      if (tiempo.includes('años')) {
+        return sum + (parseInt(tiempo) * 365);
+      } else if (tiempo.includes('meses')) {
+        return sum + (parseInt(tiempo) * 30);
+      } else {
+        return sum + parseInt(tiempo);
+      }
+    }, 0) / tiempos.length;
+    
+    if (diasPromedio < 30) return `${Math.round(diasPromedio)} días`;
+    if (diasPromedio < 365) return `${Math.round(diasPromedio / 30)} meses`;
+    return `${Math.round(diasPromedio / 365)} años`;
+  };
+
   // Calcular estadísticas de ocupación
   const estadisticasOcupacion = useMemo(() => {
     if (!viviendas || !residentes) return null;
@@ -117,44 +155,6 @@ const ReporteOcupacion = () => {
       viviendasConResidentes
     };
   }, [viviendas, residentes]);
-
-  // Función para calcular tiempo de ocupación
-  const calcularTiempoOcupacion = (fechaInicio) => {
-    if (!fechaInicio) return null;
-    
-    const inicio = new Date(fechaInicio);
-    const ahora = new Date();
-    const diferencia = ahora - inicio;
-    const dias = Math.floor(diferencia / (1000 * 60 * 60 * 24));
-    
-    if (dias < 30) return `${dias} días`;
-    if (dias < 365) return `${Math.floor(dias / 30)} meses`;
-    return `${Math.floor(dias / 365)} años`;
-  };
-
-  // Función para calcular tiempo promedio de ocupación
-  const calcularTiempoPromedioOcupacion = (viviendasOcupadas) => {
-    const tiempos = viviendasOcupadas
-      .map(v => v.tiempoOcupacion)
-      .filter(tiempo => tiempo !== null);
-    
-    if (tiempos.length === 0) return 'N/A';
-    
-    // Convertir a días para calcular promedio
-    const diasPromedio = tiempos.reduce((sum, tiempo) => {
-      if (tiempo.includes('años')) {
-        return sum + (parseInt(tiempo) * 365);
-      } else if (tiempo.includes('meses')) {
-        return sum + (parseInt(tiempo) * 30);
-      } else {
-        return sum + parseInt(tiempo);
-      }
-    }, 0) / tiempos.length;
-    
-    if (diasPromedio < 30) return `${Math.round(diasPromedio)} días`;
-    if (diasPromedio < 365) return `${Math.round(diasPromedio / 30)} meses`;
-    return `${Math.round(diasPromedio / 365)} años`;
-  };
 
   // Filtrar viviendas según criterios
   const viviendasFiltradas = useMemo(() => {
