@@ -23,12 +23,62 @@ const ReporteMorosidad = () => {
   const estadisticas = useMemo(() => {
     if (!pagos) return null;
 
-    const pagosVencidos = pagos.filter(pago => pago.vencido);
-    const pagosDentroPlazo = pagos.filter(pago => pago.dentroDelPlazo);
-    const pagosPendientes = pagos.filter(pago => !pago.pagado && !pago.vencido);
+    console.log('🔍 Analizando pagos para reporte de morosidad...');
+    console.log('📊 Pagos disponibles:', pagos);
+
+    // Función para determinar si un pago está vencido (1 mes o más atrasado)
+    const esPagoVencido = (pago) => {
+      if (pago.pagado) return false;
+      
+      const fechaLimite = new Date(pago.fechaLimite);
+      const ahora = new Date();
+      const diferenciaMeses = (ahora.getFullYear() - fechaLimite.getFullYear()) * 12 + 
+                             (ahora.getMonth() - fechaLimite.getMonth());
+      
+      console.log(`🔍 Pago ${pago.vivienda?.numero}:`, {
+        fechaLimite: fechaLimite,
+        ahora: ahora,
+        diferenciaMeses: diferenciaMeses,
+        vencido: diferenciaMeses >= 1
+      });
+      
+      return diferenciaMeses >= 1; // 1 mes o más atrasado
+    };
+
+    // Función para determinar si un pago está dentro del plazo
+    const esPagoDentroPlazo = (pago) => {
+      if (pago.pagado) return true;
+      
+      const fechaLimite = new Date(pago.fechaLimite);
+      const ahora = new Date();
+      const diferenciaMeses = (ahora.getFullYear() - fechaLimite.getFullYear()) * 12 + 
+                             (ahora.getMonth() - fechaLimite.getMonth());
+      
+      return diferenciaMeses < 1; // Menos de 1 mes atrasado
+    };
+
+    // Agregar propiedades calculadas a cada pago
+    const pagosConEstado = pagos.map(pago => ({
+      ...pago,
+      vencido: esPagoVencido(pago),
+      dentroDelPlazo: esPagoDentroPlazo(pago)
+    }));
+
+    const pagosVencidos = pagosConEstado.filter(pago => pago.vencido);
+    const pagosDentroPlazo = pagosConEstado.filter(pago => pago.dentroDelPlazo);
+    const pagosPendientes = pagosConEstado.filter(pago => !pago.pagado && !pago.vencido);
 
     const totalVencido = pagosVencidos.reduce((sum, pago) => sum + (pago.monto || 0), 0);
     const totalPendiente = pagosPendientes.reduce((sum, pago) => sum + (pago.monto || 0), 0);
+
+    console.log('✅ Estadísticas de morosidad:', {
+      totalPagos: pagos.length,
+      pagosVencidos: pagosVencidos.length,
+      pagosDentroPlazo: pagosDentroPlazo.length,
+      pagosPendientes: pagosPendientes.length,
+      totalVencido: totalVencido,
+      totalPendiente: totalPendiente
+    });
 
     return {
       totalViviendas: pagos.length,
@@ -37,15 +87,16 @@ const ReporteMorosidad = () => {
       viviendasPendientes: pagosPendientes.length,
       montoTotalVencido: totalVencido,
       montoTotalPendiente: totalPendiente,
-      porcentajeMorosidad: ((pagosVencidos.length / pagos.length) * 100).toFixed(1)
+      porcentajeMorosidad: ((pagosVencidos.length / pagos.length) * 100).toFixed(1),
+      pagosConEstado
     };
   }, [pagos]);
 
   // Filtrar pagos según criterios
   const pagosFiltrados = useMemo(() => {
-    if (!pagos) return [];
+    if (!estadisticas) return [];
 
-    let filtrados = pagos;
+    let filtrados = estadisticas.pagosConEstado;
 
     // Filtro por estado
     if (filtroEstado === 'vencidos') {
@@ -71,7 +122,7 @@ const ReporteMorosidad = () => {
       const montoB = b.vencido ? (b.monto || 0) : 0;
       return montoB - montoA;
     });
-  }, [pagos, filtroEstado, filtroMonto]);
+  }, [estadisticas, filtroEstado, filtroMonto]);
 
   // Función para imprimir reporte
   const imprimirReporte = () => {
@@ -219,9 +270,9 @@ const ReporteMorosidad = () => {
               className="w-full border border-gray-300 rounded-md px-3 py-2"
             >
               <option value="todos">Todos</option>
-              <option value="alto">Alto (>$5,000)</option>
+              <option value="alto">Alto (más de $5,000)</option>
               <option value="medio">Medio ($2,000-$5,000)</option>
-              <option value="bajo">Bajo (&lt;$2,000)</option>
+              <option value="bajo">Bajo (menos de $2,000)</option>
             </select>
           </div>
         </div>

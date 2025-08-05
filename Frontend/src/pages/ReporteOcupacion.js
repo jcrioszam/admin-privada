@@ -44,20 +44,39 @@ const ReporteOcupacion = () => {
   const estadisticasOcupacion = useMemo(() => {
     if (!viviendas || !residentes) return null;
 
+    console.log('🔍 Analizando datos para reporte de ocupación...');
+    console.log('📊 Viviendas disponibles:', viviendas);
+    console.log('👥 Residentes disponibles:', residentes);
+
     const viviendasConResidentes = viviendas.map(vivienda => {
-      const residente = residentes.find(r => r.vivienda === vivienda._id);
+      const residente = residentes.find(r => r.vivienda?._id === vivienda._id || r.vivienda === vivienda._id);
+      console.log(`🏠 Vivienda ${vivienda.numero}:`, { 
+        viviendaId: vivienda._id, 
+        residenteEncontrado: !!residente,
+        residenteId: residente?._id,
+        fechaIngreso: residente?.fechaIngreso
+      });
+      
       return {
         ...vivienda,
         residente,
         ocupada: !!residente,
-        tiempoOcupacion: residente ? calcularTiempoOcupacion(residente.fechaInicio) : null
+        tiempoOcupacion: residente ? calcularTiempoOcupacion(residente.fechaIngreso) : null
       };
     });
 
     const viviendasOcupadas = viviendasConResidentes.filter(v => v.ocupada);
     const viviendasVacias = viviendasConResidentes.filter(v => !v.ocupada);
-    const viviendasPropietarias = viviendasConResidentes.filter(v => v.residente?.tipo === 'Propietario');
+    const viviendasPropietarias = viviendasConResidentes.filter(v => v.residente?.tipo === 'Dueño');
     const viviendasInquilinas = viviendasConResidentes.filter(v => v.residente?.tipo === 'Inquilino');
+
+    console.log('✅ Estadísticas calculadas:', {
+      totalViviendas: viviendasConResidentes.length,
+      viviendasOcupadas: viviendasOcupadas.length,
+      viviendasVacias: viviendasVacias.length,
+      viviendasPropietarias: viviendasPropietarias.length,
+      viviendasInquilinas: viviendasInquilinas.length
+    });
 
     return {
       totalViviendas: viviendasConResidentes.length,
@@ -124,7 +143,7 @@ const ReporteOcupacion = () => {
 
     // Filtro por tipo
     if (filtroTipo === 'propietarios') {
-      filtradas = filtradas.filter(v => v.residente?.tipo === 'Propietario');
+      filtradas = filtradas.filter(v => v.residente?.tipo === 'Dueño');
     } else if (filtroTipo === 'inquilinos') {
       filtradas = filtradas.filter(v => v.residente?.tipo === 'Inquilino');
     }
@@ -399,7 +418,7 @@ const ReporteOcupacion = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     {vivienda.residente?.tipo ? (
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        vivienda.residente.tipo === 'Propietario'
+                        vivienda.residente.tipo === 'Dueño'
                           ? 'bg-green-100 text-green-800'
                           : 'bg-yellow-100 text-yellow-800'
                       }`}>
