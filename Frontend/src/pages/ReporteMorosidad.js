@@ -32,12 +32,15 @@ const ReporteMorosidad = () => {
       
       const fechaLimite = new Date(pago.fechaLimite);
       const ahora = new Date();
-      const diferenciaMeses = (ahora.getFullYear() - fechaLimite.getFullYear()) * 12 + 
-                             (ahora.getMonth() - fechaLimite.getMonth());
+      
+      // Calcular diferencia en días para mayor precisión
+      const diferenciaDias = Math.floor((ahora - fechaLimite) / (1000 * 60 * 60 * 24));
+      const diferenciaMeses = diferenciaDias / 30; // Aproximadamente 30 días por mes
       
       console.log(`🔍 Pago ${pago.vivienda?.numero}:`, {
         fechaLimite: fechaLimite,
         ahora: ahora,
+        diferenciaDias: diferenciaDias,
         diferenciaMeses: diferenciaMeses,
         vencido: diferenciaMeses >= 1
       });
@@ -51,8 +54,8 @@ const ReporteMorosidad = () => {
       
       const fechaLimite = new Date(pago.fechaLimite);
       const ahora = new Date();
-      const diferenciaMeses = (ahora.getFullYear() - fechaLimite.getFullYear()) * 12 + 
-                             (ahora.getMonth() - fechaLimite.getMonth());
+      const diferenciaDias = Math.floor((ahora - fechaLimite) / (1000 * 60 * 60 * 24));
+      const diferenciaMeses = diferenciaDias / 30;
       
       return diferenciaMeses < 1; // Menos de 1 mes atrasado
     };
@@ -61,7 +64,8 @@ const ReporteMorosidad = () => {
     const pagosConEstado = pagos.map(pago => ({
       ...pago,
       vencido: esPagoVencido(pago),
-      dentroDelPlazo: esPagoDentroPlazo(pago)
+      dentroDelPlazo: esPagoDentroPlazo(pago),
+      diasVencido: pago.pagado ? 0 : Math.floor((new Date() - new Date(pago.fechaLimite)) / (1000 * 60 * 60 * 24))
     }));
 
     const pagosVencidos = pagosConEstado.filter(pago => pago.vencido);
@@ -87,7 +91,7 @@ const ReporteMorosidad = () => {
       viviendasPendientes: pagosPendientes.length,
       montoTotalVencido: totalVencido,
       montoTotalPendiente: totalPendiente,
-      porcentajeMorosidad: ((pagosVencidos.length / pagos.length) * 100).toFixed(1),
+      porcentajeMorosidad: pagos.length > 0 ? ((pagosVencidos.length / pagos.length) * 100).toFixed(1) : '0.0',
       pagosConEstado
     };
   }, [pagos]);
@@ -98,8 +102,10 @@ const ReporteMorosidad = () => {
 
     let filtrados = estadisticas.pagosConEstado;
 
-    // Filtro por estado
-    if (filtroEstado === 'vencidos') {
+    // Por defecto, mostrar solo pagos vencidos (morosos)
+    if (filtroEstado === 'todos') {
+      filtrados = filtrados.filter(pago => pago.vencido);
+    } else if (filtroEstado === 'vencidos') {
       filtrados = filtrados.filter(pago => pago.vencido);
     } else if (filtroEstado === 'alCorriente') {
       filtrados = filtrados.filter(pago => pago.dentroDelPlazo);
@@ -117,7 +123,14 @@ const ReporteMorosidad = () => {
     }
 
     return filtrados.sort((a, b) => {
-      // Ordenar por monto vencido descendente
+      // Ordenar por días vencido descendente, luego por monto
+      if (a.vencido && b.vencido) {
+        const diasA = a.diasVencido || 0;
+        const diasB = b.diasVencido || 0;
+        if (diasA !== diasB) return diasB - diasA;
+      }
+      
+      // Si no están vencidos, ordenar por monto
       const montoA = a.vencido ? (a.monto || 0) : 0;
       const montoB = b.vencido ? (b.monto || 0) : 0;
       return montoB - montoA;
@@ -256,7 +269,7 @@ const ReporteMorosidad = () => {
               onChange={(e) => setFiltroEstado(e.target.value)}
               className="w-full border border-gray-300 rounded-md px-3 py-2"
             >
-              <option value="todos">Todos</option>
+              <option value="todos">Solo Morosos</option>
               <option value="vencidos">Vencidos</option>
               <option value="alCorriente">Al Corriente</option>
               <option value="pendientes">Pendientes</option>
@@ -332,7 +345,7 @@ const ReporteMorosidad = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {pago.vencido 
-                      ? Math.ceil((new Date() - new Date(pago.fechaLimite)) / (1000 * 60 * 60 * 24))
+                      ? pago.diasVencido || 0
                       : '-'
                     }
                   </td>
