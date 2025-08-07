@@ -13,6 +13,7 @@ import Accesos from './pages/Accesos';
 import Usuarios from './pages/Usuarios';
 import Configuracion from './pages/Configuracion';
 import ReporteMorosidad from './pages/ReporteMorosidad';
+import PagosEspeciales from './pages/PagosEspeciales';
 import ReporteFlujoCaja from './pages/ReporteFlujoCaja';
 import ReporteGastosCategoria from './pages/ReporteGastosCategoria';
 import ReporteOcupacion from './pages/ReporteOcupacion';
@@ -51,6 +52,7 @@ function App() {
         <Route path="/usuarios" element={<Usuarios />} />
         <Route path="/configuracion" element={<Configuracion />} />
         <Route path="/reporte-morosidad" element={<ReporteMorosidad />} />
+        <Route path="/pagos-especiales" element={<PagosEspeciales />} />
         <Route path="/reporte-flujo-caja" element={<ReporteFlujoCaja />} />
         <Route path="/reporte-gastos-categoria" element={<ReporteGastosCategoria />} />
         <Route path="/reporte-ocupacion" element={<ReporteOcupacion />} />

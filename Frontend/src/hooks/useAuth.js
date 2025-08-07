@@ -1,6 +1,6 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { authService } from '../services/authService';
-import toast from 'react-hot-toast';
+// import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext();
@@ -41,10 +41,10 @@ export const AuthProvider = ({ children }) => {
       const { token, usuario } = await authService.login(credentials);
       localStorage.setItem('token', token);
       setUser(usuario);
-      toast.success('Inicio de sesión exitoso');
+              console.log('✅', 'Inicio de sesión exitoso');
       return true;
     } catch (error) {
-      toast.error(error.message || 'Error al iniciar sesión');
+              console.error('❌', error.message || 'Error al iniciar sesión');
       return false;
     }
   };
@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
-    toast.success('Sesión cerrada');
+          console.log('✅', 'Sesión cerrada');
     navigate('/');
   };
 
