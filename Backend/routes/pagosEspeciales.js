@@ -5,6 +5,7 @@ const Vivienda = require('../models/Vivienda');
 const Residente = require('../models/Residente');
 const { body, validationResult } = require('express-validator');
 const moment = require('moment');
+const auth = require('../middleware/auth');
 
 // Obtener todos los pagos especiales
 router.get('/', async (req, res) => {
@@ -50,7 +51,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Crear nuevo pago especial
-router.post('/', [
+router.post('/', auth, [
   body('tipo').notEmpty().withMessage('Nombre del proyecto requerido'),
   body('descripcion').notEmpty().withMessage('Descripción requerida'),
   body('monto').optional().isNumeric().withMessage('Monto inválido'),
@@ -89,7 +90,7 @@ router.post('/', [
         aplicaATodasLasViviendas: true,
         cantidadPagar: cantidadPagar || 0,
         notas,
-        registradoPor: req.user._id
+        registradoPor: req.usuario._id
       });
       pagosEspeciales.push(pagoEspecial);
     }
@@ -105,7 +106,7 @@ router.post('/', [
 });
 
 // Actualizar pago especial
-router.put('/:id', [
+router.put('/:id', auth, [
   body('tipo').optional().notEmpty().withMessage('Nombre del proyecto requerido'),
   body('descripcion').optional().notEmpty().withMessage('Descripción requerida'),
   body('monto').optional().isNumeric().withMessage('Monto inválido'),
@@ -145,7 +146,7 @@ router.put('/:id', [
 });
 
 // Registrar pago de un pago especial
-router.post('/:id/pagar', [
+router.post('/:id/pagar', auth, [
   body('metodoPago').isIn(['Efectivo', 'Transferencia', 'Tarjeta', 'Cheque', 'Otro']).withMessage('Método de pago inválido')
 ], async (req, res) => {
   try {
@@ -176,7 +177,7 @@ router.post('/:id/pagar', [
 });
 
 // Eliminar pago especial
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   try {
     const pagoEspecial = await PagoEspecial.findById(req.params.id);
     if (!pagoEspecial) {
