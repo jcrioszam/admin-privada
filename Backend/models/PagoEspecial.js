@@ -4,12 +4,12 @@ const pagoEspecialSchema = new mongoose.Schema({
   vivienda: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Vivienda',
-    required: true
+    required: false
   },
   residente: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Residente',
-    required: true
+    required: false
   },
   tipo: {
     type: String,
@@ -23,8 +23,9 @@ const pagoEspecialSchema = new mongoose.Schema({
   },
   monto: {
     type: Number,
-    required: true,
-    min: 0
+    required: false,
+    min: 0,
+    default: 0
   },
   fechaLimite: {
     type: Date,
@@ -57,7 +58,7 @@ const pagoEspecialSchema = new mongoose.Schema({
   },
   aplicaATodasLasViviendas: {
     type: Boolean,
-    default: false
+    default: true
   },
   cantidadPagar: {
     type: Number,
