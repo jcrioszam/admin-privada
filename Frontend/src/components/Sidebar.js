@@ -17,6 +17,7 @@ import {
   ChartPieIcon,
   WrenchScrewdriverIcon,
   HomeModernIcon,
+  FolderIcon,
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -25,6 +26,7 @@ const navigation = [
   { name: 'Residentes', href: '/residentes', icon: UsersIcon, color: 'text-green-500' },
   { name: 'Pagos', href: '/pagos', icon: CreditCardIcon, color: 'text-emerald-500' },
   { name: 'Pagos Especiales', href: '/pagos-especiales', icon: CurrencyDollarIcon, color: 'text-yellow-500' },
+  { name: 'Proyectos', href: '/proyectos-pagos-especiales', icon: FolderIcon, color: 'text-purple-500' },
   { name: 'Gastos', href: '/gastos', icon: BanknotesIcon, color: 'text-amber-500' },
   { name: 'Corte Diario', href: '/corte-diario', icon: CurrencyDollarIcon, color: 'text-yellow-500' },
   { name: 'Historial', href: '/historial', icon: ClockIcon, color: 'text-purple-500' },

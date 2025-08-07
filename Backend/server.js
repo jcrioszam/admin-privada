@@ -80,6 +80,7 @@ app.use('/api/viviendas', require('./routes/viviendas'));
 app.use('/api/residentes', require('./routes/residentes'));
 app.use('/api/pagos', require('./routes/pagos'));
 app.use('/api/pagos-especiales', require('./routes/pagosEspeciales'));
+app.use('/api/proyectos-pagos-especiales', require('./routes/proyectosPagosEspeciales'));
 app.use('/api/accesos', require('./routes/accesos'));
 app.use('/api/usuarios', require('./routes/usuarios'));
 app.use('/api/configuracion', require('./routes/configuracion'));
