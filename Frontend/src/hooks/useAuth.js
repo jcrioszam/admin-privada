@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext } from 'react';
-import api from '../services/api';
+import { authService } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext();
@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      api.getProfile()
+      authService.getProfile()
         .then(userData => {
           setUser(userData);
         })
@@ -37,13 +37,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     try {
-      const { token, usuario } = await api.login(credentials);
+      const { token, usuario } = await authService.login(credentials);
       localStorage.setItem('token', token);
       setUser(usuario);
-              console.log('✅', 'Inicio de sesión exitoso');
+      console.log('✅', 'Inicio de sesión exitoso');
       return true;
     } catch (error) {
-              console.error('❌', error.message || 'Error al iniciar sesión');
+      console.error('❌', error.message || 'Error al iniciar sesión');
       return false;
     }
   };
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
-          console.log('✅', 'Sesión cerrada');
+    console.log('✅', 'Sesión cerrada');
     navigate('/');
   };
 
