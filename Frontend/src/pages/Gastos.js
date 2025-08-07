@@ -16,7 +16,7 @@ import {
 import { useForm } from 'react-hook-form';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
-import toast from 'react-hot-toast';
+// import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -61,11 +61,11 @@ const Gastos = () => {
       onSuccess: () => {
         queryClient.invalidateQueries('gastos');
         queryClient.invalidateQueries('gastos-estadisticas');
-        toast.success('Gasto creado exitosamente');
+        console.log('✅', 'Gasto creado exitosamente');
         setShowModal(false);
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Error al crear gasto');
+        console.error('❌', error.response?.data?.message || 'Error al crear gasto');
       }
     }
   );
@@ -76,12 +76,12 @@ const Gastos = () => {
       onSuccess: () => {
         queryClient.invalidateQueries('gastos');
         queryClient.invalidateQueries('gastos-estadisticas');
-        toast.success('Gasto actualizado exitosamente');
+        console.log('✅', 'Gasto actualizado exitosamente');
         setShowModal(false);
         setEditingGasto(null);
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Error al actualizar gasto');
+        console.error('❌', error.response?.data?.message || 'Error al actualizar gasto');
       }
     }
   );
@@ -92,10 +92,10 @@ const Gastos = () => {
       onSuccess: () => {
         queryClient.invalidateQueries('gastos');
         queryClient.invalidateQueries('gastos-estadisticas');
-        toast.success('Gasto eliminado exitosamente');
+        console.log('✅', 'Gasto eliminado exitosamente');
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Error al eliminar gasto');
+        console.error('❌', error.response?.data?.message || 'Error al eliminar gasto');
       }
     }
   );
@@ -110,12 +110,12 @@ const Gastos = () => {
         console.log('✅ Estado actualizado exitosamente:', data);
         queryClient.invalidateQueries('gastos');
         queryClient.invalidateQueries('gastos-estadisticas');
-        toast.success('Estado actualizado exitosamente');
+        console.log('✅', 'Estado actualizado exitosamente');
       },
       onError: (error) => {
         console.error('❌ Error actualizando estado:', error);
         console.error('Detalles del error:', error.response?.data);
-        toast.error(error.response?.data?.message || 'Error al actualizar estado');
+        console.error('❌', error.response?.data?.message || 'Error al actualizar estado');
       }
     }
   );
@@ -163,7 +163,7 @@ const Gastos = () => {
   // Función para imprimir historial de gastos
   const imprimirHistorialGastos = () => {
     if (!gastosData || gastosData.length === 0) {
-      toast.error('No hay datos para imprimir');
+      console.error('❌', 'No hay datos para imprimir');
       return;
     }
 

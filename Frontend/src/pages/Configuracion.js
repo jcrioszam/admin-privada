@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
-import toast from 'react-hot-toast';
+// import toast from 'react-hot-toast';
 
 const Configuracion = () => {
   const [formData, setFormData] = useState({
@@ -26,7 +26,7 @@ const Configuracion = () => {
         console.error('❌ Error response:', error.response);
         console.error('❌ Error status:', error.response?.status);
         console.error('❌ Error data:', error.response?.data);
-        toast.error('Error al cargar la configuración');
+        console.error('❌', 'Error al cargar la configuración');
         throw error; // Re-lanzar el error para que useQuery lo maneje
       }
     },
@@ -60,13 +60,13 @@ const Configuracion = () => {
     {
       onSuccess: (response) => {
         console.log('✅ Configuración actualizada exitosamente:', response.data);
-        toast.success('Configuración actualizada correctamente');
+        console.log('✅', 'Configuración actualizada correctamente');
         queryClient.invalidateQueries(['configuracion']);
       },
       onError: (error) => {
         console.error('❌ Error actualizando configuración:', error);
         console.error('❌ Error response:', error.response);
-        toast.error('Error al actualizar la configuración');
+        console.error('❌', 'Error al actualizar la configuración');
       }
     }
   );

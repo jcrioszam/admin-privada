@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PlusIcon, CreditCardIcon, CheckIcon, PrinterIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
-import toast from 'react-hot-toast';
+// import toast from 'react-hot-toast';
 
 const Pagos = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -183,17 +183,17 @@ const Pagos = () => {
            mensaje = `Pago registrado exitosamente. Excedente de $${response.data.excedente.toLocaleString()} aplicado a meses futuros.`;
          } else if (response.data.excedente > 0) {
            mensaje = `Pago registrado exitosamente. Excedente de $${response.data.excedente.toLocaleString()} disponible.`;
-         }
-         
-         toast.success(mensaje);
-         
-         // Si el pago se completó completamente, mostrar el próximo pago
-         if (response.data.pago.estado === 'Pagado' || response.data.pago.estado === 'Pagado con excedente') {
-           toast.success(`Pago completado. El próximo pago se generará automáticamente.`);
-         }
-       },
-      onError: (error) => {
-        toast.error(error.response?.data?.message || 'Error al registrar pago');
+                     }
+            
+            console.log('✅', mensaje);
+            
+            // Si el pago se completó completamente, mostrar el próximo pago
+            if (response.data.pago.estado === 'Pagado' || response.data.pago.estado === 'Pagado con excedente') {
+              console.log('✅', `Pago completado. El próximo pago se generará automáticamente.`);
+            }
+          },
+          onError: (error) => {
+            console.error('❌', error.response?.data?.message || 'Error al registrar pago');
       },
     }
   );
@@ -224,7 +224,7 @@ const Pagos = () => {
 
   const handlePagarSeleccionados = () => {
     if (selectedPagos.length === 0) {
-      toast.error('Selecciona al menos un pago para registrar');
+      console.error('❌', 'Selecciona al menos un pago para registrar');
       return;
     }
     
@@ -243,10 +243,10 @@ const Pagos = () => {
     {
       onSuccess: async (response) => {
         await queryClient.invalidateQueries('pagos');
-        toast.success(response.data.message);
+        console.log('✅', response.data.message);
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Error al actualizar residentes');
+        console.error('❌', error.response?.data?.message || 'Error al actualizar residentes');
       }
     }
   );
@@ -274,10 +274,10 @@ const Pagos = () => {
       const response = await api.get(`/api/pagos/proximo-pago/${viviendaId}`);
       if (response.data) {
         queryClient.invalidateQueries('pagos');
-        toast.success(`Próximo pago generado para ${response.data.vivienda.numero}`);
+        console.log('✅', `Próximo pago generado para ${response.data.vivienda.numero}`);
       }
     } catch (error) {
-      toast.error('Error al generar próximo pago');
+      console.error('❌', 'Error al generar próximo pago');
     }
   };
 
@@ -429,7 +429,7 @@ const Pagos = () => {
                onClick={() => {
                  queryClient.invalidateQueries('pagos');
                  queryClient.refetchQueries('pagos');
-                 toast.success('Lista actualizada');
+                 console.log('✅', 'Lista actualizada');
                }}
                className="px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700"
              >

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
-import toast from 'react-hot-toast';
+// import toast from 'react-hot-toast';
 
 const Usuarios = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,7 +24,7 @@ const Usuarios = () => {
         console.error('❌ Error response:', error.response);
         console.error('❌ Error status:', error.response?.status);
         console.error('❌ Error data:', error.response?.data);
-        toast.error('Error al cargar los usuarios');
+        console.error('❌', 'Error al cargar los usuarios');
         throw error; // Re-lanzar el error para que useQuery lo maneje
       }
     },
@@ -48,10 +48,10 @@ const Usuarios = () => {
         queryClient.invalidateQueries(['usuarios']);
         setIsModalOpen(false);
         setEditingUsuario(null);
-        toast.success(editingUsuario ? 'Usuario actualizado' : 'Usuario creado');
+        console.log('✅', editingUsuario ? 'Usuario actualizado' : 'Usuario creado');
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Error al guardar usuario');
+        console.error('❌', error.response?.data?.message || 'Error al guardar usuario');
       },
     }
   );
@@ -62,10 +62,10 @@ const Usuarios = () => {
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['usuarios']);
-        toast.success('Usuario eliminado');
+        console.log('✅', 'Usuario eliminado');
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Error al eliminar usuario');
+        console.error('❌', error.response?.data?.message || 'Error al eliminar usuario');
       },
     }
   );

@@ -1,6 +1,5 @@
 import { useState, useEffect, createContext, useContext } from 'react';
-import { authService } from '../services/authService';
-// import toast from 'react-hot-toast';
+import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext();
@@ -21,7 +20,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      authService.getProfile()
+      api.getProfile()
         .then(userData => {
           setUser(userData);
         })
@@ -38,7 +37,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     try {
-      const { token, usuario } = await authService.login(credentials);
+      const { token, usuario } = await api.login(credentials);
       localStorage.setItem('token', token);
       setUser(usuario);
               console.log('✅', 'Inicio de sesión exitoso');

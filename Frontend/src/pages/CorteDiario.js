@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { CalendarIcon, CurrencyDollarIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
-import toast from 'react-hot-toast';
+// import toast from 'react-hot-toast';
 
 const CorteDiario = () => {
   const [fechaSeleccionada, setFechaSeleccionada] = useState(new Date().toISOString().split('T')[0]);

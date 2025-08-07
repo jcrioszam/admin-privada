@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
-import toast from 'react-hot-toast';
+// import toast from 'react-hot-toast';
 
 const Viviendas = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,10 +45,10 @@ const Viviendas = () => {
         queryClient.invalidateQueries(['viviendas']);
         setIsModalOpen(false);
         setEditingVivienda(null);
-        toast.success(editingVivienda ? 'Vivienda actualizada' : 'Vivienda creada');
+        console.log('✅', editingVivienda ? 'Vivienda actualizada' : 'Vivienda creada');
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Error al guardar vivienda');
+        console.error('❌', error.response?.data?.message || 'Error al guardar vivienda');
       },
     }
   );
@@ -59,10 +59,10 @@ const Viviendas = () => {
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['viviendas']);
-        toast.success('Vivienda eliminada');
+        console.log('✅', 'Vivienda eliminada');
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Error al eliminar vivienda');
+        console.error('❌', error.response?.data?.message || 'Error al eliminar vivienda');
       },
     }
   );

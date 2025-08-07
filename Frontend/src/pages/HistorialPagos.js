@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { MagnifyingGlassIcon, FilterIcon, PrinterIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
-import toast from 'react-hot-toast';
+// import toast from 'react-hot-toast';
 
 const HistorialPagos = () => {
   const [selectedVivienda, setSelectedVivienda] = useState('');
@@ -24,7 +24,7 @@ const HistorialPagos = () => {
         console.error('❌ Error response:', error.response);
         console.error('❌ Error status:', error.response?.status);
         console.error('❌ Error data:', error.response?.data);
-        toast.error('Error al cargar las viviendas');
+        console.error('❌', 'Error al cargar las viviendas');
         throw error; // Re-lanzar el error para que useQuery lo maneje
       }
     },
@@ -76,7 +76,7 @@ const HistorialPagos = () => {
         return response.data;
       } catch (error) {
         console.error('Error cargando historial:', error);
-        toast.error('Error al cargar el historial de pagos');
+        console.error('❌', 'Error al cargar el historial de pagos');
         return [];
       }
     },
@@ -123,7 +123,7 @@ const HistorialPagos = () => {
   // Función para imprimir historial
   const imprimirHistorial = () => {
     if (!historial || historial.length === 0) {
-      toast.error('No hay datos para imprimir');
+      console.error('❌', 'No hay datos para imprimir');
       return;
     }
 
@@ -310,10 +310,10 @@ const HistorialPagos = () => {
               <button
                 onClick={() => {
                   if (!selectedVivienda) {
-                    toast.error('Por favor selecciona una vivienda');
+                    console.error('❌', 'Por favor selecciona una vivienda');
                     return;
                   }
-                  toast.success('Consultando historial...');
+                  console.log('✅', 'Consultando historial...');
                 }}
                 className="btn-primary w-full"
                 disabled={!selectedVivienda}

@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PlusIcon, PencilIcon, TrashIcon, KeyIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
-import toast from 'react-hot-toast';
 
 const Accesos = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,7 +21,7 @@ const Accesos = () => {
       } catch (error) {
         console.error('❌ Error cargando accesos:', error);
         console.error('❌ Error response:', error.response);
-        toast.error('Error al cargar los accesos');
+        console.error('❌', 'Error al cargar los accesos');
         throw error;
       }
     }
@@ -47,10 +46,10 @@ const Accesos = () => {
         queryClient.invalidateQueries(['accesos']);
         setIsModalOpen(false);
         setEditingAcceso(null);
-        toast.success(editingAcceso ? 'Acceso actualizado' : 'Acceso creado');
+        console.log('✅', editingAcceso ? 'Acceso actualizado' : 'Acceso creado');
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Error al guardar acceso');
+        console.error('❌', error.response?.data?.message || 'Error al guardar acceso');
       },
     }
   );
@@ -61,10 +60,10 @@ const Accesos = () => {
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['accesos']);
-        toast.success('Estado de acceso actualizado');
+        console.log('✅', 'Estado de acceso actualizado');
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Error al actualizar acceso');
+        console.error('❌', error.response?.data?.message || 'Error al actualizar acceso');
       },
     }
   );
@@ -75,10 +74,10 @@ const Accesos = () => {
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['accesos']);
-        toast.success('Acceso eliminado');
+        console.log('✅', 'Acceso eliminado');
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Error al eliminar acceso');
+        console.error('❌', error.response?.data?.message || 'Error al eliminar acceso');
       },
     }
   );

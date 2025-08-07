@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
-import toast from 'react-hot-toast';
+// import toast from 'react-hot-toast';
 
 const Residentes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -41,10 +41,10 @@ const Residentes = () => {
         queryClient.invalidateQueries(['residentes']);
         setIsModalOpen(false);
         setEditingResidente(null);
-        toast.success(editingResidente ? 'Residente actualizado' : 'Residente creado');
+        console.log('✅', editingResidente ? 'Residente actualizado' : 'Residente creado');
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Error al guardar residente');
+        console.error('❌', error.response?.data?.message || 'Error al guardar residente');
       },
     }
   );
@@ -55,10 +55,10 @@ const Residentes = () => {
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['residentes']);
-        toast.success('Residente eliminado');
+        console.log('✅', 'Residente eliminado');
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Error al eliminar residente');
+        console.error('❌', error.response?.data?.message || 'Error al eliminar residente');
       },
     }
   );

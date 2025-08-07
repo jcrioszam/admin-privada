@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import toast from 'react-hot-toast';
+// import toast from 'react-hot-toast';
 
 const ReporteMantenimiento = () => {
   const [periodoSeleccionado, setPeriodoSeleccionado] = useState('actual');
@@ -319,7 +319,7 @@ const ReporteMantenimiento = () => {
   // Función para imprimir lista de morosos
   const imprimirMorosos = () => {
     if (!pagos || pagos.length === 0) {
-      toast.error('No hay datos para imprimir');
+      console.error('❌', 'No hay datos para imprimir');
       return;
     }
 
@@ -362,7 +362,7 @@ const ReporteMantenimiento = () => {
     const morosos = Object.values(morososPorVivienda);
 
     if (morosos.length === 0) {
-      toast.error('No hay morosos para imprimir');
+      console.error('❌', 'No hay morosos para imprimir');
       return;
     }
 
@@ -450,7 +450,7 @@ const ReporteMantenimiento = () => {
   // Función para imprimir lista de al corriente
   const imprimirAlCorriente = () => {
     if (!pagos || pagos.length === 0) {
-      toast.error('No hay datos para imprimir');
+      console.error('❌', 'No hay datos para imprimir');
       return;
     }
 
@@ -485,7 +485,7 @@ const ReporteMantenimiento = () => {
     const alCorriente = Object.values(viviendasConPagos).filter(grupo => !grupo.tieneVencidos);
 
     if (alCorriente.length === 0) {
-      toast.error('No hay viviendas al corriente para imprimir');
+      console.error('❌', 'No hay viviendas al corriente para imprimir');
       return;
     }
 
