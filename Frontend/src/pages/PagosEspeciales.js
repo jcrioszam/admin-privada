@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import toast from 'react-hot-toast';
 
 const PagosEspeciales = () => {
   const [showForm, setShowForm] = useState(false);
@@ -67,10 +66,10 @@ const PagosEspeciales = () => {
       queryClient.invalidateQueries(['pagos-especiales-estadisticas']);
       setShowForm(false);
       resetForm();
-      toast.success(data.message || 'Pago especial creado exitosamente');
+      console.log('✅', data.message || 'Pago especial creado exitosamente');
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Error al crear el pago especial');
+      console.error('❌', error.response?.data?.message || 'Error al crear el pago especial');
     }
   });
 
@@ -86,10 +85,10 @@ const PagosEspeciales = () => {
       setShowForm(false);
       setEditingPago(null);
       resetForm();
-      toast.success('Pago especial actualizado exitosamente');
+      console.log('✅', 'Pago especial actualizado exitosamente');
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Error al actualizar el pago especial');
+      console.error('❌', error.response?.data?.message || 'Error al actualizar el pago especial');
     }
   });
 
@@ -102,10 +101,10 @@ const PagosEspeciales = () => {
     onSuccess: () => {
       queryClient.invalidateQueries(['pagos-especiales']);
       queryClient.invalidateQueries(['pagos-especiales-estadisticas']);
-      toast.success('Pago registrado exitosamente');
+      console.log('✅', 'Pago registrado exitosamente');
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Error al registrar el pago');
+      console.error('❌', error.response?.data?.message || 'Error al registrar el pago');
     }
   });
 
@@ -118,10 +117,10 @@ const PagosEspeciales = () => {
     onSuccess: () => {
       queryClient.invalidateQueries(['pagos-especiales']);
       queryClient.invalidateQueries(['pagos-especiales-estadisticas']);
-      toast.success('Pago especial eliminado exitosamente');
+      console.log('✅', 'Pago especial eliminado exitosamente');
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Error al eliminar el pago especial');
+      console.error('❌', error.response?.data?.message || 'Error al eliminar el pago especial');
     }
   });
 
