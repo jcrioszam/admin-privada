@@ -28,6 +28,15 @@ const Residentes = () => {
     }
   });
 
+  // Obtener viviendas disponibles
+  const { data: viviendasDisponibles } = useQuery({
+    queryKey: ['viviendas-disponibles'],
+    queryFn: async () => {
+      const response = await api.get('/api/residentes/viviendas/disponibles');
+      return response.data;
+    }
+  });
+
   // Crear/Actualizar residente
   const mutation = useMutation(
     (data) => {
@@ -83,24 +92,21 @@ const Residentes = () => {
     setEditingResidente(null);
   };
 
-  // Ordenar viviendas por número de manera ascendente
-  const viviendasOrdenadas = useMemo(() => {
-    if (!viviendas) return [];
+  // Ordenar viviendas disponibles
+  const viviendasDisponiblesOrdenadas = useMemo(() => {
+    if (!viviendasDisponibles) return [];
     
-    return [...viviendas].sort((a, b) => {
-      // Convertir a números si es posible, sino ordenar alfabéticamente
+    return [...viviendasDisponibles].sort((a, b) => {
       const numA = parseInt(a.numero) || 0;
       const numB = parseInt(b.numero) || 0;
       
       if (numA !== 0 && numB !== 0) {
-        // Si ambos son números, ordenar numéricamente
         return numA - numB;
       } else {
-        // Si alguno no es número, ordenar alfabéticamente
         return a.numero.localeCompare(b.numero);
       }
     });
-  }, [viviendas]);
+  }, [viviendasDisponibles]);
 
   if (isLoading) {
     return (
@@ -196,6 +202,7 @@ const Residentes = () => {
       {isModalOpen && (
         <ResidenteModal
           residente={editingResidente}
+          viviendasDisponibles={viviendasDisponiblesOrdenadas}
           viviendasOrdenadas={viviendasOrdenadas}
           onSubmit={handleSubmit}
           onClose={closeModal}
@@ -207,7 +214,7 @@ const Residentes = () => {
 };
 
 // Componente Modal
-const ResidenteModal = ({ residente, viviendasOrdenadas, onSubmit, onClose, isLoading }) => {
+const ResidenteModal = ({ residente, viviendasDisponibles, viviendasOrdenadas, onSubmit, onClose, isLoading }) => {
   const [formData, setFormData] = useState({
     vivienda: residente?.vivienda?._id || '',
     tipo: residente?.tipo || 'Dueño',
@@ -261,7 +268,14 @@ const ResidenteModal = ({ residente, viviendasOrdenadas, onSubmit, onClose, isLo
                 required
               >
                 <option value="">Seleccionar vivienda</option>
-                {viviendasOrdenadas?.map((vivienda) => (
+                {/* Si estamos editando, mostrar la vivienda actual + las disponibles */}
+                {residente && residente.vivienda && (
+                  <option value={residente.vivienda._id || residente.vivienda}>
+                    {residente.vivienda.numero} - {residente.vivienda.calle} (Actual)
+                  </option>
+                )}
+                {/* Mostrar viviendas disponibles */}
+                {viviendasDisponibles?.map((vivienda) => (
                   <option key={vivienda._id} value={vivienda._id}>
                     {vivienda.numero} - {vivienda.calle}
                   </option>
