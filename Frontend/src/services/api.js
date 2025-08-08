@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Configurar la URL base según el entorno
-const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:5000' : 'https://admin-privada.onrender.com');
+const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:5000' : 'https://admin-privada-backend.onrender.com');
 console.log('🔧 API_BASE_URL configurado como:', API_BASE_URL);
 console.log('🔧 process.env.REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
 console.log('🔧 NODE_ENV:', process.env.NODE_ENV);
