@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { formatCurrency } from '../utils/currencyFormatter';
 
 const ReporteGastosCategoria = () => {
   const [periodoSeleccionado, setPeriodoSeleccionado] = useState('actual');
@@ -168,15 +169,15 @@ const ReporteGastosCategoria = () => {
           
           <div class="summary">
             <div class="summary-item">
-              <h3>$${estadisticasCategoria.totalGeneral.toLocaleString()}</h3>
+              <h3>${formatCurrency(estadisticasCategoria.totalGeneral)}</h3>
               <p>Total General</p>
             </div>
             <div class="summary-item">
-              <h3>$${estadisticasCategoria.totalAprobados.toLocaleString()}</h3>
+              <h3>${formatCurrency(estadisticasCategoria.totalAprobados)}</h3>
               <p>Total Aprobados</p>
             </div>
             <div class="summary-item">
-              <h3>$${estadisticasCategoria.totalPendientes.toLocaleString()}</h3>
+              <h3>${formatCurrency(estadisticasCategoria.totalPendientes)}</h3>
               <p>Total Pendientes</p>
             </div>
             <div class="summary-item">
@@ -201,18 +202,18 @@ const ReporteGastosCategoria = () => {
               ${Object.entries(estadisticasCategoria.gastosPorCategoria).map(([categoria, datos]) => `
                 <tr>
                   <td class="categoria">${categoria}</td>
-                  <td>$${datos.total.toLocaleString()}</td>
-                  <td>$${datos.aprobados.toLocaleString()}</td>
-                  <td>$${datos.pendientes.toLocaleString()}</td>
+                  <td>${formatCurrency(datos.total)}</td>
+                  <td>${formatCurrency(datos.aprobados)}</td>
+                  <td>${formatCurrency(datos.pendientes)}</td>
                   <td>${datos.cantidad}</td>
                   <td>${((datos.total / estadisticasCategoria.totalGeneral) * 100).toFixed(1)}%</td>
                 </tr>
               `).join('')}
               <tr class="total">
                 <td>TOTAL</td>
-                <td>$${estadisticasCategoria.totalGeneral.toLocaleString()}</td>
-                <td>$${estadisticasCategoria.totalAprobados.toLocaleString()}</td>
-                <td>$${estadisticasCategoria.totalPendientes.toLocaleString()}</td>
+                <td>${formatCurrency(estadisticasCategoria.totalGeneral)}</td>
+                <td>${formatCurrency(estadisticasCategoria.totalAprobados)}</td>
+                <td>${formatCurrency(estadisticasCategoria.totalPendientes)}</td>
                 <td>${estadisticasCategoria.cantidadTotal}</td>
                 <td>100%</td>
               </tr>
@@ -236,7 +237,7 @@ const ReporteGastosCategoria = () => {
                   <td>${gasto.fecha ? format(new Date(gasto.fecha), 'dd/MM/yyyy', { locale: es }) : 'N/A'}</td>
                   <td>${gasto.descripcion || 'N/A'}</td>
                   <td>${determinarCategoria(gasto.descripcion || '')}</td>
-                  <td>$${(gasto.monto || 0).toLocaleString()}</td>
+                  <td>${formatCurrency((gasto.monto || 0))}</td>
                   <td>${gasto.estado || 'N/A'}</td>
                 </tr>
               `).join('')}
@@ -330,15 +331,15 @@ const ReporteGastosCategoria = () => {
       {estadisticasCategoria && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-blue-100 border border-blue-300 rounded-lg p-4">
-            <h3 className="text-2xl font-bold text-blue-600">${estadisticasCategoria.totalGeneral.toLocaleString()}</h3>
+            <h3 className="text-2xl font-bold text-blue-600">{formatCurrency(estadisticasCategoria.totalGeneral)}</h3>
             <p className="text-blue-700">Total General</p>
           </div>
           <div className="bg-green-100 border border-green-300 rounded-lg p-4">
-            <h3 className="text-2xl font-bold text-green-600">${estadisticasCategoria.totalAprobados.toLocaleString()}</h3>
+            <h3 className="text-2xl font-bold text-green-600">{formatCurrency(estadisticasCategoria.totalAprobados)}</h3>
             <p className="text-green-700">Total Aprobados</p>
           </div>
           <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-4">
-            <h3 className="text-2xl font-bold text-yellow-600">${estadisticasCategoria.totalPendientes.toLocaleString()}</h3>
+            <h3 className="text-2xl font-bold text-yellow-600">{formatCurrency(estadisticasCategoria.totalPendientes)}</h3>
             <p className="text-yellow-700">Total Pendientes</p>
           </div>
           <div className="bg-purple-100 border border-purple-300 rounded-lg p-4">
@@ -385,13 +386,13 @@ const ReporteGastosCategoria = () => {
                       {categoria}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ${datos.total.toLocaleString()}
+                      {formatCurrency(datos.total)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ${datos.aprobados.toLocaleString()}
+                      {formatCurrency(datos.aprobados)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ${datos.pendientes.toLocaleString()}
+                      {formatCurrency(datos.pendientes)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {datos.cantidad}
@@ -406,13 +407,13 @@ const ReporteGastosCategoria = () => {
                     TOTAL
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    ${estadisticasCategoria.totalGeneral.toLocaleString()}
+                    {formatCurrency(estadisticasCategoria.totalGeneral)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    ${estadisticasCategoria.totalAprobados.toLocaleString()}
+                    {formatCurrency(estadisticasCategoria.totalAprobados)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    ${estadisticasCategoria.totalPendientes.toLocaleString()}
+                    {formatCurrency(estadisticasCategoria.totalPendientes)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {estadisticasCategoria.cantidadTotal}
@@ -470,7 +471,7 @@ const ReporteGastosCategoria = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${(gasto.monto || 0).toLocaleString()}
+                    {formatCurrency((gasto.monto || 0))}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${

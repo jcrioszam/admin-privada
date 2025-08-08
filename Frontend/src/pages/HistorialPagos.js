@@ -4,6 +4,7 @@ import { MagnifyingGlassIcon, FilterIcon, PrinterIcon, DocumentArrowDownIcon } f
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 // import toast from 'react-hot-toast';
+import { formatCurrency } from '../utils/currencyFormatter';
 
 const HistorialPagos = () => {
   const [selectedVivienda, setSelectedVivienda] = useState('');
@@ -165,11 +166,11 @@ const HistorialPagos = () => {
         
         <div class="stats">
           <div class="stat">
-            <div class="stat-value">${historial.reduce((sum, pago) => sum + (pago.montoPagado || 0), 0).toLocaleString()}</div>
+            <div class="stat-value">{formatCurrency(historial.reduce((sum, pago) => sum + (pago.montoPagado || 0), 0))}</div>
             <div class="stat-label">Total Pagado</div>
           </div>
           <div class="stat">
-            <div class="stat-value">${historial.reduce((sum, pago) => sum + calcularRecargo(pago), 0).toLocaleString()}</div>
+            <div class="stat-value">{formatCurrency(historial.reduce((sum, pago) => sum + calcularRecargo(pago), 0))}</div>
             <div class="stat-label">Total Recargos</div>
           </div>
           <div class="stat">
@@ -201,10 +202,10 @@ const HistorialPagos = () => {
                 <tr>
                   <td>${vivienda?.numero || 'N/A'}</td>
                   <td>${pago.mes}/${pago.año}</td>
-                  <td>$${pago.monto?.toLocaleString()}</td>
-                  <td>$${(pago.montoPagado || 0).toLocaleString()}</td>
-                  <td>$${saldoPendiente.toLocaleString()}</td>
-                  <td>$${recargo.toLocaleString()}</td>
+                  <td>${formatCurrency(pago.monto)}</td>
+                  <td>${formatCurrency((pago.montoPagado || 0))}</td>
+                  <td>${formatCurrency(saldoPendiente)}</td>
+                  <td>${formatCurrency(recargo)}</td>
                   <td><span class="badge badge-${getEstadoBadge(pago.estado).replace('badge-', '')}">${pago.estado}</span></td>
                   <td>${pago.fechaPago ? formatFecha(pago.fechaPago) : '-'}</td>
                 </tr>
@@ -408,22 +409,22 @@ const HistorialPagos = () => {
                             </div>
                           </td>
                           <td className="table-cell">
-                            ${pago.monto?.toLocaleString()}
+                            {formatCurrency(pago.monto)}
                           </td>
                           <td className="table-cell">
-                            ${(pago.montoPagado || 0).toLocaleString()}
+                            {formatCurrency((pago.montoPagado || 0))}
                           </td>
                           <td className="table-cell">
                             <span className={`font-medium ${
                               saldoPendiente > 0 ? 'text-red-600' : 'text-green-600'
                             }`}>
-                              ${saldoPendiente.toLocaleString()}
+                              {formatCurrency(saldoPendiente)}
                             </span>
                           </td>
                           <td className="table-cell">
                             {recargo > 0 ? (
                               <span className="text-red-600 font-medium">
-                                ${recargo.toLocaleString()}
+                                {formatCurrency(recargo)}
                               </span>
                             ) : (
                               <span className="text-green-600">$0</span>
@@ -467,7 +468,7 @@ const HistorialPagos = () => {
           <div className="bg-white p-4 rounded-lg shadow">
             <div className="text-sm text-gray-500">Total Pagado</div>
             <div className="text-2xl font-bold text-green-600">
-              ${historial.reduce((sum, pago) => sum + (pago.montoPagado || 0), 0).toLocaleString()}
+              {formatCurrency(historial.reduce((sum, pago) => sum + (pago.montoPagado || 0), 0))}
             </div>
           </div>
           <div className="bg-white p-4 rounded-lg shadow">
@@ -485,7 +486,7 @@ const HistorialPagos = () => {
           <div className="bg-white p-4 rounded-lg shadow">
             <div className="text-sm text-gray-500">Total Recargos</div>
             <div className="text-2xl font-bold text-red-600">
-              ${historial.reduce((sum, pago) => sum + calcularRecargo(pago), 0).toLocaleString()}
+              {formatCurrency(historial.reduce((sum, pago) => sum + calcularRecargo(pago), 0))}
             </div>
           </div>
         </div>

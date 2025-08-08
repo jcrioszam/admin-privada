@@ -19,6 +19,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 // import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { formatCurrency } from '../utils/currencyFormatter';
 
 // Módulo de Control de Gastos - Forzar despliegue
 const Gastos = () => {
@@ -201,11 +202,11 @@ const Gastos = () => {
         
         <div class="stats">
           <div class="stat">
-            <div class="stat-value">${gastosData.reduce((sum, gasto) => sum + (gasto.monto || 0), 0).toLocaleString()}</div>
+            <div class="stat-value">{formatCurrency(gastosData.reduce((sum, gasto) => sum + (gasto.monto || 0), 0))}</div>
             <div class="stat-label">Total Gastos</div>
           </div>
           <div class="stat">
-            <div class="stat-value">${gastosData.filter(g => g.estado === 'Aprobado').reduce((sum, gasto) => sum + (gasto.monto || 0), 0).toLocaleString()}</div>
+            <div class="stat-value">{formatCurrency(gastosData.filter(g => g.estado === 'Aprobado').reduce((sum, gasto) => sum + (gasto.monto || 0), 0))}</div>
             <div class="stat-label">Total Aprobados</div>
           </div>
           <div class="stat">
@@ -232,7 +233,7 @@ const Gastos = () => {
                   <td>${new Date(gasto.fecha).toLocaleDateString('es-ES')}</td>
                   <td>${gasto.categoria}</td>
                   <td>${gasto.descripcion}</td>
-                  <td>$${(gasto.monto || 0).toLocaleString()}</td>
+                  <td>${formatCurrency((gasto.monto || 0))}</td>
                   <td><span class="badge badge-${gasto.estado.toLowerCase()}">${gasto.estado}</span></td>
                   <td>${gasto.responsable || '-'}</td>
                 </tr>
@@ -470,7 +471,7 @@ const Gastos = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    ${gasto.monto.toLocaleString()}
+                    {formatCurrency(gasto.monto)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {format(new Date(gasto.fecha), 'dd/MM/yyyy', { locale: es })}

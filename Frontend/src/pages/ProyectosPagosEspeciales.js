@@ -6,6 +6,7 @@ import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { formatCurrency } from '../utils/currencyFormatter';
 
 const ProyectosPagosEspeciales = () => {
   const [showForm, setShowForm] = useState(false);
@@ -180,7 +181,7 @@ const ProyectosPagosEspeciales = () => {
              <div className="ml-3">
                <p className="text-sm font-medium text-green-600">Total Recaudado</p>
                <p className="text-2xl font-bold text-green-900">
-                 ${estadisticas.totalRecaudado.toLocaleString()}
+                 {formatCurrency(estadisticas.totalRecaudado)}
                </p>
              </div>
            </div>
@@ -242,7 +243,7 @@ const ProyectosPagosEspeciales = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="nombre" angle={-45} textAnchor="end" height={80} />
                 <YAxis />
-                <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Monto']} />
+                <Tooltip formatter={(value) => [formatCurrency(value), 'Monto']} />
                 <Legend />
                 <Bar dataKey="recaudado" fill="#3B82F6" name="Recaudado" />
                 <Bar dataKey="meta" fill="#EF4444" name="Meta" />
@@ -290,10 +291,10 @@ const ProyectosPagosEspeciales = () => {
                          <td className="table-cell font-medium">{proyecto.nombre}</td>
                          <td className="table-cell">{proyecto.descripcion}</td>
                          <td className="table-cell">
-                           ${proyecto.montoProyecto?.toLocaleString() || '0'}
+                           {formatCurrency(proyecto.montoProyecto || 0)}
                          </td>
                          <td className="table-cell">
-                           ${proyecto.cantidadPagar.toLocaleString()}
+                           {formatCurrency(proyecto.cantidadPagar)}
                          </td>
                          <td className="table-cell">
                            {format(new Date(proyecto.fechaLimite), 'dd/MM/yyyy', { locale: es })}
@@ -319,7 +320,7 @@ const ProyectosPagosEspeciales = () => {
                              </span>
                            </div>
                            <div className="text-xs text-gray-500 mt-1">
-                             ${estadisticasProyecto.totalRecaudado.toLocaleString()} recaudado
+                             {formatCurrency(estadisticasProyecto.totalRecaudado)} recaudado
                            </div>
                          </td>
                          <td className="table-cell">
@@ -400,7 +401,7 @@ const ProyectosPagosEspeciales = () => {
                                              {pago.residente?.nombre} {pago.residente?.apellidos}
                                            </td>
                                            <td className="px-4 py-2 whitespace-nowrap text-sm text-green-600 font-medium">
-                                             ${pago.montoPagado.toLocaleString()}
+                                             {formatCurrency(pago.montoPagado)}
                                            </td>
                                            <td className="px-4 py-2 whitespace-nowrap">
                                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${

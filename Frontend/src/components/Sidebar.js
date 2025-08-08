@@ -38,6 +38,7 @@ const navigation = [
 
 const reportes = [
   { name: 'Reporte de Proyectos', href: '/reporte-proyectos', icon: DocumentChartBarIcon, color: 'text-indigo-600' },
+  { name: 'Reporte de Proyectos Especiales', href: '/reporte-proyectos-especiales', icon: CurrencyDollarIcon, color: 'text-yellow-600' },
   { name: 'Reporte de Morosidad', href: '/reporte-morosidad', icon: ExclamationTriangleIcon, color: 'text-red-500' },
   { name: 'Reporte de Flujo de Caja', href: '/reporte-flujo-caja', icon: ChartBarIcon, color: 'text-blue-600' },
   { name: 'Reporte de Gastos por Categoría', href: '/reporte-gastos-categoria', icon: ChartPieIcon, color: 'text-pink-500' },

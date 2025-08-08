@@ -27,6 +27,12 @@ const pagoEspecialSchema = new mongoose.Schema({
     min: 0,
     default: 0
   },
+  montoPorVivienda: {
+    type: Number,
+    required: false,
+    min: 0,
+    default: 0
+  },
   fechaLimite: {
     type: Date,
     required: true

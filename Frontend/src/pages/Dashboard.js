@@ -12,6 +12,7 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { formatCurrency } from '../utils/currencyFormatter';
 
 const Dashboard = () => {
   // Obtener estadísticas de viviendas

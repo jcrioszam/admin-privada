@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { CalendarIcon, CurrencyDollarIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { formatCurrency } from '../utils/currencyFormatter';
 // import toast from 'react-hot-toast';
 
 const CorteDiario = () => {
@@ -134,7 +135,7 @@ const CorteDiario = () => {
             <div className="ml-3">
               <div className="text-sm text-gray-500">Total del Día</div>
               <div className="text-2xl font-bold text-green-600">
-                ${totales.total.toLocaleString()}
+                {formatCurrency(totales.total)}
               </div>
             </div>
           </div>
@@ -163,7 +164,7 @@ const CorteDiario = () => {
             <div className="ml-3">
               <div className="text-sm text-gray-500">Promedio por Pago</div>
               <div className="text-2xl font-bold text-yellow-600">
-                ${pagosDelDia?.length > 0 ? (totales.total / pagosDelDia.length).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '0'}
+                {pagosDelDia?.length > 0 ? formatCurrency(totales.total / pagosDelDia.length) : formatCurrency(0)}
               </div>
             </div>
           </div>
@@ -191,7 +192,7 @@ const CorteDiario = () => {
             <div className="ml-3">
               <div className="text-sm text-gray-500">Pagos Especiales</div>
               <div className="text-2xl font-bold text-orange-600">
-                ${totales.totalPagosEspeciales.toLocaleString()}
+                {formatCurrency(totales.totalPagosEspeciales)}
               </div>
             </div>
           </div>
@@ -206,7 +207,7 @@ const CorteDiario = () => {
             {Object.entries(totales.porMetodo).map(([metodo, monto]) => (
               <div key={metodo} className="text-center p-3 bg-gray-50 rounded-lg">
                 <div className="text-sm text-gray-600">{metodo}</div>
-                <div className="text-lg font-bold text-gray-900">${monto.toLocaleString()}</div>
+                <div className="text-lg font-bold text-gray-900">{formatCurrency(monto)}</div>
               </div>
             ))}
           </div>
@@ -285,7 +286,7 @@ const CorteDiario = () => {
                       </span>
                     </td>
                     <td className="table-cell font-medium text-green-600">
-                      ${(pago.montoPagado || 0).toLocaleString()}
+                      {formatCurrency(pago.montoPagado || 0)}
                     </td>
                     <td className="table-cell text-sm text-gray-600">
                       {pago.referenciaPago || '-'}

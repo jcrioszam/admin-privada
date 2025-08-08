@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { formatCurrency } from '../utils/currencyFormatter';
 
 const ReporteMorosidad = () => {
   const [filtroEstado, setFiltroEstado] = useState('todos');
@@ -251,7 +252,7 @@ const ReporteMorosidad = () => {
                   <td class="${pago.vencido ? 'vencido' : pago.dentroDelPlazo ? 'al-corriente' : 'pendiente'}">
                     ${pago.vencido ? 'Vencido' : pago.dentroDelPlazo ? 'Al Corriente' : 'Pendiente'}
                   </td>
-                  <td>$${(pago.monto || 0).toLocaleString()}</td>
+                  <td>${formatCurrency((pago.monto || 0))}</td>
                   <td>${pago.fechaLimite ? format(new Date(pago.fechaLimite), 'dd/MM/yyyy', { locale: es }) : 'N/A'}</td>
                   <td>${pago.vencido ? Math.ceil((new Date() - new Date(pago.fechaLimite)) / (1000 * 60 * 60 * 24)) : '-'}</td>
                 </tr>
@@ -303,7 +304,7 @@ const ReporteMorosidad = () => {
             <p className="text-green-700">Al Corriente</p>
           </div>
           <div className="bg-blue-100 border border-blue-300 rounded-lg p-4">
-            <h3 className="text-2xl font-bold text-blue-600">${estadisticas.montoTotalVencido.toLocaleString()}</h3>
+            <h3 className="text-2xl font-bold text-blue-600">{formatCurrency(estadisticas.montoTotalVencido)}</h3>
             <p className="text-blue-700">Monto Vencido</p>
           </div>
           <div className="bg-orange-100 border border-orange-300 rounded-lg p-4">
@@ -393,7 +394,7 @@ const ReporteMorosidad = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${(pago.monto || 0).toLocaleString()}
+                    {formatCurrency((pago.monto || 0))}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {pago.fechaLimite ? format(new Date(pago.fechaLimite), 'dd/MM/yyyy', { locale: es }) : 'N/A'}

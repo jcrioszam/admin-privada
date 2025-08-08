@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { formatCurrency } from '../utils/currencyFormatter';
 
 const ReporteFlujoCaja = () => {
   const [periodoSeleccionado, setPeriodoSeleccionado] = useState('actual');
@@ -157,19 +158,19 @@ const ReporteFlujoCaja = () => {
           
           <div class="summary">
             <div class="summary-item">
-              <h3>$${flujoCaja.ingresos.pagados.toLocaleString()}</h3>
+              <h3>${formatCurrency(flujoCaja.ingresos.pagados)}</h3>
               <p>Ingresos Pagados</p>
             </div>
             <div class="summary-item">
-              <h3>$${flujoCaja.gastos.aprobados.toLocaleString()}</h3>
+              <h3>${formatCurrency(flujoCaja.gastos.aprobados)}</h3>
               <p>Gastos Aprobados</p>
             </div>
             <div class="summary-item">
-              <h3 class="${flujoCaja.balance.actual >= 0 ? 'positive' : 'negative'}">$${flujoCaja.balance.actual.toLocaleString()}</h3>
+              <h3 class="${flujoCaja.balance.actual >= 0 ? 'positive' : 'negative'}">${formatCurrency(flujoCaja.balance.actual)}</h3>
               <p>Balance Actual</p>
             </div>
             <div class="summary-item">
-              <h3 class="${flujoCaja.balance.proyeccion >= 0 ? 'positive' : 'negative'}">$${flujoCaja.balance.proyeccion.toLocaleString()}</h3>
+              <h3 class="${flujoCaja.balance.proyeccion >= 0 ? 'positive' : 'negative'}">${formatCurrency(flujoCaja.balance.proyeccion)}</h3>
               <p>Proyección</p>
             </div>
           </div>
@@ -190,7 +191,7 @@ const ReporteFlujoCaja = () => {
                 <tr>
                   <td>${pago.vivienda?.numero || 'N/A'}</td>
                   <td>${pago.residente?.nombre || 'N/A'}</td>
-                  <td>$${(pago.montoPagado || pago.monto || 0).toLocaleString()}</td>
+                  <td>${formatCurrency((pago.montoPagado || pago.monto || 0))}</td>
                   <td>${pago.fechaPago ? format(new Date(pago.fechaPago), 'dd/MM/yyyy', { locale: es }) : 'N/A'}</td>
                   <td>${pago.pagado ? 'Pagado' : 'Pendiente'}</td>
                 </tr>
@@ -212,7 +213,7 @@ const ReporteFlujoCaja = () => {
               ${flujoCaja.detalles.gastos.map(gasto => `
                 <tr>
                   <td>${gasto.descripcion || 'N/A'}</td>
-                  <td>$${(gasto.monto || 0).toLocaleString()}</td>
+                  <td>${formatCurrency((gasto.monto || 0))}</td>
                   <td>${gasto.fecha ? format(new Date(gasto.fecha), 'dd/MM/yyyy', { locale: es }) : 'N/A'}</td>
                   <td>${gasto.estado || 'N/A'}</td>
                 </tr>
@@ -295,24 +296,24 @@ const ReporteFlujoCaja = () => {
         <>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-green-100 border border-green-300 rounded-lg p-4">
-              <h3 className="text-2xl font-bold text-green-600">${flujoCaja.ingresos.pagados.toLocaleString()}</h3>
+              <h3 className="text-2xl font-bold text-green-600">{formatCurrency(flujoCaja.ingresos.pagados)}</h3>
               <p className="text-green-700">Ingresos Pagados</p>
               <p className="text-sm text-green-600">{flujoCaja.ingresos.cantidadPagados} pagos</p>
             </div>
             <div className="bg-red-100 border border-red-300 rounded-lg p-4">
-              <h3 className="text-2xl font-bold text-red-600">${flujoCaja.gastos.aprobados.toLocaleString()}</h3>
+              <h3 className="text-2xl font-bold text-red-600">{formatCurrency(flujoCaja.gastos.aprobados)}</h3>
               <p className="text-red-700">Gastos Aprobados</p>
               <p className="text-sm text-red-600">{flujoCaja.gastos.cantidadAprobados} gastos</p>
             </div>
             <div className={`border rounded-lg p-4 ${flujoCaja.balance.actual >= 0 ? 'bg-green-100 border-green-300' : 'bg-red-100 border-red-300'}`}>
               <h3 className={`text-2xl font-bold ${flujoCaja.balance.actual >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                ${flujoCaja.balance.actual.toLocaleString()}
+                {formatCurrency(flujoCaja.balance.actual)}
               </h3>
               <p className={flujoCaja.balance.actual >= 0 ? 'text-green-700' : 'text-red-700'}>Balance Actual</p>
             </div>
             <div className={`border rounded-lg p-4 ${flujoCaja.balance.proyeccion >= 0 ? 'bg-blue-100 border-blue-300' : 'bg-orange-100 border-orange-300'}`}>
               <h3 className={`text-2xl font-bold ${flujoCaja.balance.proyeccion >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
-                ${flujoCaja.balance.proyeccion.toLocaleString()}
+                {formatCurrency(flujoCaja.balance.proyeccion)}
               </h3>
               <p className={flujoCaja.balance.proyeccion >= 0 ? 'text-blue-700' : 'text-orange-700'}>Proyección</p>
             </div>
@@ -323,14 +324,14 @@ const ReporteFlujoCaja = () => {
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-lg font-semibold mb-4">Ingresos Pendientes</h3>
               <div className="text-3xl font-bold text-yellow-600 mb-2">
-                ${flujoCaja.ingresos.pendientes.toLocaleString()}
+                {formatCurrency(flujoCaja.ingresos.pendientes)}
               </div>
               <p className="text-sm text-gray-600">{flujoCaja.ingresos.cantidadPendientes} pagos pendientes</p>
             </div>
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-lg font-semibold mb-4">Gastos Pendientes</h3>
               <div className="text-3xl font-bold text-orange-600 mb-2">
-                ${flujoCaja.gastos.pendientes.toLocaleString()}
+                {formatCurrency(flujoCaja.gastos.pendientes)}
               </div>
               <p className="text-sm text-gray-600">{flujoCaja.gastos.cantidadPendientes} gastos pendientes</p>
             </div>
@@ -396,7 +397,7 @@ const ReporteFlujoCaja = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ${(transaccion.monto || transaccion.montoPagado || 0).toLocaleString()}
+                        {formatCurrency((transaccion.monto || transaccion.montoPagado || 0))}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${

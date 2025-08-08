@@ -7,7 +7,8 @@ import {
   ClockIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
-  ArrowDownTrayIcon
+  ArrowDownTrayIcon,
+  HomeIcon
 } from '@heroicons/react/24/outline';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { format, parseISO, isAfter, isBefore, addDays } from 'date-fns';
@@ -16,17 +17,17 @@ import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatCurrency } from '../utils/currencyFormatter';
 
-const ReporteProyectos = () => {
+const ReporteProyectosEspeciales = () => {
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [filtroFecha, setFiltroFecha] = useState('todos');
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
 
-  // Obtener todos los proyectos
-  const { data: proyectos, isLoading } = useQuery({
-    queryKey: ['proyectos-reporte'],
+  // Obtener todos los pagos especiales (proyectos)
+  const { data: pagosEspeciales, isLoading } = useQuery({
+    queryKey: ['pagos-especiales-reporte'],
     queryFn: async () => {
-      const response = await api.get('/api/proyectos-pagos-especiales');
+      const response = await api.get('/api/pagos-especiales');
       return response.data;
     },
     refetchInterval: 30000
@@ -34,23 +35,28 @@ const ReporteProyectos = () => {
 
   // Calcular estadísticas generales
   const estadisticas = useMemo(() => {
-    if (!proyectos) return null;
+    if (!pagosEspeciales) return null;
 
-    const total = proyectos.length;
-    const activos = proyectos.filter(p => p.estado === 'Activo').length;
-    const completados = proyectos.filter(p => p.estado === 'Completado').length;
-    const vencidos = proyectos.filter(p => {
+    const total = pagosEspeciales.length;
+    const activos = pagosEspeciales.filter(p => p.estado === 'Activo').length;
+    const completados = pagosEspeciales.filter(p => p.estado === 'Completado').length;
+    const vencidos = pagosEspeciales.filter(p => {
       const fechaLimite = new Date(p.fechaLimite);
       const hoy = new Date();
       return p.estado === 'Activo' && isAfter(hoy, fechaLimite);
     }).length;
 
-    const totalRecaudado = proyectos.reduce((sum, proyecto) => {
-      return sum + (proyecto.pagosRealizados?.reduce((pSum, pago) => pSum + pago.montoPagado, 0) || 0);
+    const totalRecaudado = pagosEspeciales.reduce((sum, pago) => {
+      return sum + (pago.pagosRealizados?.reduce((pSum, pagoRealizado) => pSum + pagoRealizado.montoPagado, 0) || 0);
     }, 0);
 
-    const totalEsperado = proyectos.reduce((sum, proyecto) => sum + (proyecto.montoProyecto || 0), 0);
-    const totalViviendasPagadas = proyectos.reduce((sum, proyecto) => sum + (proyecto.pagosRealizados?.length || 0), 0);
+    const totalEsperado = pagosEspeciales.reduce((sum, pago) => {
+      const cantidadPagar = pago.cantidadPagar || 0;
+      const viviendasAsignadas = pago.aplicaATodasLasViviendas ? 25 : (pago.viviendasSeleccionadas?.length || 0);
+      return sum + (cantidadPagar * viviendasAsignadas);
+    }, 0);
+
+    const totalViviendasPagadas = pagosEspeciales.reduce((sum, pago) => sum + (pago.pagosRealizados?.length || 0), 0);
 
     return {
       total,
@@ -62,13 +68,13 @@ const ReporteProyectos = () => {
       totalViviendasPagadas,
       porcentajeRecaudado: totalEsperado > 0 ? (totalRecaudado / totalEsperado) * 100 : 0
     };
-  }, [proyectos]);
+  }, [pagosEspeciales]);
 
-  // Filtrar proyectos
-  const proyectosFiltrados = useMemo(() => {
-    if (!proyectos) return [];
+  // Filtrar pagos especiales
+  const pagosFiltrados = useMemo(() => {
+    if (!pagosEspeciales) return [];
 
-    let filtrados = [...proyectos];
+    let filtrados = [...pagosEspeciales];
 
     // Filtro por estado
     if (filtroEstado !== 'todos') {
@@ -103,11 +109,11 @@ const ReporteProyectos = () => {
     }
 
     return filtrados;
-  }, [proyectos, filtroEstado, filtroFecha, fechaInicio, fechaFin]);
+  }, [pagosEspeciales, filtroEstado, filtroFecha, fechaInicio, fechaFin]);
 
   // Datos para gráficas
   const datosGraficas = useMemo(() => {
-    if (!proyectos) return { estados: [], recaudacion: [], progreso: [] };
+    if (!pagosEspeciales) return { estados: [], recaudacion: [], progreso: [] };
 
     const estados = [
       { name: 'Activos', value: estadisticas?.activos || 0, color: '#3B82F6' },
@@ -115,50 +121,59 @@ const ReporteProyectos = () => {
       { name: 'Vencidos', value: estadisticas?.vencidos || 0, color: '#EF4444' }
     ];
 
-    const recaudacion = proyectos.map(proyecto => {
-      const recaudado = proyecto.pagosRealizados?.reduce((sum, pago) => sum + pago.montoPagado, 0) || 0;
-      const meta = proyecto.montoProyecto || 0;
+    const recaudacion = pagosEspeciales.map(pago => {
+      const recaudado = pago.pagosRealizados?.reduce((sum, pagoRealizado) => sum + pagoRealizado.montoPagado, 0) || 0;
+      const cantidadPagar = pago.cantidadPagar || 0;
+      const viviendasAsignadas = pago.aplicaATodasLasViviendas ? 25 : (pago.viviendasSeleccionadas?.length || 0);
+      const meta = cantidadPagar * viviendasAsignadas;
+      
       return {
-        nombre: proyecto.nombre.length > 15 ? proyecto.nombre.substring(0, 15) + '...' : proyecto.nombre,
+        nombre: pago.tipo.length > 15 ? pago.tipo.substring(0, 15) + '...' : pago.tipo,
         recaudado,
         meta,
         progreso: meta > 0 ? (recaudado / meta) * 100 : 0
       };
     });
 
-    const progreso = proyectos.map(proyecto => {
-      const totalViviendas = 25; // Asumiendo 25 viviendas por defecto
-      const viviendasPagadas = proyecto.pagosRealizados?.length || 0;
-      const porcentaje = (viviendasPagadas / totalViviendas) * 100;
+    const progreso = pagosEspeciales.map(pago => {
+      const viviendasAsignadas = pago.aplicaATodasLasViviendas ? 25 : (pago.viviendasSeleccionadas?.length || 0);
+      const viviendasPagadas = pago.pagosRealizados?.length || 0;
+      const porcentaje = viviendasAsignadas > 0 ? (viviendasPagadas / viviendasAsignadas) * 100 : 0;
       
       return {
-        nombre: proyecto.nombre.length > 15 ? proyecto.nombre.substring(0, 15) + '...' : proyecto.nombre,
+        nombre: pago.tipo.length > 15 ? pago.tipo.substring(0, 15) + '...' : pago.tipo,
         viviendas: viviendasPagadas,
+        total: viviendasAsignadas,
         porcentaje: Math.min(porcentaje, 100)
       };
     });
 
     return { estados, recaudacion, progreso };
-  }, [proyectos, estadisticas]);
+  }, [pagosEspeciales, estadisticas]);
 
   const exportarReporte = () => {
     // Preparar datos para exportación
-    const datosExport = proyectosFiltrados.map(proyecto => {
-      const recaudado = proyecto.pagosRealizados?.reduce((sum, pago) => sum + pago.montoPagado, 0) || 0;
-      const viviendasPagadas = proyecto.pagosRealizados?.length || 0;
-      const totalViviendas = 25; // Asumiendo 25 viviendas
-      const progreso = (viviendasPagadas / totalViviendas) * 100;
+    const datosExport = pagosFiltrados.map(pago => {
+      const recaudado = pago.pagosRealizados?.reduce((sum, pagoRealizado) => sum + pagoRealizado.montoPagado, 0) || 0;
+      const viviendasPagadas = pago.pagosRealizados?.length || 0;
+      const viviendasAsignadas = pago.aplicaATodasLasViviendas ? 25 : (pago.viviendasSeleccionadas?.length || 0);
+      const progreso = viviendasAsignadas > 0 ? (viviendasPagadas / viviendasAsignadas) * 100 : 0;
+      const cantidadPagar = pago.cantidadPagar || 0;
+      const meta = cantidadPagar * viviendasAsignadas;
 
       return {
-        Proyecto: proyecto.nombre,
-        Descripción: proyecto.descripcion,
-        Estado: proyecto.estado,
-        'Fecha Límite': format(new Date(proyecto.fechaLimite), 'dd/MM/yyyy', { locale: es }),
-        'Monto Esperado': `$${proyecto.montoProyecto?.toLocaleString() || '0'}`,
+        'Proyecto': pago.tipo,
+        'Descripción': pago.descripcion,
+        'Estado': pago.estado,
+        'Fecha Límite': format(new Date(pago.fechaLimite), 'dd/MM/yyyy', { locale: es }),
+        'Cantidad por Vivienda': `$${cantidadPagar?.toLocaleString() || '0'}`,
+        'Viviendas Asignadas': viviendasAsignadas,
+        'Meta Total': `${formatCurrency(meta)}`,
         'Monto Recaudado': `${formatCurrency(recaudado)}`,
-        'Viviendas Pagadas': `${viviendasPagadas}/${totalViviendas}`,
+        'Viviendas Pagadas': `${viviendasPagadas}/${viviendasAsignadas}`,
         'Progreso %': `${progreso.toFixed(1)}%`,
-        'Fecha Creación': format(new Date(proyecto.fechaCreacion), 'dd/MM/yyyy', { locale: es })
+        'Aplica a Todas': pago.aplicaATodasLasViviendas ? 'Sí' : 'No',
+        'Fecha Creación': format(new Date(pago.fechaCreacion), 'dd/MM/yyyy', { locale: es })
       };
     });
 
@@ -175,7 +190,7 @@ const ReporteProyectos = () => {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `reporte_proyectos_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    link.download = `reporte_proyectos_especiales_${format(new Date(), 'yyyy-MM-dd')}.csv`;
     link.click();
   };
 
@@ -192,7 +207,7 @@ const ReporteProyectos = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reporte de Proyectos</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Reporte de Proyectos Especiales</h1>
           <p className="mt-1 text-sm text-gray-500">
             Análisis detallado de proyectos de pagos especiales
           </p>
@@ -389,7 +404,7 @@ const ReporteProyectos = () => {
       <div className="card">
         <div className="card-body">
           <h3 className="text-lg font-medium text-gray-900 mb-4">
-            Proyectos Detallados ({proyectosFiltrados.length})
+            Proyectos Detallados ({pagosFiltrados.length})
           </h3>
           <div className="overflow-x-auto">
             <table className="table">
@@ -401,32 +416,35 @@ const ReporteProyectos = () => {
                   <th>Progreso</th>
                   <th>Recaudación</th>
                   <th>Viviendas</th>
+                  <th>Cantidad/Vivienda</th>
                 </tr>
               </thead>
               <tbody>
-                {proyectosFiltrados.map((proyecto) => {
-                  const recaudado = proyecto.pagosRealizados?.reduce((sum, pago) => sum + pago.montoPagado, 0) || 0;
-                  const viviendasPagadas = proyecto.pagosRealizados?.length || 0;
-                  const totalViviendas = 25; // Asumiendo 25 viviendas
-                  const progreso = (viviendasPagadas / totalViviendas) * 100;
-                  const fechaLimite = new Date(proyecto.fechaLimite);
+                {pagosFiltrados.map((pago) => {
+                  const recaudado = pago.pagosRealizados?.reduce((sum, pagoRealizado) => sum + pagoRealizado.montoPagado, 0) || 0;
+                  const viviendasPagadas = pago.pagosRealizados?.length || 0;
+                  const viviendasAsignadas = pago.aplicaATodasLasViviendas ? 25 : (pago.viviendasSeleccionadas?.length || 0);
+                  const progreso = viviendasAsignadas > 0 ? (viviendasPagadas / viviendasAsignadas) * 100 : 0;
+                  const fechaLimite = new Date(pago.fechaLimite);
                   const hoy = new Date();
-                  const estaVencido = proyecto.estado === 'Activo' && isAfter(hoy, fechaLimite);
+                  const estaVencido = pago.estado === 'Activo' && isAfter(hoy, fechaLimite);
+                  const cantidadPagar = pago.cantidadPagar || 0;
+                  const meta = cantidadPagar * viviendasAsignadas;
 
                   return (
-                    <tr key={proyecto._id} className={estaVencido ? 'bg-red-50' : ''}>
+                    <tr key={pago._id} className={estaVencido ? 'bg-red-50' : ''}>
                       <td>
                         <div>
-                          <div className="font-medium text-gray-900">{proyecto.nombre}</div>
-                          <div className="text-sm text-gray-500">{proyecto.descripcion}</div>
+                          <div className="font-medium text-gray-900">{pago.tipo}</div>
+                          <div className="text-sm text-gray-500">{pago.descripcion}</div>
                         </div>
                       </td>
                       <td>
                         <span className={`badge ${
-                          proyecto.estado === 'Activo' ? (estaVencido ? 'badge-danger' : 'badge-success') :
-                          proyecto.estado === 'Completado' ? 'badge-info' : 'badge-warning'
+                          pago.estado === 'Activo' ? (estaVencido ? 'badge-danger' : 'badge-success') :
+                          pago.estado === 'Completado' ? 'badge-info' : 'badge-warning'
                         }`}>
-                          {estaVencido ? 'Vencido' : proyecto.estado}
+                          {estaVencido ? 'Vencido' : pago.estado}
                         </span>
                       </td>
                       <td className={estaVencido ? 'text-red-600 font-medium' : ''}>
@@ -451,13 +469,18 @@ const ReporteProyectos = () => {
                             {formatCurrency(recaudado)}
                           </div>
                           <div className="text-gray-500">
-                            de ${proyecto.montoProyecto?.toLocaleString() || '0'}
+                            de {formatCurrency(meta)}
                           </div>
                         </div>
                       </td>
                       <td>
                         <span className="text-sm font-medium">
-                          {viviendasPagadas}/{totalViviendas}
+                          {viviendasPagadas}/{viviendasAsignadas}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="text-sm font-medium text-gray-600">
+                          {formatCurrency(cantidadPagar)}
                         </span>
                       </td>
                     </tr>
@@ -465,7 +488,7 @@ const ReporteProyectos = () => {
                 })}
               </tbody>
             </table>
-            {proyectosFiltrados.length === 0 && (
+            {pagosFiltrados.length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 No hay proyectos que coincidan con los filtros seleccionados
               </div>
@@ -477,4 +500,4 @@ const ReporteProyectos = () => {
   );
 };
 
-export default ReporteProyectos;
+export default ReporteProyectosEspeciales;

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PlusIcon, CreditCardIcon, CheckIcon, PrinterIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { formatCurrency } from '../utils/currencyFormatter';
 // import toast from 'react-hot-toast';
 
 const Pagos = () => {
@@ -180,9 +181,9 @@ const Pagos = () => {
          // Mostrar mensaje de éxito
          let mensaje = 'Pago registrado exitosamente';
          if (response.data.excedente > 0 && response.data.aplicadoAMesesFuturos) {
-           mensaje = `Pago registrado exitosamente. Excedente de $${response.data.excedente.toLocaleString()} aplicado a meses futuros.`;
+           mensaje = `Pago registrado exitosamente. Excedente de ${formatCurrency(response.data.excedente)} aplicado a meses futuros.`;
          } else if (response.data.excedente > 0) {
-           mensaje = `Pago registrado exitosamente. Excedente de $${response.data.excedente.toLocaleString()} disponible.`;
+           mensaje = `Pago registrado exitosamente. Excedente de ${formatCurrency(response.data.excedente)} disponible.`;
                      }
             
             console.log('✅', mensaje);
@@ -587,31 +588,31 @@ const Pagos = () => {
                        <td className="table-cell text-sm">
                          <div className="font-medium">
                            {grupo.esPagoIndividual ? 
-                             `$${grupo.pagos[0].monto.toLocaleString()}` : 
-                             `$${(grupo.totalSaldo / grupo.pagos.length).toLocaleString()}`
+                             formatCurrency(grupo.pagos[0].monto) : 
+                             formatCurrency(grupo.totalSaldo / grupo.pagos.length)
                            }
                          </div>
                        </td>
                        <td className="table-cell text-sm">
                          <div className="text-gray-600">
                            {grupo.esPagoIndividual ? 
-                             `$${(grupo.pagos[0].montoPagado || 0).toLocaleString()}` : 
-                             `$0`
+                             formatCurrency(grupo.pagos[0].montoPagado || 0) : 
+                             formatCurrency(0)
                            }
                          </div>
                        </td>
                        <td className="table-cell text-sm">
                          <span className="font-medium text-red-600">
-                           ${grupo.totalSaldo.toLocaleString()}
+                           {formatCurrency(grupo.totalSaldo)}
                          </span>
                        </td>
                                                                                                <td className="table-cell text-sm">
                            {grupo.totalAdeudo > 0 ? (
                              <div className="text-red-600">
-                               <div className="font-medium">${grupo.totalAdeudo.toLocaleString()}</div>
+                               <div className="font-medium">{formatCurrency(grupo.totalAdeudo)}</div>
                                {grupo.totalRecargo > 0 && (
                                  <div className="text-xs">
-                                   +${grupo.totalRecargo.toLocaleString()}
+                                   +{formatCurrency(grupo.totalRecargo)}
                                  </div>
                                )}
                              </div>
@@ -765,8 +766,8 @@ const RegistrarPagoModal = ({ pago, onSubmit, onClose, isLoading, obtenerPagosPe
                           {pagoPendiente.mes}/{pagoPendiente.año}
                         </div>
                         <div className="text-xs text-gray-600">
-                          ${pagoPendiente.monto.toLocaleString()}
-                          {recargoPendiente > 0 && ` + $${recargoPendiente.toLocaleString()} recargo`}
+                          {formatCurrency(pagoPendiente.monto)}
+                          {recargoPendiente > 0 && ` + ${formatCurrency(recargoPendiente)} recargo`}
                           {diasAtraso > 0 && ` (${diasAtraso} días atrasado)`}
                         </div>
                       </div>
@@ -788,15 +789,15 @@ const RegistrarPagoModal = ({ pago, onSubmit, onClose, isLoading, obtenerPagosPe
               <strong>Período:</strong> {pagoSeleccionado.mes}/{pagoSeleccionado.año}
             </p>
             <p className="text-sm text-gray-600">
-              <strong>Monto Base:</strong> ${pagoSeleccionado.monto?.toLocaleString()}
+                              <strong>Monto Base:</strong> {formatCurrency(pagoSeleccionado.monto)}
             </p>
             {recargo > 0 && (
               <p className="text-sm text-red-600">
-                <strong>Recargo por atraso:</strong> ${recargo.toLocaleString()}
+                <strong>Recargo por atraso:</strong> {formatCurrency(recargo)}
               </p>
             )}
             <p className="text-sm font-medium text-gray-800">
-              <strong>Total a Pagar:</strong> ${totalAPagar.toLocaleString()}
+              <strong>Total a Pagar:</strong> {formatCurrency(totalAPagar)}
             </p>
           </div>
           
@@ -847,7 +848,7 @@ const RegistrarPagoModal = ({ pago, onSubmit, onClose, isLoading, obtenerPagosPe
             {excedente > 0 && (
               <div className="p-3 bg-blue-50 rounded-lg">
                 <p className="text-sm text-blue-800">
-                  <strong>Excedente detectado:</strong> ${excedente.toLocaleString()}
+                  <strong>Excedente detectado:</strong> {formatCurrency(excedente)}
                 </p>
                 <div className="mt-2">
                   <label className="flex items-center">
