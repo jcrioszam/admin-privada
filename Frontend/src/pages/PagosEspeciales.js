@@ -3,16 +3,20 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const PagosEspeciales = () => {
   const [showForm, setShowForm] = useState(false);
+  const [showPagoModal, setShowPagoModal] = useState(false);
   const [editingPago, setEditingPago] = useState(null);
+  const [selectedPagoEspecial, setSelectedPagoEspecial] = useState(null);
   const [formData, setFormData] = useState({
     tipo: '',
     descripcion: '',
     monto: '',
     fechaLimite: '',
     aplicaATodasLasViviendas: true,
+    viviendasSeleccionadas: [],
     cantidadPagar: '',
     notas: ''
   });
@@ -28,11 +32,11 @@ const PagosEspeciales = () => {
     }
   });
 
-  // Obtener viviendas
+  // Obtener viviendas con residentes
   const { data: viviendas } = useQuery({
     queryKey: ['viviendas'],
     queryFn: async () => {
-      const response = await api.get('/api/viviendas');
+      const response = await api.get('/api/viviendas?populate=residentes');
       return response.data;
     }
   });
@@ -131,6 +135,7 @@ const PagosEspeciales = () => {
       monto: '',
       fechaLimite: '',
       aplicaATodasLasViviendas: true,
+      viviendasSeleccionadas: [],
       cantidadPagar: '',
       notas: ''
     });
@@ -172,11 +177,34 @@ const PagosEspeciales = () => {
     }
   };
 
-  const handlePagar = (pago) => {
-    const metodoPago = prompt('Ingrese el método de pago (Efectivo, Transferencia, Tarjeta, Cheque, Otro):');
-    if (metodoPago && ['Efectivo', 'Transferencia', 'Tarjeta', 'Cheque', 'Otro'].includes(metodoPago)) {
-      registrarPago.mutate({ id: pago._id, metodoPago });
+  // Mutación para registrar pago individual
+  const registrarPagoIndividual = useMutation({
+    mutationFn: async (pagoData) => {
+      const response = await api.post('/api/pagos-especiales/pagar-individual', pagoData);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['pagos-especiales']);
+      setShowPagoModal(false);
+      setSelectedPagoEspecial(null);
+      alert('Pago registrado exitosamente');
+    },
+    onError: (error) => {
+      console.error('Error registrando pago:', error);
+      alert('Error al registrar el pago');
     }
+  });
+
+  const handlePagar = (pago) => {
+    setSelectedPagoEspecial(pago);
+    setShowPagoModal(true);
+  };
+
+  const handleSubmitPago = (pagoData) => {
+    registrarPagoIndividual.mutate({
+      pagoEspecialId: selectedPagoEspecial._id,
+      ...pagoData
+    });
   };
 
   if (isLoading) {
@@ -303,18 +331,90 @@ const PagosEspeciales = () => {
               </label>
             </div>
 
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="aplicaATodasLasViviendas"
-                checked={formData.aplicaATodasLasViviendas}
-                onChange={(e) => setFormData({ ...formData, aplicaATodasLasViviendas: e.target.checked })}
-                className="mr-2"
-              />
-              <label htmlFor="aplicaATodasLasViviendas" className="text-sm font-medium text-gray-700">
-                Aplicar a todas las viviendas
-              </label>
-            </div>
+                         {/* Selección de viviendas específicas */}
+             {!formData.aplicaATodasLasViviendas && (
+               <div>
+                 <div className="flex justify-between items-center mb-2">
+                   <label className="block text-sm font-medium text-gray-700">
+                     Seleccionar Viviendas Específicas
+                   </label>
+                   <div className="flex space-x-2">
+                     <button
+                       type="button"
+                       onClick={() => {
+                         const todasLasViviendas = viviendas?.map(v => v._id) || [];
+                         setFormData({
+                           ...formData,
+                           viviendasSeleccionadas: todasLasViviendas
+                         });
+                       }}
+                       className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200"
+                     >
+                       Seleccionar todas
+                     </button>
+                     <button
+                       type="button"
+                       onClick={() => {
+                         setFormData({
+                           ...formData,
+                           viviendasSeleccionadas: []
+                         });
+                       }}
+                       className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200"
+                     >
+                       Deseleccionar todas
+                     </button>
+                   </div>
+                 </div>
+                                 <div className="border border-gray-300 rounded-md p-4 max-h-60 overflow-y-auto">
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                     {viviendas
+                       ?.sort((a, b) => parseInt(a.numero) - parseInt(b.numero))
+                       ?.map((vivienda) => {
+                         const residente = vivienda.residentes?.[0]; // Tomar el primer residente
+                         return (
+                           <div key={vivienda._id} className="flex items-center">
+                             <input
+                               type="checkbox"
+                               id={`vivienda-${vivienda._id}`}
+                               checked={formData.viviendasSeleccionadas.includes(vivienda._id)}
+                               onChange={(e) => {
+                                 if (e.target.checked) {
+                                   setFormData({
+                                     ...formData,
+                                     viviendasSeleccionadas: [...formData.viviendasSeleccionadas, vivienda._id]
+                                   });
+                                 } else {
+                                   setFormData({
+                                     ...formData,
+                                     viviendasSeleccionadas: formData.viviendasSeleccionadas.filter(id => id !== vivienda._id)
+                                   });
+                                 }
+                               }}
+                               className="mr-2"
+                             />
+                             <label htmlFor={`vivienda-${vivienda._id}`} className="text-sm text-gray-700">
+                               <div className="font-medium">
+                                 {vivienda.numero} - {vivienda.calle}
+                               </div>
+                               {residente && (
+                                 <div className="text-xs text-gray-500">
+                                   {residente.nombre} {residente.apellidos}
+                                 </div>
+                               )}
+                             </label>
+                           </div>
+                         );
+                       })}
+                   </div>
+                 </div>
+                {formData.viviendasSeleccionadas.length > 0 && (
+                  <p className="text-sm text-gray-600 mt-2">
+                    Seleccionadas: {formData.viviendasSeleccionadas.length} viviendas
+                  </p>
+                )}
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Notas</label>
@@ -375,6 +475,9 @@ const PagosEspeciales = () => {
                   Estado
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Viviendas Aplicadas
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
@@ -407,6 +510,34 @@ const PagosEspeciales = () => {
                     }`}>
                       {pago.estado}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {pago.aplicaATodasLasViviendas ? (
+                      <span className="text-blue-600 font-medium">Todas las viviendas</span>
+                    ) : (
+                      <div>
+                        <span className="text-gray-600 font-medium">
+                          {pago.viviendasSeleccionadas?.length || 0} viviendas específicas
+                        </span>
+                        {pago.viviendasSeleccionadas && pago.viviendasSeleccionadas.length > 0 && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {pago.viviendasSeleccionadas.slice(0, 3).map((vivienda, index) => (
+                              <div key={index}>
+                                {vivienda.numero} - {vivienda.calle}
+                                {vivienda.residentes?.[0] && (
+                                  <span className="text-gray-400"> ({vivienda.residentes[0].nombre})</span>
+                                )}
+                              </div>
+                            ))}
+                            {pago.viviendasSeleccionadas.length > 3 && (
+                              <div className="text-gray-400">
+                                ... y {pago.viviendasSeleccionadas.length - 3} más
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
@@ -451,6 +582,205 @@ const PagosEspeciales = () => {
           No hay pagos especiales registrados.
         </div>
       )}
+
+      {/* Modal de Pago Individual */}
+      {showPagoModal && selectedPagoEspecial && (
+        <PagoIndividualModal
+          pagoEspecial={selectedPagoEspecial}
+          viviendas={viviendas}
+          residentes={residentes}
+          onSubmit={handleSubmitPago}
+          onClose={() => {
+            setShowPagoModal(false);
+            setSelectedPagoEspecial(null);
+          }}
+          isLoading={registrarPagoIndividual.isLoading}
+        />
+      )}
+    </div>
+  );
+};
+
+// Componente Modal de Pago Individual
+const PagoIndividualModal = ({ pagoEspecial, viviendas, residentes, onSubmit, onClose, isLoading }) => {
+  const [formData, setFormData] = useState({
+    viviendaId: '',
+    residenteId: '',
+    montoPagado: pagoEspecial?.cantidadPagar || '',
+    metodoPago: 'Efectivo',
+    notas: ''
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    
+    if (name === 'viviendaId') {
+      // Buscar el residente principal de la vivienda seleccionada
+      const vivienda = viviendas?.find(v => v._id === value);
+      const residente = vivienda?.residentes?.[0] || vivienda?.residente; // Tomar el primer residente o el residente principal
+      
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        residenteId: residente?._id || ''
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  // Obtener las viviendas aplicables según el tipo de pago especial
+  const viviendasAplicables = pagoEspecial.aplicaATodasLasViviendas 
+    ? viviendas || []
+    : pagoEspecial.viviendasSeleccionadas || [];
+
+  // Ordenar por número de vivienda
+  const viviendasOrdenadas = viviendasAplicables.sort((a, b) => 
+    parseInt(a.numero) - parseInt(b.numero)
+  );
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div className="mt-3">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            Registrar Pago Individual - {pagoEspecial.tipo}
+          </h3>
+          <p className="text-sm text-gray-600 mb-4">
+            {pagoEspecial.descripcion}
+          </p>
+          
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Vivienda
+              </label>
+              <select
+                name="viviendaId"
+                value={formData.viviendaId}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="">Seleccionar vivienda</option>
+                {viviendasOrdenadas.map((vivienda) => {
+                  const residente = vivienda.residentes?.[0] || vivienda.residente;
+                  return (
+                    <option key={vivienda._id} value={vivienda._id}>
+                      {vivienda.numero} - {vivienda.calle}
+                      {residente && ` (${residente.nombre} ${residente.apellidos})`}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Residente
+              </label>
+              <select
+                name="residenteId"
+                value={formData.residenteId}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="">Seleccionar residente</option>
+                {formData.viviendaId && viviendas?.find(v => v._id === formData.viviendaId)?.residentes?.map((residente) => (
+                  <option key={residente._id} value={residente._id}>
+                    {residente.nombre} {residente.apellidos}
+                  </option>
+                ))}
+                {formData.viviendaId && !viviendas?.find(v => v._id === formData.viviendaId)?.residentes?.length && 
+                 viviendas?.find(v => v._id === formData.viviendaId)?.residente && (
+                  <option value={viviendas.find(v => v._id === formData.viviendaId).residente._id}>
+                    {viviendas.find(v => v._id === formData.viviendaId).residente.nombre} {viviendas.find(v => v._id === formData.viviendaId).residente.apellidos}
+                  </option>
+                )}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Monto a Pagar
+              </label>
+              <input
+                type="number"
+                name="montoPagado"
+                value={formData.montoPagado}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                min="0"
+                step="0.01"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Método de Pago
+              </label>
+              <select
+                name="metodoPago"
+                value={formData.metodoPago}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="Efectivo">Efectivo</option>
+                <option value="Transferencia">Transferencia</option>
+                <option value="Tarjeta">Tarjeta</option>
+                <option value="Cheque">Cheque</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Notas
+              </label>
+              <textarea
+                name="notas"
+                value={formData.notas}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows="2"
+              />
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 border border-gray-300 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                disabled={isLoading}
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <LoadingSpinner size="sm" />
+                ) : (
+                  'Registrar Pago'
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   );
 };

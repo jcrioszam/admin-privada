@@ -19,7 +19,10 @@ router.get('/', async (req, res) => {
     if (tipo) filtro.tipo = tipo;
     if (tipoOcupacion) filtro.tipoOcupacion = tipoOcupacion;
     
-    const viviendas = await Vivienda.find(filtro).populate('residente').sort({ numero: 1 });
+    const viviendas = await Vivienda.find(filtro)
+      .populate('residente')
+      .populate('residentes', 'nombre apellidos')
+      .sort({ numero: 1 });
     res.json(viviendas);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -29,7 +32,9 @@ router.get('/', async (req, res) => {
 // Obtener una vivienda específica
 router.get('/:id', async (req, res) => {
   try {
-    const vivienda = await Vivienda.findById(req.params.id).populate('residente');
+    const vivienda = await Vivienda.findById(req.params.id)
+      .populate('residente')
+      .populate('residentes', 'nombre apellidos');
     if (!vivienda) {
       return res.status(404).json({ message: 'Vivienda no encontrada' });
     }

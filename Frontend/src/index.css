@@ -44,6 +44,10 @@
     @apply btn bg-gradient-to-r from-danger-500 to-danger-600 text-white hover:from-danger-600 hover:to-danger-700 focus:ring-danger-500 shadow-glow-danger;
   }
   
+  .btn-info {
+    @apply btn bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 focus:ring-blue-500 shadow-glow;
+  }
+  
   .btn-sm {
     @apply px-3 py-2 text-xs;
   }

@@ -110,11 +110,19 @@ proyectoPagoEspecialSchema.methods.obtenerEstadisticas = function() {
   const pendiente = this.cantidadPagar - totalRecaudado;
   const viviendasPagadas = this.pagosRealizados.length;
   
+  // Calcular progreso basado en viviendas que han pagado vs total de viviendas
+  // Necesitamos obtener el total de viviendas del sistema
+  // Por ahora usamos un cálculo basado en el monto recaudado vs monto esperado por vivienda
+  const montoEsperadoPorVivienda = this.cantidadPagar;
+  const viviendasEsperadas = this.montoProyecto > 0 ? Math.ceil(this.montoProyecto / montoEsperadoPorVivienda) : 25; // 25 viviendas por defecto
+  
   return {
     totalRecaudado,
     pendiente,
     viviendasPagadas,
-    porcentajeCompletado: (totalRecaudado / this.cantidadPagar) * 100
+    viviendasEsperadas,
+    porcentajeCompletado: (viviendasPagadas / viviendasEsperadas) * 100,
+    montoEsperadoPorVivienda
   };
 };
 

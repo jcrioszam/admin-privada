@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PlusIcon, PencilIcon, TrashIcon, CurrencyDollarIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { format } from 'date-fns';
@@ -11,6 +12,7 @@ const ProyectosPagosEspeciales = () => {
   const [showPagoModal, setShowPagoModal] = useState(false);
   const [selectedProyecto, setSelectedProyecto] = useState(null);
   const [editingProyecto, setEditingProyecto] = useState(null);
+  const [showViviendasPagadas, setShowViviendasPagadas] = useState({});
   const queryClient = useQueryClient();
 
   // Obtener proyectos
@@ -26,7 +28,7 @@ const ProyectosPagosEspeciales = () => {
   const { data: viviendas } = useQuery({
     queryKey: ['viviendas'],
     queryFn: async () => {
-      const response = await api.get('/api/viviendas');
+      const response = await api.get('/api/viviendas?populate=residentes');
       return response.data;
     }
   });
@@ -55,14 +57,18 @@ const ProyectosPagosEspeciales = () => {
     mutationFn: async (data) => {
       return api.post(`/api/proyectos-pagos-especiales/${selectedProyecto._id}/pagar`, data);
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries(['proyectos-pagos-especiales']);
       setShowPagoModal(false);
       setSelectedProyecto(null);
-      console.log('✅', 'Pago registrado exitosamente');
+      // Mostrar mensaje de confirmación
+      alert(response.data.message || '✅ Pago registrado exitosamente');
+      console.log('✅', response.data.message || 'Pago registrado exitosamente');
     },
     onError: (error) => {
-      console.error('❌', error.response?.data?.message || 'Error al registrar pago');
+      const errorMessage = error.response?.data?.message || 'Error al registrar pago';
+      alert(`❌ ${errorMessage}`);
+      console.error('❌', errorMessage);
     }
   });
 
@@ -113,8 +119,13 @@ const ProyectosPagosEspeciales = () => {
     total: proyectos.length,
     activos: proyectos.filter(p => p.estado === 'Activo').length,
     completados: proyectos.filter(p => p.estado === 'Completado').length,
-    montoTotal: proyectos.reduce((total, p) => total + p.cantidadPagar, 0)
-  } : { total: 0, activos: 0, completados: 0, montoTotal: 0 };
+    montoTotal: proyectos.reduce((total, p) => total + p.cantidadPagar, 0),
+    totalRecaudado: proyectos.reduce((total, p) => {
+      const recaudado = p.pagosRealizados?.reduce((sum, pago) => sum + pago.montoPagado, 0) || 0;
+      return total + recaudado;
+    }, 0),
+    totalViviendasPagadas: proyectos.reduce((total, p) => total + (p.pagosRealizados?.length || 0), 0)
+  } : { total: 0, activos: 0, completados: 0, montoTotal: 0, totalRecaudado: 0, totalViviendasPagadas: 0 };
 
   if (isLoading) {
     return (
@@ -143,44 +154,100 @@ const ProyectosPagosEspeciales = () => {
         </button>
       </div>
 
-      {/* Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <div className="flex items-center">
-            <ChartBarIcon className="h-8 w-8 text-blue-600" />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-blue-600">Total Proyectos</p>
-              <p className="text-2xl font-bold text-blue-900">{estadisticas.total}</p>
-            </div>
+             {/* Estadísticas */}
+       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+         <div className="bg-blue-50 p-4 rounded-lg">
+           <div className="flex items-center">
+             <ChartBarIcon className="h-8 w-8 text-blue-600" />
+             <div className="ml-3">
+               <p className="text-sm font-medium text-blue-600">Total Proyectos</p>
+               <p className="text-2xl font-bold text-blue-900">{estadisticas.total}</p>
+             </div>
+           </div>
+         </div>
+         <div className="bg-yellow-50 p-4 rounded-lg">
+           <div className="flex items-center">
+             <ChartBarIcon className="h-8 w-8 text-yellow-600" />
+             <div className="ml-3">
+               <p className="text-sm font-medium text-yellow-600">Activos</p>
+               <p className="text-2xl font-bold text-yellow-900">{estadisticas.activos}</p>
+             </div>
+           </div>
+         </div>
+         <div className="bg-green-50 p-4 rounded-lg">
+           <div className="flex items-center">
+             <CurrencyDollarIcon className="h-8 w-8 text-green-600" />
+             <div className="ml-3">
+               <p className="text-sm font-medium text-green-600">Total Recaudado</p>
+               <p className="text-2xl font-bold text-green-900">
+                 ${estadisticas.totalRecaudado.toLocaleString()}
+               </p>
+             </div>
+           </div>
+         </div>
+         <div className="bg-purple-50 p-4 rounded-lg">
+           <div className="flex items-center">
+             <ChartBarIcon className="h-8 w-8 text-purple-600" />
+             <div className="ml-3">
+               <p className="text-sm font-medium text-purple-600">Viviendas Pagadas</p>
+               <p className="text-2xl font-bold text-purple-900">{estadisticas.totalViviendasPagadas}</p>
+             </div>
+           </div>
+         </div>
+       </div>
+
+      {/* Gráficas */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Gráfica de Progreso General */}
+        <div className="card">
+          <div className="card-body">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Progreso General de Proyectos</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'Viviendas Pagadas', value: estadisticas.totalViviendasPagadas, color: '#10B981' },
+                    { name: 'Viviendas Pendientes', value: (25 * estadisticas.total) - estadisticas.totalViviendasPagadas, color: '#F59E0B' }
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                >
+                  {[
+                    { name: 'Viviendas Pagadas', value: estadisticas.totalViviendasPagadas, color: '#10B981' },
+                    { name: 'Viviendas Pendientes', value: (25 * estadisticas.total) - estadisticas.totalViviendasPagadas, color: '#F59E0B' }
+                  ].map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => [value, 'Viviendas']} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
         </div>
-        <div className="bg-yellow-50 p-4 rounded-lg">
-          <div className="flex items-center">
-            <ChartBarIcon className="h-8 w-8 text-yellow-600" />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-yellow-600">Activos</p>
-              <p className="text-2xl font-bold text-yellow-900">{estadisticas.activos}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-green-50 p-4 rounded-lg">
-          <div className="flex items-center">
-            <ChartBarIcon className="h-8 w-8 text-green-600" />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-green-600">Completados</p>
-              <p className="text-2xl font-bold text-green-900">{estadisticas.completados}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-red-50 p-4 rounded-lg">
-          <div className="flex items-center">
-            <CurrencyDollarIcon className="h-8 w-8 text-red-600" />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-red-600">Monto Total</p>
-              <p className="text-2xl font-bold text-red-900">
-                ${estadisticas.montoTotal.toLocaleString()}
-              </p>
-            </div>
+
+        {/* Gráfica de Recaudación por Proyecto */}
+        <div className="card">
+          <div className="card-body">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Recaudación por Proyecto</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={proyectos?.map(proyecto => ({
+                nombre: proyecto.nombre,
+                recaudado: proyecto.pagosRealizados?.reduce((total, pago) => total + pago.montoPagado, 0) || 0,
+                meta: proyecto.cantidadPagar
+              })) || []}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="nombre" angle={-45} textAnchor="end" height={80} />
+                <YAxis />
+                <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Monto']} />
+                <Legend />
+                <Bar dataKey="recaudado" fill="#3B82F6" name="Recaudado" />
+                <Bar dataKey="meta" fill="#EF4444" name="Meta" />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
@@ -203,69 +270,171 @@ const ProyectosPagosEspeciales = () => {
                 </tr>
               </thead>
               <tbody className="table-body">
-                {proyectos?.map((proyecto) => {
-                  const estadisticasProyecto = proyecto.obtenerEstadisticas();
-                  return (
-                    <tr key={proyecto._id} className="table-row">
-                      <td className="table-cell font-medium">{proyecto.nombre}</td>
-                      <td className="table-cell">{proyecto.descripcion}</td>
-                      <td className="table-cell">
-                        ${proyecto.montoProyecto?.toLocaleString() || '0'}
-                      </td>
-                      <td className="table-cell">
-                        ${proyecto.cantidadPagar.toLocaleString()}
-                      </td>
-                      <td className="table-cell">
-                        {format(new Date(proyecto.fechaLimite), 'dd/MM/yyyy', { locale: es })}
-                      </td>
-                      <td className="table-cell">
-                        <span className={`badge ${
-                          proyecto.estado === 'Activo' ? 'badge-success' :
-                          proyecto.estado === 'Completado' ? 'badge-info' : 'badge-warning'
-                        }`}>
-                          {proyecto.estado}
-                        </span>
-                      </td>
-                      <td className="table-cell">
-                        <div className="flex items-center">
-                          <div className="w-full bg-gray-200 rounded-full h-2 mr-2">
-                            <div 
-                              className="bg-blue-600 h-2 rounded-full" 
-                              style={{ width: `${estadisticasProyecto.porcentajeCompletado}%` }}
-                            ></div>
-                          </div>
-                          <span className="text-sm text-gray-600">
-                            {Math.round(estadisticasProyecto.porcentajeCompletado)}%
-                          </span>
-                        </div>
-                      </td>
-                      <td className="table-cell">
-                        <div className="flex space-x-2">
-                          {proyecto.estado === 'Activo' && (
-                            <button
-                              onClick={() => handlePago(proyecto)}
-                              className="btn-sm btn-success"
-                            >
-                              <CurrencyDollarIcon className="h-4 w-4 mr-1" />
-                              Cobrar
-                            </button>
-                          )}
-                          <button
-                            onClick={() => openModal(proyecto)}
-                            className="text-primary-600 hover:text-primary-900"
-                          >
-                            <PencilIcon className="h-5 w-5" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(proyecto._id)}
-                            className="text-danger-600 hover:text-danger-900"
-                          >
-                            <TrashIcon className="h-5 w-5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
+                                 {proyectos?.map((proyecto) => {
+                   // Calcular estadísticas del proyecto
+                   const totalRecaudado = proyecto.pagosRealizados?.reduce((total, pago) => total + pago.montoPagado, 0) || 0;
+                   const viviendasPagadas = proyecto.pagosRealizados?.length || 0;
+                   // Calcular progreso basado en viviendas que han pagado (asumiendo 25 viviendas totales)
+                   const totalViviendas = 25; // Total de viviendas en el fraccionamiento
+                   const porcentajeCompletado = (viviendasPagadas / totalViviendas) * 100;
+                   const estadisticasProyecto = {
+                     totalRecaudado,
+                     viviendasPagadas,
+                     totalViviendas,
+                     porcentajeCompletado,
+                     pendiente: proyecto.cantidadPagar - totalRecaudado
+                   };
+                                     return (
+                     <React.Fragment key={proyecto._id}>
+                       <tr className="table-row">
+                         <td className="table-cell font-medium">{proyecto.nombre}</td>
+                         <td className="table-cell">{proyecto.descripcion}</td>
+                         <td className="table-cell">
+                           ${proyecto.montoProyecto?.toLocaleString() || '0'}
+                         </td>
+                         <td className="table-cell">
+                           ${proyecto.cantidadPagar.toLocaleString()}
+                         </td>
+                         <td className="table-cell">
+                           {format(new Date(proyecto.fechaLimite), 'dd/MM/yyyy', { locale: es })}
+                         </td>
+                         <td className="table-cell">
+                           <span className={`badge ${
+                             proyecto.estado === 'Activo' ? 'badge-success' :
+                             proyecto.estado === 'Completado' ? 'badge-info' : 'badge-warning'
+                           }`}>
+                             {proyecto.estado}
+                           </span>
+                         </td>
+                         <td className="table-cell">
+                           <div className="flex items-center">
+                             <div className="w-full bg-gray-200 rounded-full h-2 mr-2">
+                               <div 
+                                 className="bg-blue-600 h-2 rounded-full" 
+                                 style={{ width: `${estadisticasProyecto.porcentajeCompletado}%` }}
+                               ></div>
+                             </div>
+                             <span className="text-sm text-gray-600">
+                               {estadisticasProyecto.viviendasPagadas}/{estadisticasProyecto.totalViviendas}
+                             </span>
+                           </div>
+                           <div className="text-xs text-gray-500 mt-1">
+                             ${estadisticasProyecto.totalRecaudado.toLocaleString()} recaudado
+                           </div>
+                         </td>
+                         <td className="table-cell">
+                           <div className="flex space-x-2">
+                             {proyecto.estado === 'Activo' && (
+                               <button
+                                 onClick={() => handlePago(proyecto)}
+                                 className="btn-sm btn-success"
+                               >
+                                 <CurrencyDollarIcon className="h-4 w-4 mr-1" />
+                                 Cobrar
+                               </button>
+                             )}
+                             <button
+                               onClick={() => setShowViviendasPagadas(prev => ({
+                                 ...prev,
+                                 [proyecto._id]: !prev[proyecto._id]
+                               }))}
+                               className="btn-sm btn-info"
+                             >
+                               <ChartBarIcon className="h-4 w-4 mr-1" />
+                               {showViviendasPagadas[proyecto._id] ? 'Ocultar' : 'Ver'} Pagos
+                             </button>
+                             <button
+                               onClick={() => openModal(proyecto)}
+                               className="text-primary-600 hover:text-primary-900"
+                             >
+                               <PencilIcon className="h-5 w-5" />
+                             </button>
+                             <button
+                               onClick={() => handleDelete(proyecto._id)}
+                               className="text-danger-600 hover:text-danger-900"
+                             >
+                               <TrashIcon className="h-5 w-5" />
+                             </button>
+                           </div>
+                         </td>
+                       </tr>
+                       {showViviendasPagadas[proyecto._id] && (
+                         <tr>
+                           <td colSpan="8" className="bg-gray-50 p-4">
+                             <div className="space-y-4">
+                               <h4 className="font-medium text-gray-900">
+                                 Viviendas que han pagado - {proyecto.nombre}
+                               </h4>
+                               {proyecto.pagosRealizados && proyecto.pagosRealizados.length > 0 ? (
+                                 <div className="overflow-x-auto">
+                                   <table className="min-w-full divide-y divide-gray-200">
+                                     <thead className="bg-gray-100">
+                                       <tr>
+                                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                           Vivienda
+                                         </th>
+                                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                           Residente
+                                         </th>
+                                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                           Monto Pagado
+                                         </th>
+                                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                           Método
+                                         </th>
+                                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                           Fecha
+                                         </th>
+                                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                           Registrado Por
+                                         </th>
+                                       </tr>
+                                     </thead>
+                                     <tbody className="bg-white divide-y divide-gray-200">
+                                       {proyecto.pagosRealizados.map((pago, index) => (
+                                         <tr key={index} className="hover:bg-gray-50">
+                                           <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                                             {pago.vivienda?.numero} - {pago.vivienda?.calle}
+                                           </td>
+                                           <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                             {pago.residente?.nombre} {pago.residente?.apellidos}
+                                           </td>
+                                           <td className="px-4 py-2 whitespace-nowrap text-sm text-green-600 font-medium">
+                                             ${pago.montoPagado.toLocaleString()}
+                                           </td>
+                                           <td className="px-4 py-2 whitespace-nowrap">
+                                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                               pago.metodoPago === 'Efectivo' ? 'bg-green-100 text-green-800' :
+                                               pago.metodoPago === 'Transferencia' ? 'bg-blue-100 text-blue-800' :
+                                               pago.metodoPago === 'Tarjeta' ? 'bg-yellow-100 text-yellow-800' :
+                                               pago.metodoPago === 'Cheque' ? 'bg-purple-100 text-purple-800' :
+                                               'bg-gray-100 text-gray-800'
+                                             }`}>
+                                               {pago.metodoPago}
+                                             </span>
+                                           </td>
+                                           <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                             {format(new Date(pago.fechaPago), 'dd/MM/yyyy HH:mm', { locale: es })}
+                                           </td>
+                                           <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                             {pago.registradoPor?.nombre || 'Sistema'}
+                                           </td>
+                                         </tr>
+                                       ))}
+                                     </tbody>
+                                   </table>
+                                 </div>
+                               ) : (
+                                 <div className="text-center py-4 text-gray-500">
+                                   No hay pagos registrados para este proyecto
+                                 </div>
+                               )}
+                             </div>
+                           </td>
+                         </tr>
+                       )}
+                     </React.Fragment>
+                   );
                 })}
               </tbody>
             </table>
@@ -483,12 +652,12 @@ const PagoModal = ({ proyecto, viviendas, onSubmit, onClose, isLoading }) => {
     onSubmit(formData);
   };
 
-  // Filtrar viviendas que no han pagado
+  // Filtrar viviendas que no han pagado y ordenarlas por número
   const viviendasPendientes = viviendas?.filter(vivienda => 
     !proyecto.pagosRealizados.some(pago => 
       pago.vivienda._id === vivienda._id
     )
-  ) || [];
+  ).sort((a, b) => parseInt(a.numero) - parseInt(b.numero)) || [];
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
@@ -509,11 +678,15 @@ const PagoModal = ({ proyecto, viviendas, onSubmit, onClose, isLoading }) => {
                 required
               >
                 <option value="">Seleccionar vivienda</option>
-                {viviendasPendientes.map((vivienda) => (
-                  <option key={vivienda._id} value={vivienda._id}>
-                    {vivienda.numero} - {vivienda.calle}
-                  </option>
-                ))}
+                {viviendasPendientes.map((vivienda) => {
+                  const residente = vivienda.residentes?.[0]; // Tomar el primer residente
+                  return (
+                    <option key={vivienda._id} value={vivienda._id}>
+                      {vivienda.numero} - {vivienda.calle}
+                      {residente && ` (${residente.nombre} ${residente.apellidos})`}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 

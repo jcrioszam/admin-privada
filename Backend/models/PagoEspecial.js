@@ -60,6 +60,10 @@ const pagoEspecialSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  viviendasSeleccionadas: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Vivienda'
+  }],
   cantidadPagar: {
     type: Number,
     min: 0,
@@ -68,6 +72,10 @@ const pagoEspecialSchema = new mongoose.Schema({
   notas: {
     type: String,
     trim: true
+  },
+  pagoEspecialOriginal: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'PagoEspecial'
   }
 }, {
   timestamps: true

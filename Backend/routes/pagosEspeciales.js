@@ -25,6 +25,7 @@ router.get('/', async (req, res) => {
       .populate('vivienda', 'numero calle')
       .populate('residente', 'nombre apellidos')
       .populate('registradoPor', 'nombre apellidos')
+      .populate('viviendasSeleccionadas', 'numero calle')
       .sort({ fechaCreacion: -1 });
     
     res.json(pagosEspeciales);
@@ -57,7 +58,8 @@ router.post('/', auth, [
   body('monto').optional().isNumeric().withMessage('Monto inválido'),
   body('fechaLimite').isISO8601().withMessage('Fecha límite inválida'),
   body('aplicaATodasLasViviendas').optional().isBoolean().withMessage('Aplica a todas las viviendas debe ser booleano'),
-  body('cantidadPagar').optional().isNumeric().withMessage('Cantidad a pagar inválida')
+  body('cantidadPagar').optional().isNumeric().withMessage('Cantidad a pagar inválida'),
+  body('viviendasSeleccionadas').optional().isArray().withMessage('Viviendas seleccionadas debe ser un array')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -71,12 +73,24 @@ router.post('/', auth, [
       monto,
       fechaLimite,
       aplicaATodasLasViviendas = true,
+      viviendasSeleccionadas = [],
       cantidadPagar = 0,
       notas
     } = req.body;
 
-    // Crear pago especial para todas las viviendas
-    const viviendas = await Vivienda.find({});
+    let viviendas = [];
+
+    if (aplicaATodasLasViviendas) {
+      // Aplicar a todas las viviendas
+      viviendas = await Vivienda.find({});
+    } else {
+      // Aplicar solo a las viviendas seleccionadas
+      if (viviendasSeleccionadas.length === 0) {
+        return res.status(400).json({ message: 'Debe seleccionar al menos una vivienda' });
+      }
+      viviendas = await Vivienda.find({ _id: { $in: viviendasSeleccionadas } });
+    }
+
     const pagosEspeciales = [];
 
     for (const viviendaItem of viviendas) {
@@ -87,7 +101,8 @@ router.post('/', auth, [
         descripcion,
         monto: monto || 0,
         fechaLimite,
-        aplicaATodasLasViviendas: true,
+        aplicaATodasLasViviendas,
+        viviendasSeleccionadas: aplicaATodasLasViviendas ? [] : viviendasSeleccionadas,
         cantidadPagar: cantidadPagar || 0,
         notas,
         registradoPor: req.usuario._id
@@ -223,6 +238,104 @@ router.get('/estadisticas/resumen', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+// Registrar pago individual
+router.post('/pagar-individual', auth, [
+  body('pagoEspecialId').notEmpty().withMessage('ID del pago especial es requerido'),
+  body('viviendaId').notEmpty().withMessage('ID de vivienda es requerido'),
+  body('residenteId').notEmpty().withMessage('ID de residente es requerido'),
+  body('montoPagado').isNumeric().withMessage('Monto pagado debe ser numérico'),
+  body('metodoPago').isIn(['Efectivo', 'Transferencia', 'Tarjeta', 'Cheque', 'Otro']).withMessage('Método de pago inválido')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { pagoEspecialId, viviendaId, residenteId, montoPagado, metodoPago, notas } = req.body;
+
+    // Verificar que el pago especial existe
+    const pagoEspecial = await PagoEspecial.findById(pagoEspecialId);
+    if (!pagoEspecial) {
+      return res.status(404).json({ message: 'Pago especial no encontrado' });
+    }
+
+    // Verificar que la vivienda y residente existen
+    const vivienda = await Vivienda.findById(viviendaId);
+    const residente = await Residente.findById(residenteId);
+    
+    if (!vivienda) {
+      return res.status(404).json({ message: 'Vivienda no encontrada' });
+    }
+    
+    if (!residente) {
+      return res.status(404).json({ message: 'Residente no encontrado' });
+    }
+
+    // Verificar que la vivienda está en el scope del pago especial
+    if (!pagoEspecial.aplicaATodasLasViviendas) {
+      const viviendaIncluida = pagoEspecial.viviendasSeleccionadas.some(
+        viv => viv.toString() === viviendaId
+      );
+      if (!viviendaIncluida) {
+        return res.status(400).json({ 
+          message: 'La vivienda seleccionada no está incluida en este pago especial' 
+        });
+      }
+    }
+
+    // Verificar que la vivienda no ha pagado ya este pago especial
+    const yaPago = await PagoEspecial.findOne({
+      _id: pagoEspecialId,
+      vivienda: viviendaId,
+      estado: 'Pagado'
+    });
+
+    if (yaPago) {
+      return res.status(400).json({ 
+        message: 'Esta vivienda ya ha realizado el pago para este concepto especial' 
+      });
+    }
+
+    // Crear el registro de pago individual
+    const nuevoPagoIndividual = new PagoEspecial({
+      tipo: pagoEspecial.tipo,
+      descripcion: `Pago individual - ${pagoEspecial.descripcion}`,
+      monto: montoPagado,
+      vivienda: viviendaId,
+      residente: residenteId,
+      fechaLimite: pagoEspecial.fechaLimite,
+      aplicaATodasLasViviendas: false,
+      cantidadPagar: montoPagado,
+      metodoPago: metodoPago,
+      fechaPago: new Date(),
+      estado: 'Pagado',
+      pagado: true,
+      registradoPor: req.user.id,
+      notas: notas || `Pago individual registrado para ${pagoEspecial.tipo}`,
+      pagoEspecialOriginal: pagoEspecialId // Referencia al pago especial original
+    });
+
+    await nuevoPagoIndividual.save();
+
+    // Poblar la respuesta
+    await nuevoPagoIndividual.populate([
+      { path: 'vivienda', select: 'numero calle' },
+      { path: 'residente', select: 'nombre apellidos' },
+      { path: 'registradoPor', select: 'nombre' }
+    ]);
+
+    res.status(201).json({
+      message: 'Pago registrado exitosamente',
+      pago: nuevoPagoIndividual
+    });
+
+  } catch (error) {
+    console.error('Error registrando pago individual:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
 

@@ -18,6 +18,7 @@ import ReporteFlujoCaja from './pages/ReporteFlujoCaja';
 import ReporteGastosCategoria from './pages/ReporteGastosCategoria';
 import ReporteOcupacion from './pages/ReporteOcupacion';
 import ReporteMantenimiento from './pages/ReporteMantenimiento';
+import ReporteProyectos from './pages/ReporteProyectos';
 import ProyectosPagosEspeciales from './pages/ProyectosPagosEspeciales';
 import Layout from './components/Layout';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -52,6 +53,7 @@ function App() {
         <Route path="/accesos" element={<Accesos />} />
         <Route path="/usuarios" element={<Usuarios />} />
         <Route path="/configuracion" element={<Configuracion />} />
+        <Route path="/reporte-proyectos" element={<ReporteProyectos />} />
         <Route path="/reporte-morosidad" element={<ReporteMorosidad />} />
         <Route path="/pagos-especiales" element={<PagosEspeciales />} />
         <Route path="/proyectos-pagos-especiales" element={<ProyectosPagosEspeciales />} />

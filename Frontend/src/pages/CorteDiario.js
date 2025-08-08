@@ -10,7 +10,7 @@ const CorteDiario = () => {
   const [filtroMetodo, setFiltroMetodo] = useState('todos');
 
   // Obtener pagos del día seleccionado
-  const { data: pagosDelDia, isLoading } = useQuery(
+  const { data: pagosDelDia, isLoading: isLoadingPagos } = useQuery(
     ['pagos-corte', fechaSeleccionada],
     () => api.get(`/api/pagos/corte-diario/${fechaSeleccionada}`).then(res => res.data),
     {
@@ -19,31 +19,69 @@ const CorteDiario = () => {
     }
   );
 
+  // Obtener pagos especiales del día seleccionado
+  const { data: pagosEspecialesDelDia, isLoading: isLoadingPagosEspeciales } = useQuery(
+    ['pagos-especiales-corte', fechaSeleccionada],
+    () => api.get(`/api/proyectos-pagos-especiales/pagos-del-dia/${fechaSeleccionada}`).then(res => res.data),
+    {
+      refetchInterval: 30000,
+      staleTime: 10000
+    }
+  );
+
   // Calcular totales
   const totales = useMemo(() => {
-    if (!pagosDelDia) return { total: 0, porMetodo: {} };
+    const pagosNormales = pagosDelDia || [];
+    const pagosEspeciales = pagosEspecialesDelDia || [];
+    
+    // Combinar todos los pagos
+    const todosLosPagos = [
+      ...pagosNormales,
+      ...pagosEspeciales.map(pago => ({
+        ...pago,
+        tipo: 'especial',
+        montoPagado: pago.montoPagado
+      }))
+    ];
 
-    const total = pagosDelDia.reduce((sum, pago) => sum + (pago.montoPagado || 0), 0);
-    const porMetodo = pagosDelDia.reduce((acc, pago) => {
+    const total = todosLosPagos.reduce((sum, pago) => sum + (pago.montoPagado || 0), 0);
+    const porMetodo = todosLosPagos.reduce((acc, pago) => {
       const metodo = pago.metodoPago || 'Otro';
       acc[metodo] = (acc[metodo] || 0) + (pago.montoPagado || 0);
       return acc;
     }, {});
 
-    return { total, porMetodo };
-  }, [pagosDelDia]);
+    const totalPagosNormales = pagosNormales.reduce((sum, pago) => sum + (pago.montoPagado || 0), 0);
+    const totalPagosEspeciales = pagosEspeciales.reduce((sum, pago) => sum + (pago.montoPagado || 0), 0);
+
+    return { 
+      total, 
+      porMetodo, 
+      totalPagosNormales, 
+      totalPagosEspeciales,
+      totalPagos: todosLosPagos.length
+    };
+  }, [pagosDelDia, pagosEspecialesDelDia]);
 
   // Filtrar pagos por método de pago
   const pagosFiltrados = useMemo(() => {
-    if (!pagosDelDia) return [];
+    const pagosNormales = pagosDelDia || [];
+    const pagosEspeciales = pagosEspecialesDelDia || [];
+    
+    const todosLosPagos = [
+      ...pagosNormales.map(pago => ({ ...pago, tipo: 'normal' })),
+      ...pagosEspeciales.map(pago => ({ ...pago, tipo: 'especial' }))
+    ];
     
     if (filtroMetodo === 'todos') {
-      return pagosDelDia;
+      return todosLosPagos;
     }
     
-    return pagosDelDia.filter(pago => pago.metodoPago === filtroMetodo);
-  }, [pagosDelDia, filtroMetodo]);
+    return todosLosPagos.filter(pago => pago.metodoPago === filtroMetodo);
+  }, [pagosDelDia, pagosEspecialesDelDia, filtroMetodo]);
 
+  const isLoading = isLoadingPagos || isLoadingPagosEspeciales;
+  
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -108,7 +146,10 @@ const CorteDiario = () => {
             <div className="ml-3">
               <div className="text-sm text-gray-500">Pagos Registrados</div>
               <div className="text-2xl font-bold text-blue-600">
-                {pagosDelDia?.length || 0}
+                {totales.totalPagos}
+              </div>
+              <div className="text-xs text-gray-500">
+                {pagosDelDia?.length || 0} normales + {pagosEspecialesDelDia?.length || 0} especiales
               </div>
             </div>
           </div>
@@ -137,6 +178,20 @@ const CorteDiario = () => {
               <div className="text-sm text-gray-500">Métodos Usados</div>
               <div className="text-2xl font-bold text-purple-600">
                 {Object.keys(totales.porMetodo).length}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-lg shadow">
+          <div className="flex items-center">
+            <div className="h-8 w-8 bg-orange-100 rounded-full flex items-center justify-center">
+              <span className="text-orange-600 font-bold">$</span>
+            </div>
+            <div className="ml-3">
+              <div className="text-sm text-gray-500">Pagos Especiales</div>
+              <div className="text-2xl font-bold text-orange-600">
+                ${totales.totalPagosEspeciales.toLocaleString()}
               </div>
             </div>
           </div>
@@ -175,9 +230,10 @@ const CorteDiario = () => {
               <thead className="table-header">
                 <tr>
                   <th className="table-header-cell">Hora</th>
+                  <th className="table-header-cell">Tipo</th>
                   <th className="table-header-cell">Vivienda</th>
                   <th className="table-header-cell">Residente</th>
-                  <th className="table-header-cell">Período</th>
+                  <th className="table-header-cell">Período/Proyecto</th>
                   <th className="table-header-cell">Método</th>
                   <th className="table-header-cell">Monto Pagado</th>
                   <th className="table-header-cell">Referencia</th>
@@ -186,12 +242,21 @@ const CorteDiario = () => {
               </thead>
               <tbody className="table-body">
                 {pagosFiltrados?.map((pago) => (
-                  <tr key={pago._id} className="table-row">
+                  <tr key={pago._id} className={`table-row ${pago.tipo === 'especial' ? 'bg-orange-50' : ''}`}>
                     <td className="table-cell text-sm">
-                      {new Date(pago.fechaPago).toLocaleTimeString('es-ES', {
+                      {new Date(pago.fechaPago || pago.fechaCreacion).toLocaleTimeString('es-ES', {
                         hour: '2-digit',
                         minute: '2-digit'
                       })}
+                    </td>
+                    <td className="table-cell">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        pago.tipo === 'especial' 
+                          ? 'bg-orange-100 text-orange-800' 
+                          : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {pago.tipo === 'especial' ? 'Especial' : 'Normal'}
+                      </span>
                     </td>
                     <td className="table-cell font-medium">
                       {pago.vivienda?.numero}
@@ -200,7 +265,13 @@ const CorteDiario = () => {
                       {pago.residente?.nombre} {pago.residente?.apellidos}
                     </td>
                     <td className="table-cell text-sm">
-                      {pago.mes}/{pago.año}
+                      {pago.tipo === 'especial' ? (
+                        <span className="text-orange-600 font-medium">
+                          {pago.proyecto?.nombre || 'Proyecto Especial'}
+                        </span>
+                      ) : (
+                        `${pago.mes}/${pago.año}`
+                      )}
                     </td>
                     <td className="table-cell">
                       <span className={`badge ${

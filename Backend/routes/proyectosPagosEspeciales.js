@@ -159,7 +159,10 @@ router.post('/:id/pagar', [
       .populate('pagosRealizados.residente', 'nombre apellidos')
       .populate('pagosRealizados.registradoPor', 'nombre');
 
-    res.json(proyectoActualizado);
+    res.json({
+      message: `Pago registrado exitosamente para la vivienda ${vivienda.numero}`,
+      proyecto: proyectoActualizado
+    });
   } catch (error) {
     console.error('Error registrando pago:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
@@ -202,6 +205,59 @@ router.get('/:id/viviendas-pendientes', auth, async (req, res) => {
     res.json(viviendasPendientes);
   } catch (error) {
     console.error('Error obteniendo viviendas pendientes:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Obtener pagos especiales del día
+router.get('/pagos-del-dia/:fecha', auth, async (req, res) => {
+  try {
+    const { fecha } = req.params;
+    
+    // Crear las fechas de inicio y fin del día
+    const fechaInicio = new Date(fecha);
+    fechaInicio.setHours(0, 0, 0, 0);
+    const fechaFin = new Date(fecha);
+    fechaFin.setHours(23, 59, 59, 999);
+
+    // Obtener todos los proyectos con pagos
+    const todosLosProyectos = await ProyectoPagoEspecial.find({})
+      .populate('pagosRealizados.vivienda', 'numero calle')
+      .populate('pagosRealizados.residente', 'nombre apellidos')
+      .populate('pagosRealizados.registradoPor', 'nombre');
+
+    // Extraer todos los pagos del día
+    const pagosDelDia = [];
+    
+    todosLosProyectos.forEach(proyecto => {
+      if (proyecto.pagosRealizados && proyecto.pagosRealizados.length > 0) {
+        proyecto.pagosRealizados.forEach(pago => {
+          const fechaPago = new Date(pago.fechaPago);
+          const fechaPagoStr = fechaPago.toISOString().split('T')[0]; // YYYY-MM-DD
+          
+          if (fechaPagoStr === fecha) {
+            pagosDelDia.push({
+              _id: pago._id,
+              fechaPago: pago.fechaPago,
+              montoPagado: pago.montoPagado,
+              metodoPago: pago.metodoPago,
+              notas: pago.notas,
+              vivienda: pago.vivienda,
+              residente: pago.residente,
+              registradoPor: pago.registradoPor,
+              proyecto: {
+                _id: proyecto._id,
+                nombre: proyecto.nombre
+              }
+            });
+          }
+        });
+      }
+    });
+
+    res.json(pagosDelDia);
+  } catch (error) {
+    console.error('Error obteniendo pagos del día:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });

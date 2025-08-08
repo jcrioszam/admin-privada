@@ -34,7 +34,11 @@ const viviendaSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Residente',
     default: null
-  }
+  },
+  residentes: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Residente'
+  }]
 }, {
   timestamps: true
 });
