@@ -2,7 +2,9 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import Login from './pages/Login';
+import LoginResidente from './pages/LoginResidente';
 import Dashboard from './pages/Dashboard';
+import DashboardResidente from './pages/DashboardResidente';
 import Viviendas from './pages/Viviendas';
 import Residentes from './pages/Residentes';
 import Pagos from './pages/Pagos';
@@ -27,6 +29,7 @@ import NotFound from './components/NotFound';
 
 function App() {
   const { user, loading } = useAuth();
+  const isResidente = localStorage.getItem('isResidente') === 'true';
 
   if (loading) {
     return (
@@ -36,10 +39,24 @@ function App() {
     );
   }
 
+  // Si es residente, mostrar el portal de residentes
+  if (isResidente) {
+    return (
+      <Routes>
+        <Route path="/residente/login" element={<LoginResidente />} />
+        <Route path="/residente/dashboard" element={<DashboardResidente />} />
+        <Route path="/residente/*" element={<Navigate to="/residente/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/residente/dashboard" replace />} />
+      </Routes>
+    );
+  }
+
+  // Si no hay usuario, mostrar login de administrador
   if (!user) {
     return <Login />;
   }
 
+  // Si hay usuario, mostrar el portal de administración
   return (
     <Layout>
       <Routes>
