@@ -203,7 +203,6 @@ const Residentes = () => {
         <ResidenteModal
           residente={editingResidente}
           viviendasDisponibles={viviendasDisponiblesOrdenadas}
-          viviendasOrdenadas={viviendasOrdenadas}
           onSubmit={handleSubmit}
           onClose={closeModal}
           isLoading={mutation.isLoading}
@@ -214,7 +213,7 @@ const Residentes = () => {
 };
 
 // Componente Modal
-const ResidenteModal = ({ residente, viviendasDisponibles, viviendasOrdenadas, onSubmit, onClose, isLoading }) => {
+const ResidenteModal = ({ residente, viviendasDisponibles, onSubmit, onClose, isLoading }) => {
   const [formData, setFormData] = useState({
     vivienda: residente?.vivienda?._id || '',
     tipo: residente?.tipo || 'Dueño',
