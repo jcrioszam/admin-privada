@@ -14,20 +14,32 @@ const usuarioSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: true,
-    unique: true,
+    required: false,
+    unique: false,
+    sparse: true,
     trim: true,
     lowercase: true
+  },
+  telefono: {
+    type: String,
+    required: false,
+    trim: true,
+    unique: false,
+    sparse: true
   },
   password: {
     type: String,
     required: true,
-    minlength: 6
+    minlength: 4
   },
   rol: {
     type: String,
-    enum: ['Administrador', 'Operador', 'Supervisor'],
+    enum: ['Administrador', 'Operador', 'Supervisor', 'Residente'],
     default: 'Operador'
+  },
+  residente: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Residente'
   },
   activo: {
     type: Boolean,
@@ -46,10 +58,6 @@ const usuarioSchema = new mongoose.Schema({
       enum: ['crear', 'leer', 'actualizar', 'eliminar', 'exportar']
     }]
   }],
-  telefono: {
-    type: String,
-    trim: true
-  },
   foto: {
     type: String
   }
@@ -59,13 +67,13 @@ const usuarioSchema = new mongoose.Schema({
 
 // Índices
 usuarioSchema.index({ email: 1 });
+usuarioSchema.index({ telefono: 1 });
 usuarioSchema.index({ rol: 1 });
 usuarioSchema.index({ activo: 1 });
 
 // Hash password antes de guardar
 usuarioSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
-  
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
@@ -80,12 +88,10 @@ usuarioSchema.methods.compararPassword = async function(passwordCandidata) {
   return await bcrypt.compare(passwordCandidata, this.password);
 };
 
-// Método para obtener nombre completo
 usuarioSchema.virtual('nombreCompleto').get(function() {
   return `${this.nombre} ${this.apellidos}`;
 });
 
-// Configurar virtuals para JSON
 usuarioSchema.set('toJSON', {
   virtuals: true,
   transform: function(doc, ret) {

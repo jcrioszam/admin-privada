@@ -53,6 +53,12 @@ const residenteSchema = new mongoose.Schema({
   observaciones: {
     type: String,
     trim: true
+  },
+  claveAcceso: {
+    type: String,
+    unique: true,
+    sparse: true,
+    trim: true
   }
 }, {
   timestamps: true
@@ -62,5 +68,6 @@ const residenteSchema = new mongoose.Schema({
 residenteSchema.index({ vivienda: 1 });
 residenteSchema.index({ activo: 1 });
 residenteSchema.index({ tipo: 1 });
+residenteSchema.index({ claveAcceso: 1 });
 
 module.exports = mongoose.model('Residente', residenteSchema); 

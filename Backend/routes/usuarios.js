@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Usuario = require('../models/Usuario');
+const Residente = require('../models/Residente');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
@@ -79,9 +80,8 @@ router.post('/crear-admin-inicial', async (req, res) => {
   }
 });
 
-// Login
+// Login por email o teléfono
 router.post('/login', [
-  body('email').isEmail().withMessage('Email inválido'),
   body('password').notEmpty().withMessage('Password requerido')
 ], async (req, res) => {
   try {
@@ -90,35 +90,36 @@ router.post('/login', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password } = req.body;
-    
-    // Buscar usuario
-    const usuario = await Usuario.findOne({ email, activo: true });
+    const { email, telefono, password } = req.body;
+
+    // buscar por email o teléfono
+    let usuario = null;
+    if (email) {
+      usuario = await Usuario.findOne({ email, activo: true });
+    } else if (telefono) {
+      usuario = await Usuario.findOne({ telefono, activo: true });
+    } else {
+      return res.status(400).json({ message: 'Email o teléfono requerido' });
+    }
+
     if (!usuario) {
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
-    
-    // Verificar password
+
     const passwordValido = await usuario.compararPassword(password);
     if (!passwordValido) {
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
-    
-    // Actualizar último acceso
+
     usuario.ultimoAcceso = new Date();
     await usuario.save();
-    
-    // Generar token
+
     const token = jwt.sign(
-      { 
-        id: usuario._id, 
-        email: usuario.email, 
-        rol: usuario.rol 
-      },
+      { id: usuario._id, rol: usuario.rol, residente: usuario.residente },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
-    
+
     res.json({
       token,
       usuario: {
@@ -126,8 +127,61 @@ router.post('/login', [
         nombre: usuario.nombre,
         apellidos: usuario.apellidos,
         email: usuario.email,
+        telefono: usuario.telefono,
         rol: usuario.rol,
-        permisos: usuario.permisos
+        residente: usuario.residente
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Crear usuario para un residente (admin)
+router.post('/crear-usuario-residente', [
+  body('residenteId').notEmpty().withMessage('residenteId requerido'),
+  body('password').isLength({ min: 4 }).withMessage('Password mínimo 4 caracteres'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { residenteId, email, telefono, password } = req.body;
+    const residente = await Residente.findById(residenteId);
+    if (!residente) {
+      return res.status(404).json({ message: 'Residente no encontrado' });
+    }
+
+    // Evitar duplicados por email o teléfono
+    if (email) {
+      const existeEmail = await Usuario.findOne({ email });
+      if (existeEmail) return res.status(400).json({ message: 'Email ya en uso' });
+    }
+    if (telefono) {
+      const existeTel = await Usuario.findOne({ telefono });
+      if (existeTel) return res.status(400).json({ message: 'Teléfono ya en uso' });
+    }
+
+    const usuario = new Usuario({
+      nombre: residente.nombre,
+      apellidos: residente.apellidos,
+      email: email || undefined,
+      telefono: telefono || undefined,
+      password,
+      rol: 'Residente',
+      residente: residente._id,
+      activo: true
+    });
+
+    await usuario.save();
+
+    res.status(201).json({
+      message: 'Usuario de residente creado',
+      usuario: {
+        id: usuario._id, nombre: usuario.nombre, apellidos: usuario.apellidos,
+        email: usuario.email, telefono: usuario.telefono, rol: usuario.rol, residente: usuario.residente
       }
     });
   } catch (error) {
