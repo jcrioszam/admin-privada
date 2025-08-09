@@ -7,6 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [usePhone, setUsePhone] = useState(false);
   const { login } = useAuth();
   
   const {
@@ -18,7 +19,18 @@ const Login = () => {
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
-      await login(data);
+      // construir credenciales con email o telefono
+      const payload = usePhone ? { telefono: data.telefono, password: data.password } : { email: data.email, password: data.password };
+      const ok = await login(payload);
+      if (!ok) return;
+      // el hook useAuth setea user en localStorage->token; necesitamos leer user desde authService.getProfile o desde login
+      // Para simplificar, el login ya devuelve usuario via authService.login y el hook guarda setUser(usuario)
+      const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
+      const effectiveUser = storedUser || null;
+      if (effectiveUser && effectiveUser.rol === 'Residente') {
+        localStorage.setItem('isResidente', 'true');
+        window.location.href = '/residente/dashboard';
+      }
     } catch (error) {
       console.error('Error de login:', error);
     } finally {
@@ -54,38 +66,63 @@ const Login = () => {
         </div>
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-700">Usar teléfono para iniciar sesión</span>
+            <input type="checkbox" checked={usePhone} onChange={(e) => setUsePhone(e.target.checked)} />
+          </div>
+
           <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email" className="sr-only">
-                Correo electrónico
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${
-                  errors.email ? 'border-danger-300' : 'border-gray-300'
-                } placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm`}
-                placeholder="Correo electrónico"
-                {...register('email', {
-                  required: 'El correo electrónico es requerido',
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'Correo electrónico inválido',
-                  },
-                })}
-              />
-              {errors.email && (
-                <p className="mt-1 text-sm text-danger-600">{errors.email.message}</p>
-              )}
-            </div>
+            {!usePhone ? (
+              <div>
+                <label htmlFor="email" className="sr-only">Correo electrónico</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${
+                    errors.email ? 'border-danger-300' : 'border-gray-300'
+                  } placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm`}
+                  placeholder="Correo electrónico"
+                  {...register('email', {
+                    required: 'El correo electrónico es requerido',
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: 'Correo electrónico inválido',
+                    },
+                  })}
+                />
+                {errors.email && (
+                  <p className="mt-1 text-sm text-danger-600">{errors.email.message}</p>
+                )}
+              </div>
+            ) : (
+              <div>
+                <label htmlFor="telefono" className="sr-only">Teléfono</label>
+                <input
+                  id="telefono"
+                  name="telefono"
+                  type="tel"
+                  autoComplete="tel"
+                  required
+                  className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${
+                    errors.telefono ? 'border-danger-300' : 'border-gray-300'
+                  } placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm`}
+                  placeholder="Teléfono"
+                  {...register('telefono', {
+                    required: 'El teléfono es requerido',
+                    minLength: { value: 7, message: 'Teléfono inválido' }
+                  })}
+                />
+                {errors.telefono && (
+                  <p className="mt-1 text-sm text-danger-600">{errors.telefono.message}</p>
+                )}
+              </div>
+            )}
             
             <div className="relative">
-              <label htmlFor="password" className="sr-only">
-                Contraseña
-              </label>
+              <label htmlFor="password" className="sr-only">Contraseña</label>
               <input
                 id="password"
                 name="password"
@@ -98,17 +135,10 @@ const Login = () => {
                 placeholder="Contraseña"
                 {...register('password', {
                   required: 'La contraseña es requerida',
-                  minLength: {
-                    value: 6,
-                    message: 'La contraseña debe tener al menos 6 caracteres',
-                  },
+                  minLength: { value: 4, message: 'Mínimo 4 caracteres' },
                 })}
               />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                onClick={() => setShowPassword(!showPassword)}
-              >
+              <button type="button" className="absolute inset-y-0 right-0 pr-3 flex items-center" onClick={() => setShowPassword(!showPassword)}>
                 {showPassword ? (
                   <EyeSlashIcon className="h-5 w-5 text-gray-400" />
                 ) : (
@@ -127,19 +157,13 @@ const Login = () => {
               disabled={isLoading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? (
-                <LoadingSpinner size="sm" />
-              ) : (
-                'Iniciar sesión'
-              )}
+              {isLoading ? <LoadingSpinner size="sm" /> : 'Iniciar sesión'}
             </button>
           </div>
         </form>
         
         <div className="text-center">
-          <p className="text-xs text-gray-500">
-            © 2024 Admin Privada. Todos los derechos reservados.
-          </p>
+          <p className="text-xs text-gray-500">© 2024 Admin Privada. Todos los derechos reservados.</p>
         </div>
       </div>
     </div>

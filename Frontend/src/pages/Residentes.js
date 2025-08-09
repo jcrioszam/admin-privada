@@ -220,6 +220,9 @@ const ResidenteModal = ({ residente, viviendasDisponibles, onSubmit, onClose, is
     nombre: residente?.nombre || '',
     apellidos: residente?.apellidos || '',
     telefono: residente?.telefono || '',
+    email: residente?.email || '',
+    password: '',
+    crearUsuario: false,
     activo: residente?.activo ?? true,
     observaciones: residente?.observaciones || '',
   });
@@ -317,6 +320,41 @@ const ResidenteModal = ({ residente, viviendasDisponibles, onSubmit, onClose, is
                 className="input"
                 required
               />
+            </div>
+
+            <div>
+              <label className="form-label">Email (opcional)</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="input"
+                placeholder="correo@ejemplo.com"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  name="crearUsuario"
+                  checked={formData.crearUsuario}
+                  onChange={(e) => setFormData(prev => ({ ...prev, crearUsuario: e.target.checked }))}
+                />
+                <label className="form-label">Crear usuario para residente</label>
+              </div>
+              <div>
+                <label className="form-label">Contraseña (si se crea usuario)</label>
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="input"
+                  placeholder="Mínimo 4 caracteres"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
