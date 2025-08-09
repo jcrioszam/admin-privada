@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import Login from './pages/Login';
 import LoginResidente from './pages/LoginResidente';
@@ -30,24 +30,31 @@ import NotFound from './components/NotFound';
 function App() {
   const { user, loading } = useAuth();
   const isResidente = localStorage.getItem('isResidente') === 'true';
+  const location = useLocation();
+
+  // Rutas de residentes (siempre disponibles sin requerir sesión de admin)
+  if (location.pathname.startsWith('/residente')) {
+    return (
+      <Routes>
+        <Route path="/residente/login" element={<LoginResidente />} />
+        <Route
+          path="/residente/dashboard"
+          element={isResidente ? <DashboardResidente /> : <Navigate to="/residente/login" replace />}
+        />
+        <Route
+          path="/residente/*"
+          element={<Navigate to={isResidente ? '/residente/dashboard' : '/residente/login'} replace />}
+        />
+        <Route path="*" element={<Navigate to="/residente/login" replace />} />
+      </Routes>
+    );
+  }
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
       </div>
-    );
-  }
-
-  // Si es residente, mostrar el portal de residentes
-  if (isResidente) {
-    return (
-      <Routes>
-        <Route path="/residente/login" element={<LoginResidente />} />
-        <Route path="/residente/dashboard" element={<DashboardResidente />} />
-        <Route path="/residente/*" element={<Navigate to="/residente/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/residente/dashboard" replace />} />
-      </Routes>
     );
   }
 

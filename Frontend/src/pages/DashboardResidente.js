@@ -133,7 +133,7 @@ const DashboardResidente = () => {
         </div>
 
         {/* Resumen de Pagos */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <div className="bg-white overflow-hidden shadow rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
@@ -199,6 +199,34 @@ const DashboardResidente = () => {
                     </dt>
                     <dd className="text-lg font-medium text-gray-900">
                       {proyectosLoading ? '...' : proyectos?.proyectosPendientes || 0}
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-indigo-100 rounded-md flex items-center justify-center">
+                    <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Próximo Pago
+                    </dt>
+                    <dd className="text-sm text-gray-900">
+                      {pagosLoading ? '...' : pagos?.proximoPago ? (
+                        <span>
+                          {`Mantenimiento ${pagos.proximoPago.mes}/${pagos.proximoPago.año} - $${pagos.proximoPago.monto}`}
+                        </span>
+                      ) : '—'}
                     </dd>
                   </dl>
                 </div>
