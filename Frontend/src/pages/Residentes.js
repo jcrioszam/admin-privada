@@ -77,7 +77,7 @@ const Residentes = () => {
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar este residente?')) {
+    if (window.confirm('¿Estás seguro de que quieres eliminar este residente?\n\nEsto también eliminará el usuario asociado si existe y actualizará el estado de la vivienda.')) {
       deleteMutation.mutate(id);
     }
   };

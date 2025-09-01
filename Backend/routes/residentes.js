@@ -210,6 +210,10 @@ router.delete('/:id', async (req, res) => {
       activo: true
     });
 
+    // Eliminar usuario asociado si existe
+    const Usuario = require('../models/Usuario');
+    await Usuario.findOneAndDelete({ residente: req.params.id });
+
     await Residente.findByIdAndDelete(req.params.id);
 
     // Remover residente de la vivienda
@@ -226,7 +230,7 @@ router.delete('/:id', async (req, res) => {
       });
     }
 
-    res.json({ message: 'Residente eliminado correctamente' });
+    res.json({ message: 'Residente y usuario asociado eliminados correctamente' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -32,8 +32,8 @@ function App() {
   const isResidente = localStorage.getItem('isResidente') === 'true';
   const location = useLocation();
 
-  // Rutas de residentes (siempre disponibles sin requerir sesión de admin)
-  if (location.pathname.startsWith('/residente')) {
+  // Rutas de residentes (solo para usuarios no autenticados como admin)
+  if (location.pathname.startsWith('/residente') && !user) {
     return (
       <Routes>
         <Route path="/residente/login" element={<LoginResidente />} />
