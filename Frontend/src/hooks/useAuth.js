@@ -19,13 +19,30 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (token) {
+    const storedUser = localStorage.getItem('user');
+    
+    if (token && storedUser) {
+      // Si tenemos token y usuario almacenado, usar el usuario almacenado
+      try {
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+        setLoading(false);
+        console.log('✅ Usuario cargado desde localStorage:', userData);
+      } catch (error) {
+        console.error('❌ Error parseando usuario desde localStorage:', error);
+        localStorage.removeItem('user');
+        setLoading(false);
+      }
+    } else if (token && !storedUser) {
+      // Si tenemos token pero no usuario, obtener perfil
       authService.getProfile()
         .then(userData => {
           setUser(userData);
         })
-        .catch(() => {
+        .catch((error) => {
+          console.error('❌ Error obteniendo perfil:', error);
           localStorage.removeItem('token');
+          localStorage.removeItem('user');
         })
         .finally(() => {
           setLoading(false);
