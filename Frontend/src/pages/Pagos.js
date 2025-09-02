@@ -141,13 +141,16 @@ const Pagos = () => {
     console.log('📊 Vivienda 5 encontrada:', vivienda5);
     
     // Log detallado de todos los pagos de la vivienda 5
-    const pagosVivienda5 = pagos.filter(p => p.vivienda.numero === 5);
+    const pagosVivienda5 = pagos.filter(p => p.vivienda && p.vivienda.numero === 5);
     console.log('📊 Pagos de vivienda 5:', pagosVivienda5);
     console.log('📊 Total pagos vivienda 5:', pagosVivienda5.length);
     
     // Log de filtros aplicados
     console.log('📊 Filtro actual:', filter);
     console.log('📊 Pagos filtrados:', pagos.filter(p => {
+      // Verificar que pago y vivienda existan
+      if (!p || !p.vivienda) return false;
+      
       if (filter === 'todos') return p.saldoPendiente > 0;
       if (filter === 'vencidas') return p.estado === 'Vencido' || (p.estado === 'Pendiente' && p.diasAtraso > 0);
       if (filter === 'pendientes') return p.estado === 'Pendiente' && p.diasAtraso <= 0;

@@ -63,6 +63,24 @@ router.get('/', async (req, res) => {
       .populate('registradoPor', 'nombre apellidos')
       .sort({ año: -1, mes: -1, fechaPago: -1 });
     
+    console.log(`📊 API /api/pagos - Total pagos encontrados: ${pagos.length}`);
+    
+    // Log de pagos con vivienda null
+    const pagosSinVivienda = pagos.filter(p => !p.vivienda);
+    if (pagosSinVivienda.length > 0) {
+      console.log(`⚠️ Pagos sin vivienda: ${pagosSinVivienda.length}`);
+      pagosSinVivienda.forEach(p => {
+        console.log(`  - Pago ${p._id}: mes ${p.mes}/${p.año}, estado: ${p.estado}`);
+      });
+    }
+    
+    // Log específico de vivienda 5
+    const pagosVivienda5 = pagos.filter(p => p.vivienda && p.vivienda.numero === 5);
+    console.log(`📊 Pagos de vivienda 5: ${pagosVivienda5.length}`);
+    pagosVivienda5.forEach(p => {
+      console.log(`  - Pago ${p._id}: mes ${p.mes}/${p.año}, estado: ${p.estado}, monto: ${p.monto}`);
+    });
+    
     res.json(pagos);
   } catch (error) {
     res.status(500).json({ message: error.message });
