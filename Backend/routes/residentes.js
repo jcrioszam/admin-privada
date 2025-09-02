@@ -73,7 +73,15 @@ router.post('/', [
       return res.status(400).json({ message: 'Esta vivienda ya tiene residentes activos' });
     }
 
-    const residente = new Residente(req.body);
+    // Procesar fecha de ingreso para evitar problemas de zona horaria
+    const residenteData = { ...req.body };
+    if (residenteData.fechaIngreso) {
+      // Convertir la fecha a UTC para evitar problemas de zona horaria
+      const fecha = new Date(residenteData.fechaIngreso);
+      residenteData.fechaIngreso = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+    }
+
+    const residente = new Residente(residenteData);
     const nuevoResidente = await residente.save();
     
     // Actualizar la vivienda con el nuevo residente
@@ -185,9 +193,17 @@ router.put('/:id', [
       });
     }
 
+    // Procesar fecha de ingreso para evitar problemas de zona horaria
+    const updateData = { ...req.body };
+    if (updateData.fechaIngreso) {
+      // Convertir la fecha a UTC para evitar problemas de zona horaria
+      const fecha = new Date(updateData.fechaIngreso);
+      updateData.fechaIngreso = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+    }
+
     const residente = await Residente.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updateData,
       { new: true, runValidators: true }
     ).populate('vivienda', 'numero calle');
 
