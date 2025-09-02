@@ -66,10 +66,16 @@ const Pagos = () => {
          });
         break;
                           case 'todos':
-        // Para "todos", mostrar solo pagos con saldo pendiente
+        // Para "todos", mostrar pagos con saldo pendiente O pagos vencidos (aunque estén pagados)
           pagosFiltrados = pagosConVivienda.filter(pago => {
            const saldoPendiente = pago.monto - (pago.montoPagado || 0);
-           return saldoPendiente > 0;
+           const fechaLimite = new Date(pago.fechaLimite);
+           const hoy = new Date();
+           const diasAtraso = pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente' || 
+                              hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
+           
+           // Mostrar si tiene saldo pendiente O si está vencido (aunque esté pagado) O si es Parcial
+           return saldoPendiente > 0 || diasAtraso > 0 || pago.estado === 'Parcial';
          });
          break;
       case 'al-dia':
@@ -119,7 +125,7 @@ const Pagos = () => {
       agrupados[viviendaId].totalMonto += pago.monto;
       agrupados[viviendaId].mesesPendientes += 1;
       
-      if (diasAtraso > 0) {
+      if (diasAtraso > 0 || pago.estado === 'Parcial') {
         agrupados[viviendaId].estadoGeneral = 'Vencida';
       }
     });
@@ -133,6 +139,21 @@ const Pagos = () => {
     // Buscar específicamente la vivienda 5
     const vivienda5 = resultado.find(v => v.vivienda.numero === 5);
     console.log('📊 Vivienda 5 encontrada:', vivienda5);
+    
+    // Log detallado de todos los pagos de la vivienda 5
+    const pagosVivienda5 = pagos.filter(p => p.vivienda.numero === 5);
+    console.log('📊 Pagos de vivienda 5:', pagosVivienda5);
+    console.log('📊 Total pagos vivienda 5:', pagosVivienda5.length);
+    
+    // Log de filtros aplicados
+    console.log('📊 Filtro actual:', filter);
+    console.log('📊 Pagos filtrados:', pagos.filter(p => {
+      if (filter === 'todos') return p.saldoPendiente > 0;
+      if (filter === 'vencidas') return p.estado === 'Vencido' || (p.estado === 'Pendiente' && p.diasAtraso > 0);
+      if (filter === 'pendientes') return p.estado === 'Pendiente' && p.diasAtraso <= 0;
+      if (filter === 'al-dia') return p.saldoPendiente <= 0;
+      return true;
+    }));
     
     return resultado;
   }, [pagos, filter]);
