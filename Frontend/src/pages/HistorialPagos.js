@@ -11,13 +11,13 @@ const HistorialPagos = () => {
   const [filterEstado, setFilterEstado] = useState('todos');
   const [filterFecha, setFilterFecha] = useState('todos');
 
-  // Obtener viviendas con mejor manejo de errores
+  // Obtener viviendas con residentes
   const { data: viviendas, isLoading: loadingViviendas, error: errorViviendas } = useQuery(
-    ['viviendas'],
+    ['viviendas-con-residentes'],
     async () => {
       try {
-        console.log('🔍 Intentando obtener viviendas...');
-        const response = await api.get('/api/viviendas');
+        console.log('🔍 Intentando obtener viviendas con residentes...');
+        const response = await api.get('/api/viviendas?populate=residentes');
         console.log('✅ Viviendas obtenidas:', response.data);
         return response.data;
       } catch (error) {
@@ -90,6 +90,33 @@ const HistorialPagos = () => {
 
   const handleViviendaChange = (e) => {
     setSelectedVivienda(e.target.value);
+  };
+
+  // Función para obtener el nombre del residente principal
+  const getResidentePrincipal = (vivienda) => {
+    if (!vivienda || !vivienda.residentes || vivienda.residentes.length === 0) {
+      return 'Sin residente';
+    }
+    
+    // Buscar el residente principal (tipo "Propietario" o el primero)
+    const residentePrincipal = vivienda.residentes.find(r => r.tipo === 'Propietario') || vivienda.residentes[0];
+    return `${residentePrincipal.nombre} ${residentePrincipal.apellidos}`;
+  };
+
+  // Función para obtener información completa del residente
+  const getInfoResidente = (vivienda) => {
+    if (!vivienda || !vivienda.residentes || vivienda.residentes.length === 0) {
+      return null;
+    }
+    
+    const residentePrincipal = vivienda.residentes.find(r => r.tipo === 'Propietario') || vivienda.residentes[0];
+    return {
+      nombre: `${residentePrincipal.nombre} ${residentePrincipal.apellidos}`,
+      telefono: residentePrincipal.telefono,
+      email: residentePrincipal.email,
+      tipo: residentePrincipal.tipo,
+      fechaIngreso: residentePrincipal.fechaIngreso
+    };
   };
 
   const getEstadoBadge = (estado) => {
@@ -267,7 +294,7 @@ const HistorialPagos = () => {
                 <option value="todos">Todas las viviendas</option>
                 {viviendasOrdenadas?.map((vivienda) => (
                   <option key={vivienda._id} value={vivienda._id}>
-                    {vivienda.numero}
+                    {vivienda.numero} - {getResidentePrincipal(vivienda)}
                   </option>
                 ))}
               </select>
@@ -332,16 +359,32 @@ const HistorialPagos = () => {
         <div className="card">
           <div className="card-body">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">
-                Historial de Pagos
-                {selectedVivienda === 'todos' ? (
-                  <span className="text-gray-500 ml-2">- Todas las viviendas</span>
-                ) : viviendasOrdenadas?.find(v => v._id === selectedVivienda) && (
-                  <span className="text-gray-500 ml-2">
-                    - {viviendasOrdenadas.find(v => v._id === selectedVivienda).numero}
-                  </span>
-                )}
-              </h3>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">
+                  Historial de Pagos
+                  {selectedVivienda === 'todos' ? (
+                    <span className="text-gray-500 ml-2">- Todas las viviendas</span>
+                  ) : viviendasOrdenadas?.find(v => v._id === selectedVivienda) && (
+                    <span className="text-gray-500 ml-2">
+                      - {viviendasOrdenadas.find(v => v._id === selectedVivienda).numero}
+                    </span>
+                  )}
+                </h3>
+                {selectedVivienda !== 'todos' && selectedVivienda && (() => {
+                  const viviendaSeleccionada = viviendasOrdenadas?.find(v => v._id === selectedVivienda);
+                  const infoResidente = getInfoResidente(viviendaSeleccionada);
+                  return infoResidente ? (
+                    <div className="mt-2 text-sm text-gray-600">
+                      <div className="flex items-center space-x-4">
+                        <span><strong>Residente:</strong> {infoResidente.nombre}</span>
+                        <span><strong>Tipo:</strong> {infoResidente.tipo}</span>
+                        {infoResidente.telefono && <span><strong>Teléfono:</strong> {infoResidente.telefono}</span>}
+                        {infoResidente.email && <span><strong>Email:</strong> {infoResidente.email}</span>}
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
+              </div>
               <div className="flex items-center space-x-2">
                 {historial && historial.length > 0 && (
                   <>
@@ -371,7 +414,7 @@ const HistorialPagos = () => {
                   <thead className="table-header">
                     <tr>
                       {selectedVivienda === 'todos' && (
-                        <th className="table-header-cell">Vivienda</th>
+                        <th className="table-header-cell">Vivienda / Residente</th>
                       )}
                       <th className="table-header-cell">Período</th>
                       <th className="table-header-cell">Monto</th>
@@ -393,7 +436,14 @@ const HistorialPagos = () => {
                         <tr key={pago._id} className="table-row">
                           {selectedVivienda === 'todos' && (
                             <td className="table-cell font-medium">
-                              {vivienda?.numero || 'N/A'}
+                              <div className="text-sm">
+                                <div className="font-medium text-gray-900">
+                                  Vivienda {vivienda?.numero || 'N/A'}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {getResidentePrincipal(vivienda)}
+                                </div>
+                              </div>
                             </td>
                           )}
                           <td className="table-cell">
