@@ -124,6 +124,8 @@ const Pagos = () => {
           },
           onError: (error) => {
         console.error('❌ Error al registrar pagos múltiples:', error.response?.data?.message || error.message);
+        console.error('❌ Detalles del error:', error.response?.data);
+        console.error('❌ Datos enviados:', error.config?.data);
       },
     }
   );
@@ -164,8 +166,10 @@ const Pagos = () => {
     return selectedMeses.reduce((total, pagoId) => {
       const pago = selectedVivienda.pagos.find(p => p._id === pagoId);
       if (pago) {
+        // Calcular recargo igual que en el backend: 10% por cada 30 días de atraso
         const recargo = pago.diasAtraso > 0 ? (pago.monto * 0.10) * Math.ceil(pago.diasAtraso / 30) : 0;
-        return total + pago.saldoPendiente + recargo;
+        // El total debe ser monto + recargo, no saldoPendiente + recargo
+        return total + pago.monto + recargo;
       }
       return total;
     }, 0);
@@ -180,9 +184,13 @@ const Pagos = () => {
     const data = {
       pagoIds: selectedMeses,
       metodoPago: formData.metodoPago,
-      referenciaPago: formData.referenciaPago,
+      referenciaPago: formData.referenciaPago || undefined, // Enviar undefined si está vacío
       montoPagado: formData.montoPagado
     };
+
+    console.log('📤 Datos a enviar:', data);
+    console.log('📤 IDs de pagos seleccionados:', selectedMeses);
+    console.log('📤 Total calculado:', formData.montoPagado);
 
     pagosMultiplesMutation.mutate(data);
   };
@@ -321,14 +329,17 @@ const Pagos = () => {
                         </div>
                       </div>
                     </label>
-                    <div className="text-right">
-                      <div className="font-medium">{formatCurrency(pago.saldoPendiente)}</div>
+                                        <div className="text-right">
+                      <div className="font-medium">{formatCurrency(pago.monto)}</div>
                       {pago.diasAtraso > 0 && (
                         <div className="text-sm text-red-500">
                           +{formatCurrency((pago.monto * 0.10) * Math.ceil(pago.diasAtraso / 30))} recargo
                         </div>
                       )}
-                        </div>
+                      <div className="text-sm text-gray-500">
+                        Total: {formatCurrency(pago.monto + ((pago.diasAtraso > 0 ? (pago.monto * 0.10) * Math.ceil(pago.diasAtraso / 30) : 0)))}
+                      </div>
+                    </div>
                       </div>
                 ))}
               </div>
@@ -348,36 +359,36 @@ const Pagos = () => {
                             {/* Formulario de pago */}
               {selectedMeses.length > 0 && (
                 <div className="space-y-4">
-                  <div>
+            <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Método de Pago
                     </label>
-                    <select 
+              <select
                       className="w-full p-2 border border-gray-300 rounded-md"
-                      value={formData.metodoPago}
+                value={formData.metodoPago}
                       onChange={(e) => setFormData(prev => ({ ...prev, metodoPago: e.target.value }))}
-                    >
-                      <option value="Efectivo">Efectivo</option>
-                      <option value="Transferencia">Transferencia</option>
-                      <option value="Tarjeta">Tarjeta</option>
-                      <option value="Cheque">Cheque</option>
-                      <option value="Otro">Otro</option>
-                    </select>
-                  </div>
-                  
-                  <div>
+              >
+                <option value="Efectivo">Efectivo</option>
+                <option value="Transferencia">Transferencia</option>
+                <option value="Tarjeta">Tarjeta</option>
+                <option value="Cheque">Cheque</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+
+            <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Referencia de Pago
                     </label>
-                    <input
-                      type="text"
+              <input
+                type="text"
                       className="w-full p-2 border border-gray-300 rounded-md"
                       placeholder="Ej: Transferencia 123456"
-                      value={formData.referenciaPago}
+                value={formData.referenciaPago}
                       onChange={(e) => setFormData(prev => ({ ...prev, referenciaPago: e.target.value }))}
-                    />
-                  </div>
-                  
+              />
+            </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Monto a Pagar
@@ -388,13 +399,13 @@ const Pagos = () => {
                       value={calcularTotalSeleccionado()}
                       readOnly
                     />
-                  </div>
                 </div>
-              )}
+              </div>
+            )}
 
               {/* Botones */}
               <div className="flex justify-end space-x-3 mt-6">
-                               <button
+              <button
                    onClick={() => {
                      setIsModalOpen(false);
                      setSelectedVivienda(null);
@@ -406,11 +417,11 @@ const Pagos = () => {
                      });
                    }}
                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                 >
-                   Cancelar
-                 </button>
+              >
+                Cancelar
+              </button>
                                  {selectedMeses.length > 0 && (
-                   <button
+              <button
                      onClick={() => {
                        const dataToSend = {
                          ...formData,
@@ -422,7 +433,7 @@ const Pagos = () => {
                      disabled={pagosMultiplesMutation.isPending}
                    >
                      {pagosMultiplesMutation.isPending ? 'Procesando...' : 'Registrar Pago'}
-                   </button>
+              </button>
                  )}
             </div>
         </div>

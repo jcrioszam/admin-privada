@@ -76,9 +76,10 @@ router.post('/', [
     // Procesar fecha de ingreso para evitar problemas de zona horaria
     const residenteData = { ...req.body };
     if (residenteData.fechaIngreso) {
-      // Convertir la fecha a UTC para evitar problemas de zona horaria
+      // Mantener la fecha exacta sin conversión de zona horaria
       const fecha = new Date(residenteData.fechaIngreso);
-      residenteData.fechaIngreso = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+      // Usar la fecha tal como viene del frontend, sin ajustes de zona horaria
+      residenteData.fechaIngreso = fecha;
     }
 
     const residente = new Residente(residenteData);
@@ -196,9 +197,10 @@ router.put('/:id', [
     // Procesar fecha de ingreso para evitar problemas de zona horaria
     const updateData = { ...req.body };
     if (updateData.fechaIngreso) {
-      // Convertir la fecha a UTC para evitar problemas de zona horaria
+      // Mantener la fecha exacta sin conversión de zona horaria
       const fecha = new Date(updateData.fechaIngreso);
-      updateData.fechaIngreso = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+      // Usar la fecha tal como viene del frontend, sin ajustes de zona horaria
+      updateData.fechaIngreso = fecha;
     }
 
     const residente = await Residente.findByIdAndUpdate(

@@ -48,6 +48,7 @@ const Residentes = () => {
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['residentes']);
+        queryClient.invalidateQueries(['pagos']); // Invalidar pagos para reflejar cambios
         setIsModalOpen(false);
         setEditingResidente(null);
         console.log('✅', editingResidente ? 'Residente actualizado' : 'Residente creado');
@@ -64,6 +65,7 @@ const Residentes = () => {
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['residentes']);
+        queryClient.invalidateQueries(['pagos']); // Invalidar pagos para reflejar cambios
         console.log('✅', 'Residente eliminado');
       },
       onError: (error) => {
