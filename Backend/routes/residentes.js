@@ -196,9 +196,14 @@ router.put('/:id', [
 
     // Procesar fecha de ingreso para evitar problemas de zona horaria
     const updateData = { ...req.body };
+    console.log('📥 Fecha recibida del frontend:', updateData.fechaIngreso);
+    console.log('📥 Tipo de fecha recibida:', typeof updateData.fechaIngreso);
+    
     if (updateData.fechaIngreso) {
       // Mantener la fecha exacta sin conversión de zona horaria
       const fecha = new Date(updateData.fechaIngreso);
+      console.log('📥 Fecha convertida a Date:', fecha);
+      console.log('📥 Fecha en ISO:', fecha.toISOString());
       // Usar la fecha tal como viene del frontend, sin ajustes de zona horaria
       updateData.fechaIngreso = fecha;
     }

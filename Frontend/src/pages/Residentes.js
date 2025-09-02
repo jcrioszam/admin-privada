@@ -227,7 +227,7 @@ const ResidenteModal = ({ residente, viviendasDisponibles, onSubmit, onClose, is
     crearUsuario: false,
     activo: residente?.activo ?? true,
     observaciones: residente?.observaciones || '',
-    fechaIngreso: residente?.fechaIngreso ? new Date(residente.fechaIngreso).toLocaleDateString('en-CA') : new Date().toLocaleDateString('en-CA'),
+    fechaIngreso: residente?.fechaIngreso ? new Date(residente.fechaIngreso).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
   });
 
   const handleChange = (e) => {
@@ -251,6 +251,9 @@ const ResidenteModal = ({ residente, viviendasDisponibles, onSubmit, onClose, is
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log('📤 Datos del formulario a enviar:', formData);
+    console.log('📤 Fecha de ingreso específica:', formData.fechaIngreso);
+    console.log('📤 Tipo de fecha:', typeof formData.fechaIngreso);
     onSubmit(formData);
   };
 

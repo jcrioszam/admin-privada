@@ -22,6 +22,15 @@ const Pagos = () => {
     queryKey: ['pagos'],
     queryFn: async () => {
         const response = await api.get('/api/pagos');
+      console.log('📥 Pagos obtenidos del backend:', response.data);
+      console.log('📥 Total de pagos:', response.data.length);
+      
+      // Buscar pagos de la vivienda 5
+      const pagosVivienda5 = response.data.filter(pago => 
+        pago.vivienda && pago.vivienda.numero === 5
+      );
+      console.log('📥 Pagos de vivienda 5:', pagosVivienda5);
+      
         return response.data;
     },
     refetchInterval: 30000,
@@ -30,7 +39,7 @@ const Pagos = () => {
     refetchOnMount: true
   });
 
-  // Agrupar pagos por vivienda
+    // Agrupar pagos por vivienda
   const viviendasConPagos = useMemo(() => {
     if (!pagos) return [];
     
@@ -57,9 +66,17 @@ const Pagos = () => {
          });
         break;
                           case 'todos':
+        // Para "todos", mostrar solo pagos con saldo pendiente
           pagosFiltrados = pagosConVivienda.filter(pago => {
            const saldoPendiente = pago.monto - (pago.montoPagado || 0);
            return saldoPendiente > 0;
+         });
+         break;
+      case 'al-dia':
+        // Para "al día", mostrar viviendas que están al día (sin saldo pendiente)
+          pagosFiltrados = pagosConVivienda.filter(pago => {
+           const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+          return saldoPendiente === 0 || pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente';
          });
          break;
       default:
@@ -108,7 +125,16 @@ const Pagos = () => {
     });
     
     // Convertir a array y ordenar por número de vivienda
-    return Object.values(agrupados).sort((a, b) => a.vivienda.numero - b.vivienda.numero);
+    const resultado = Object.values(agrupados).sort((a, b) => a.vivienda.numero - b.vivienda.numero);
+    
+    console.log('📊 Viviendas agrupadas:', resultado);
+    console.log('📊 Total de viviendas con pagos:', resultado.length);
+    
+    // Buscar específicamente la vivienda 5
+    const vivienda5 = resultado.find(v => v.vivienda.numero === 5);
+    console.log('📊 Vivienda 5 encontrada:', vivienda5);
+    
+    return resultado;
   }, [pagos, filter]);
 
   // Mutación para pagos múltiples
@@ -202,7 +228,7 @@ const Pagos = () => {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Gestión de Pagos</h1>
-        <div className="flex gap-2">
+                <div className="flex gap-2">
           <button 
             onClick={() => setFilter('todos')}
             className={`px-4 py-2 rounded-lg ${filter === 'todos' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
@@ -220,6 +246,12 @@ const Pagos = () => {
             className={`px-4 py-2 rounded-lg ${filter === 'vencidos' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
           >
             Vencidos
+        </button>
+                 <button
+            onClick={() => setFilter('al-dia')}
+            className={`px-4 py-2 rounded-lg ${filter === 'al-dia' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+          >
+            Al día
              </button>
            </div>
       </div>
@@ -338,8 +370,8 @@ const Pagos = () => {
                       )}
                       <div className="text-sm text-gray-500">
                         Total: {formatCurrency(pago.monto + ((pago.diasAtraso > 0 ? (pago.monto * 0.10) * Math.ceil(pago.diasAtraso / 30) : 0)))}
-                      </div>
-                    </div>
+                        </div>
+                        </div>
                       </div>
                 ))}
               </div>
