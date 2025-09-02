@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -18,20 +18,7 @@ const LoginResidente = () => {
     formState: { errors },
   } = useForm();
 
-  // Efecto para manejar redirección cuando el usuario se actualice
-  useEffect(() => {
-    if (user) {
-      console.log('👤 Usuario detectado en contexto:', user);
-      if (user.rol === 'Residente') {
-        console.log('🏠 Redirigiendo a dashboard de residente');
-        localStorage.setItem('isResidente', 'true');
-        navigate('/residente/dashboard');
-      } else if (user.rol !== 'Residente') {
-        console.log('👨‍💼 Redirigiendo a dashboard de administrador');
-        navigate('/dashboard');
-      }
-    }
-  }, [user, navigate]);
+
 
   const onSubmit = async (data) => {
     setIsLoading(true);
@@ -46,7 +33,24 @@ const LoginResidente = () => {
         return;
       }
       
-      console.log('✅ Login exitoso, el useEffect manejará la redirección');
+      console.log('✅ Login exitoso, verificando rol...');
+      
+      // Esperar un momento para que se actualice el contexto
+      setTimeout(() => {
+        const currentUser = user || JSON.parse(localStorage.getItem('user') || 'null');
+        console.log('👤 Usuario actual:', currentUser);
+        
+        if (currentUser && currentUser.rol === 'Residente') {
+          console.log('🏠 Redirigiendo a dashboard de residente');
+          localStorage.setItem('isResidente', 'true');
+          navigate('/residente/dashboard', { replace: true });
+        } else if (currentUser && currentUser.rol !== 'Residente') {
+          console.log('👨‍💼 Redirigiendo a dashboard de administrador');
+          navigate('/dashboard', { replace: true });
+        } else {
+          console.log('❓ Usuario no encontrado o sin rol');
+        }
+      }, 500);
       
     } catch (error) {
       console.error('❌ Error de login:', error);
