@@ -980,13 +980,20 @@ router.get('/debug/pagos/:viviendaId', async (req, res) => {
       });
     }
     
-    // Obtener todos los pagos de esta vivienda
+    // Obtener todos los pagos de esta vivienda (incluyendo pagados)
     const pagos = await Pago.find({ vivienda: viviendaId })
       .populate('vivienda', 'numero')
       .populate('residente', 'nombre apellidos')
       .sort({ año: 1, mes: 1 });
     
+    // También obtener solo los pagos pendientes para comparar
+    const pagosPendientes = await Pago.find({ 
+      vivienda: viviendaId,
+      estado: { $in: ['Pendiente', 'Vencido', 'Parcial'] }
+    }).sort({ año: 1, mes: 1 });
+    
     console.log(`📊 Total de pagos encontrados: ${pagos.length}`);
+    console.log(`📊 Pagos pendientes encontrados: ${pagosPendientes.length}`);
     
     // Obtener información de la vivienda
     const vivienda = await Vivienda.findById(viviendaId)
@@ -999,7 +1006,22 @@ router.get('/debug/pagos/:viviendaId', async (req, res) => {
         residente: vivienda.residente
       } : null,
       totalPagos: pagos.length,
+      totalPagosPendientes: pagosPendientes.length,
       pagos: pagos.map(pago => ({
+        id: pago._id,
+        mes: pago.mes,
+        año: pago.año,
+        monto: pago.monto,
+        montoPagado: pago.montoPagado,
+        saldoPendiente: pago.monto - (pago.montoPagado || 0),
+        estado: pago.estado,
+        fechaInicioPeriodo: pago.fechaInicioPeriodo,
+        fechaFinPeriodo: pago.fechaFinPeriodo,
+        fechaLimite: pago.fechaLimite,
+        diasAtraso: pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente' ? 0 : 
+                   new Date() > pago.fechaLimite ? Math.ceil((new Date() - pago.fechaLimite) / (1000 * 60 * 60 * 24)) : 0
+      })),
+      pagosPendientes: pagosPendientes.map(pago => ({
         id: pago._id,
         mes: pago.mes,
         año: pago.año,
