@@ -68,34 +68,44 @@ function App() {
     return <Login />;
   }
 
-  // Si hay usuario, mostrar el portal de administración
-  return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/viviendas" element={<Viviendas />} />
-        <Route path="/residentes" element={<Residentes />} />
-        <Route path="/pagos" element={<Pagos />} />
-        <Route path="/gastos" element={<Gastos />} />
-        <Route path="/historial" element={<HistorialPagos />} />
-        <Route path="/corte-diario" element={<CorteDiario />} />
-        <Route path="/accesos" element={<Accesos />} />
-        <Route path="/usuarios" element={<Usuarios />} />
-        <Route path="/configuracion" element={<Configuracion />} />
-        <Route path="/reporte-proyectos" element={<ReporteProyectos />} />
-        <Route path="/reporte-proyectos-especiales" element={<ReporteProyectosEspeciales />} />
-        <Route path="/reporte-morosidad" element={<ReporteMorosidad />} />
-        <Route path="/pagos-especiales" element={<PagosEspeciales />} />
-        <Route path="/proyectos-pagos-especiales" element={<ProyectosPagosEspeciales />} />
-        <Route path="/reporte-flujo-caja" element={<ReporteFlujoCaja />} />
-        <Route path="/reporte-gastos-categoria" element={<ReporteGastosCategoria />} />
-        <Route path="/reporte-ocupacion" element={<ReporteOcupacion />} />
-        <Route path="/reporte-mantenimiento" element={<ReporteMantenimiento />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Layout>
-  );
+  // Si hay usuario y NO es residente, mostrar el portal de administración
+  if (user && user.rol !== 'Residente') {
+    return (
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/viviendas" element={<Viviendas />} />
+          <Route path="/residentes" element={<Residentes />} />
+          <Route path="/pagos" element={<Pagos />} />
+          <Route path="/gastos" element={<Gastos />} />
+          <Route path="/historial" element={<HistorialPagos />} />
+          <Route path="/corte-diario" element={<CorteDiario />} />
+          <Route path="/accesos" element={<Accesos />} />
+          <Route path="/usuarios" element={<Usuarios />} />
+          <Route path="/configuracion" element={<Configuracion />} />
+          <Route path="/reporte-proyectos" element={<ReporteProyectos />} />
+          <Route path="/reporte-proyectos-especiales" element={<ReporteProyectosEspeciales />} />
+          <Route path="/reporte-morosidad" element={<ReporteMorosidad />} />
+          <Route path="/pagos-especiales" element={<PagosEspeciales />} />
+          <Route path="/proyectos-pagos-especiales" element={<ProyectosPagosEspeciales />} />
+          <Route path="/reporte-flujo-caja" element={<ReporteFlujoCaja />} />
+          <Route path="/reporte-gastos-categoria" element={<ReporteGastosCategoria />} />
+          <Route path="/reporte-ocupacion" element={<ReporteOcupacion />} />
+          <Route path="/reporte-mantenimiento" element={<ReporteMantenimiento />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Layout>
+    );
+  }
+
+  // Si hay usuario residente pero no está en rutas de residente, redirigir
+  if (user && user.rol === 'Residente') {
+    return <Navigate to="/residente/dashboard" replace />;
+  }
+
+  // Si no hay usuario, mostrar login de administrador
+  return <Login />;
 }
 
 export default App; 
