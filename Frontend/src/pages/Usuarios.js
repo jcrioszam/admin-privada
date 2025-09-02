@@ -154,6 +154,7 @@ const Usuarios = () => {
                       <span className={`badge ${
                         usuario.rol === 'Administrador' ? 'badge-danger' :
                         usuario.rol === 'Supervisor' ? 'badge-warning' :
+                        usuario.rol === 'Residente' ? 'badge-info' :
                         'badge-secondary'
                       }`}>
                         {usuario.rol}
@@ -307,6 +308,7 @@ const UsuarioModal = ({ usuario, onSubmit, onClose, isLoading }) => {
                   <option value="Operador">Operador</option>
                   <option value="Supervisor">Supervisor</option>
                   <option value="Administrador">Administrador</option>
+                  <option value="Residente">Residente</option>
                 </select>
               </div>
               <div>
