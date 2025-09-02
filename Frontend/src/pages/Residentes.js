@@ -225,7 +225,7 @@ const ResidenteModal = ({ residente, viviendasDisponibles, onSubmit, onClose, is
     crearUsuario: false,
     activo: residente?.activo ?? true,
     observaciones: residente?.observaciones || '',
-    fechaIngreso: residente?.fechaIngreso ? new Date(residente.fechaIngreso).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    fechaIngreso: residente?.fechaIngreso ? new Date(residente.fechaIngreso).toLocaleDateString('en-CA') : new Date().toLocaleDateString('en-CA'),
   });
 
   const handleChange = (e) => {
