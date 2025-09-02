@@ -214,11 +214,7 @@ const DashboardResidente = () => {
                       Próximo Pago
                     </dt>
                     <dd className="text-sm text-gray-900">
-                      {pagosLoading ? '...' : pagos?.proximoPago ? (
-                        <span>
-                          {`Mantenimiento ${pagos.proximoPago.mes}/${pagos.proximoPago.año} - $${pagos.proximoPago.monto}`}
-                        </span>
-                      ) : '—'}
+                      {dashboardLoading ? '...' : 'Próximo mes'}
                     </dd>
                   </dl>
                 </div>
