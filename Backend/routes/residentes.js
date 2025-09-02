@@ -86,6 +86,7 @@ router.post('/', [
     
     // Si se solicita crear usuario de residente
     if (req.body.crearUsuario && req.body.password) {
+      console.log('🔧 Creando usuario para nuevo residente:', nuevoResidente._id);
       const Usuario = require('../models/Usuario');
 
       // Evitar duplicados por email o teléfono
@@ -113,6 +114,7 @@ router.post('/', [
         activo: true
       });
       await usuario.save();
+      console.log('✅ Usuario creado exitosamente para nuevo residente:', usuario._id);
     }
     
     const residentePopulado = await Residente.findById(nuevoResidente._id)
@@ -188,6 +190,45 @@ router.put('/:id', [
       req.body,
       { new: true, runValidators: true }
     ).populate('vivienda', 'numero calle');
+
+    // Si se solicita crear usuario de residente y no existe
+    if (req.body.crearUsuario && req.body.password) {
+      console.log('🔧 Intentando crear usuario para residente:', req.params.id);
+      const Usuario = require('../models/Usuario');
+
+      // Verificar si ya existe un usuario para este residente
+      const usuarioExistente = await Usuario.findOne({ residente: req.params.id });
+      console.log('👤 Usuario existente:', usuarioExistente ? 'Sí' : 'No');
+      
+      if (!usuarioExistente) {
+        // Evitar duplicados por email o teléfono
+        if (req.body.email) {
+          const existenteEmail = await Usuario.findOne({ email: req.body.email });
+          if (existenteEmail) {
+            return res.status(400).json({ message: 'El email ya está en uso' });
+          }
+        }
+        if (req.body.telefono) {
+          const existenteTel = await Usuario.findOne({ telefono: req.body.telefono });
+          if (existenteTel) {
+            return res.status(400).json({ message: 'El teléfono ya está en uso' });
+          }
+        }
+
+        const usuario = new Usuario({
+          nombre: residente.nombre,
+          apellidos: residente.apellidos,
+          email: req.body.email || undefined,
+          telefono: req.body.telefono || undefined,
+          password: req.body.password,
+          rol: 'Residente',
+          residente: residente._id,
+          activo: true
+        });
+        await usuario.save();
+        console.log('✅ Usuario creado exitosamente:', usuario._id);
+      }
+    }
     
     res.json(residente);
   } catch (error) {

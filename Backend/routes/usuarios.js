@@ -259,7 +259,7 @@ router.post('/', [
   body('apellidos').notEmpty().withMessage('Los apellidos son requeridos'),
   body('email').isEmail().withMessage('Email inválido'),
   body('password').isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres'),
-  body('rol').isIn(['Administrador', 'Operador', 'Supervisor']).withMessage('Rol inválido')
+  body('rol').isIn(['Administrador', 'Operador', 'Supervisor', 'Residente']).withMessage('Rol inválido')
 ], async (req, res) => {
   try {
     // Verificar token si está presente
@@ -304,7 +304,7 @@ router.put('/:id', [
   body('nombre').optional().notEmpty().withMessage('El nombre no puede estar vacío'),
   body('apellidos').optional().notEmpty().withMessage('Los apellidos no pueden estar vacíos'),
   body('email').optional().isEmail().withMessage('Email inválido'),
-  body('rol').optional().isIn(['Administrador', 'Operador', 'Supervisor']).withMessage('Rol inválido'),
+  body('rol').optional().isIn(['Administrador', 'Operador', 'Supervisor', 'Residente']).withMessage('Rol inválido'),
   body('activo').optional().isBoolean().withMessage('El estado activo debe ser booleano')
 ], async (req, res) => {
   try {
