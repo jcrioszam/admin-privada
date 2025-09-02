@@ -214,20 +214,20 @@ router.put('/:id', [
       { new: true, runValidators: true }
     ).populate('vivienda', 'numero calle');
 
-    // Si se cambió la fecha de ingreso, recalcular pagos pendientes
-    if (updateData.fechaIngreso && residente.vivienda) {
+    // SIEMPRE recalcular pagos si hay vivienda (para corregir problemas existentes)
+    if (residente.vivienda) {
       console.log('🔄 Recalculando pagos por cambio de fecha de ingreso...');
       console.log('🔄 Residente ID:', residente._id);
       console.log('🔄 Vivienda ID:', residente.vivienda._id);
-      console.log('🔄 Nueva fecha de ingreso:', updateData.fechaIngreso);
+      console.log('🔄 Nueva fecha de ingreso:', updateData.fechaIngreso || residente.fechaIngreso);
       try {
-        await recalcularPagosPorFechaIngreso(residente._id, residente.vivienda._id, updateData.fechaIngreso);
+        await recalcularPagosPorFechaIngreso(residente._id, residente.vivienda._id, updateData.fechaIngreso || residente.fechaIngreso);
         console.log('✅ Recálculo de pagos completado exitosamente');
       } catch (error) {
         console.error('❌ Error en recálculo de pagos:', error);
       }
     } else {
-      console.log('ℹ️ No se recalculan pagos - fecha de ingreso no cambió o no hay vivienda');
+      console.log('ℹ️ No se recalculan pagos - no hay vivienda asignada');
     }
 
     // Si se solicita crear usuario de residente y no existe
@@ -898,10 +898,14 @@ async function recalcularPagosPorFechaIngreso(residenteId, viviendaId, nuevaFech
       console.log(`📊 Meses transcurridos desde ingreso: ${mesesTranscurridos}`);
       
       if (mesesTranscurridos >= 0) {
-        // Recalcular fechas del período
-        const nuevaFechaInicio = new Date(nuevoAñoInicio, nuevoMesInicio - 1 + mesesTranscurridos, 1);
-        const nuevaFechaFin = new Date(nuevoAñoInicio, nuevoMesInicio + mesesTranscurridos, 0);
-        const nuevaFechaLimite = new Date(nuevoAñoInicio, nuevoMesInicio + mesesTranscurridos, 0);
+        // Recalcular fechas del período basándose en la fecha de ingreso
+        const añoPago = pago.año;
+        const mesPago = pago.mes;
+        
+        // La fecha límite debe ser el último día del mes del pago
+        const nuevaFechaInicio = new Date(añoPago, mesPago - 1, 1);
+        const nuevaFechaFin = new Date(añoPago, mesPago, 0); // Último día del mes
+        const nuevaFechaLimite = new Date(añoPago, mesPago, 0); // Último día del mes
         
         console.log(`📅 Nuevas fechas - Inicio: ${nuevaFechaInicio.toISOString()}, Fin: ${nuevaFechaFin.toISOString()}, Límite: ${nuevaFechaLimite.toISOString()}`);
         
@@ -921,14 +925,91 @@ async function recalcularPagosPorFechaIngreso(residenteId, viviendaId, nuevaFech
           fechaLimite: pagoActualizado.fechaLimite
         });
       } else {
-        console.log(`⚠️ Pago ${pago.mes}/${pago.año} es anterior a la fecha de ingreso, no se recalcula`);
+        console.log(`⚠️ Pago ${pago.mes}/${pago.año} es anterior a la fecha de ingreso, ELIMINANDO...`);
+        
+        // Eliminar pagos que son anteriores a la fecha de ingreso
+        await Pago.findByIdAndDelete(pago._id);
+        console.log(`🗑️ Pago ${pago.mes}/${pago.año} eliminado por ser anterior a la fecha de ingreso`);
       }
     }
+    
+    // Crear pagos faltantes desde la fecha de ingreso hasta el mes actual
+    await crearPagosFaltantes(viviendaId, residenteId, nuevaFechaIngreso);
     
     console.log('✅ Recálculo de pagos completado');
     
   } catch (error) {
     console.error('❌ Error recalculando pagos:', error);
+    throw error;
+  }
+}
+
+// Función para crear pagos faltantes desde la fecha de ingreso
+async function crearPagosFaltantes(viviendaId, residenteId, fechaIngreso) {
+  try {
+    console.log('🔄 Creando pagos faltantes desde fecha de ingreso...');
+    
+    const fechaIngresoDate = new Date(fechaIngreso);
+    const añoIngreso = fechaIngresoDate.getFullYear();
+    const mesIngreso = fechaIngresoDate.getMonth() + 1;
+    
+    const hoy = new Date();
+    const añoActual = hoy.getFullYear();
+    const mesActual = hoy.getMonth() + 1;
+    
+    console.log(`📅 Creando pagos desde ${mesIngreso}/${añoIngreso} hasta ${mesActual}/${añoActual}`);
+    
+    // Obtener configuración para el monto
+    const Configuracion = require('../models/Configuracion');
+    const config = await Configuracion.findOne();
+    const montoMantenimiento = config?.montoMantenimiento || 200;
+    
+    // Crear pagos para cada mes desde el ingreso hasta el actual
+    for (let año = añoIngreso; año <= añoActual; año++) {
+      const mesInicio = año === añoIngreso ? mesIngreso : 1;
+      const mesFin = año === añoActual ? mesActual : 12;
+      
+      for (let mes = mesInicio; mes <= mesFin; mes++) {
+        // Verificar si ya existe un pago para este mes
+        const pagoExistente = await Pago.findOne({
+          vivienda: viviendaId,
+          residente: residenteId,
+          mes: mes,
+          año: año
+        });
+        
+        if (!pagoExistente) {
+          // Crear nuevo pago
+          const fechaInicio = new Date(año, mes - 1, 1);
+          const fechaFin = new Date(año, mes, 0);
+          const fechaLimite = new Date(año, mes, 0);
+          
+          const nuevoPago = new Pago({
+            vivienda: viviendaId,
+            residente: residenteId,
+            mes: mes,
+            año: año,
+            monto: montoMantenimiento,
+            montoPagado: 0,
+            fechaInicioPeriodo: fechaInicio,
+            fechaFinPeriodo: fechaFin,
+            fechaLimite: fechaLimite,
+            estado: 'Pendiente',
+            metodoPago: 'Efectivo'
+          });
+          
+          await nuevoPago.save();
+          console.log(`✅ Pago creado para ${mes}/${año}`);
+        } else {
+          console.log(`ℹ️ Pago ya existe para ${mes}/${año}`);
+        }
+      }
+    }
+    
+    console.log('✅ Creación de pagos faltantes completada');
+    
+  } catch (error) {
+    console.error('❌ Error creando pagos faltantes:', error);
     throw error;
   }
 }
