@@ -933,12 +933,52 @@ async function recalcularPagosPorFechaIngreso(residenteId, viviendaId, nuevaFech
   }
 }
 
+// Endpoint temporal para listar todas las viviendas con sus IDs
+router.get('/debug/viviendas', async (req, res) => {
+  try {
+    console.log('🔍 Listando todas las viviendas...');
+    
+    const viviendas = await Vivienda.find()
+      .populate('residente', 'nombre apellidos fechaIngreso')
+      .sort({ numero: 1 });
+    
+    const resultado = viviendas.map(vivienda => ({
+      id: vivienda._id,
+      numero: vivienda.numero,
+      calle: vivienda.calle,
+      residente: vivienda.residente ? {
+        nombre: vivienda.residente.nombre,
+        apellidos: vivienda.residente.apellidos,
+        fechaIngreso: vivienda.residente.fechaIngreso
+      } : null
+    }));
+    
+    console.log('📊 Viviendas encontradas:', resultado.length);
+    
+    res.json({
+      total: resultado.length,
+      viviendas: resultado
+    });
+    
+  } catch (error) {
+    console.error('❌ Error listando viviendas:', error);
+    res.status(500).json({ message: 'Error listando viviendas', error: error.message });
+  }
+});
+
 // Endpoint temporal para verificar pagos de una vivienda específica
 router.get('/debug/pagos/:viviendaId', async (req, res) => {
   try {
     const { viviendaId } = req.params;
     
     console.log(`🔍 Verificando pagos para vivienda: ${viviendaId}`);
+    
+    // Verificar que el ID sea válido
+    if (!viviendaId || viviendaId === '[ID_DE_LA_VIVIENDA]') {
+      return res.status(400).json({ 
+        message: 'ID de vivienda inválido. Usa /api/residentes/debug/viviendas para obtener los IDs válidos' 
+      });
+    }
     
     // Obtener todos los pagos de esta vivienda
     const pagos = await Pago.find({ vivienda: viviendaId })
@@ -954,6 +994,7 @@ router.get('/debug/pagos/:viviendaId', async (req, res) => {
     
     const resultado = {
       vivienda: vivienda ? {
+        id: vivienda._id,
         numero: vivienda.numero,
         residente: vivienda.residente
       } : null,
