@@ -203,13 +203,19 @@ router.put('/:id', [
       if (!usuarioExistente) {
         // Evitar duplicados por email o teléfono
         if (req.body.email) {
-          const existenteEmail = await Usuario.findOne({ email: req.body.email });
+          const existenteEmail = await Usuario.findOne({ 
+            email: req.body.email,
+            _id: { $ne: usuarioExistente?._id } // Excluir el usuario actual si existe
+          });
           if (existenteEmail) {
             return res.status(400).json({ message: 'El email ya está en uso' });
           }
         }
         if (req.body.telefono) {
-          const existenteTel = await Usuario.findOne({ telefono: req.body.telefono });
+          const existenteTel = await Usuario.findOne({ 
+            telefono: req.body.telefono,
+            _id: { $ne: usuarioExistente?._id } // Excluir el usuario actual si existe
+          });
           if (existenteTel) {
             return res.status(400).json({ message: 'El teléfono ya está en uso' });
           }
