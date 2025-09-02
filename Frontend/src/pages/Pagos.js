@@ -916,9 +916,9 @@ const RegistrarPagoModal = ({ pago, onSubmit, onClose, isLoading, obtenerPagosPe
             <p className="text-sm text-gray-600">
                               <strong>Monto Base:</strong> {formatCurrency(pagoSeleccionado.monto)}
             </p>
-            {recargo > 0 && (
+            {!modoSeleccionMultiple && pagoSeleccionado.estaVencido && (pagoSeleccionado.calcularRecargo?.() || 0) > 0 && (
               <p className="text-sm text-red-600">
-                <strong>Recargo por atraso:</strong> {formatCurrency(recargo)}
+                <strong>Recargo por atraso:</strong> {formatCurrency(pagoSeleccionado.calcularRecargo?.() || 0)}
               </p>
             )}
             <p className="text-sm font-medium text-gray-800">
