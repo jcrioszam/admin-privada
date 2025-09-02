@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -9,7 +9,7 @@ const LoginResidente = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [usePhone, setUsePhone] = useState(false);
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
   
   const {
@@ -18,27 +18,38 @@ const LoginResidente = () => {
     formState: { errors },
   } = useForm();
 
+  // Efecto para manejar redirección cuando el usuario se actualice
+  useEffect(() => {
+    if (user) {
+      console.log('👤 Usuario detectado en contexto:', user);
+      if (user.rol === 'Residente') {
+        console.log('🏠 Redirigiendo a dashboard de residente');
+        localStorage.setItem('isResidente', 'true');
+        navigate('/residente/dashboard');
+      } else if (user.rol !== 'Residente') {
+        console.log('👨‍💼 Redirigiendo a dashboard de administrador');
+        navigate('/dashboard');
+      }
+    }
+  }, [user, navigate]);
+
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
       // construir credenciales con email o telefono
       const payload = usePhone ? { telefono: data.telefono, password: data.password } : { email: data.email, password: data.password };
+      console.log('🔐 Enviando credenciales:', payload);
+      
       const ok = await login(payload);
-      if (!ok) return;
-      
-      // Verificar el rol del usuario y redirigir según corresponda
-      const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
-      const effectiveUser = storedUser || null;
-      
-      if (effectiveUser && effectiveUser.rol === 'Residente') {
-        localStorage.setItem('isResidente', 'true');
-        navigate('/residente/dashboard');
-      } else if (effectiveUser && effectiveUser.rol !== 'Residente') {
-        // Si es administrador, supervisor u operador, ir al dashboard de admin
-        navigate('/dashboard');
+      if (!ok) {
+        console.log('❌ Login falló');
+        return;
       }
+      
+      console.log('✅ Login exitoso, el useEffect manejará la redirección');
+      
     } catch (error) {
-      console.error('Error de login:', error);
+      console.error('❌ Error de login:', error);
     } finally {
       setIsLoading(false);
     }
