@@ -214,6 +214,12 @@ router.put('/:id', [
       { new: true, runValidators: true }
     ).populate('vivienda', 'numero calle');
 
+    // Si se cambió la fecha de ingreso, recalcular pagos pendientes
+    if (updateData.fechaIngreso && residente.vivienda) {
+      console.log('🔄 Recalculando pagos por cambio de fecha de ingreso...');
+      await recalcularPagosPorFechaIngreso(residente._id, residente.vivienda._id, updateData.fechaIngreso);
+    }
+
     // Si se solicita crear usuario de residente y no existe
     if (req.body.crearUsuario && req.body.password) {
       console.log('🔧 Intentando crear usuario para residente:', req.params.id);
@@ -841,5 +847,67 @@ router.get('/proyectos/:clave', async (req, res) => {
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
+
+// Función para recalcular pagos cuando cambia la fecha de ingreso
+async function recalcularPagosPorFechaIngreso(residenteId, viviendaId, nuevaFechaIngreso) {
+  try {
+    console.log('🔄 Iniciando recálculo de pagos...');
+    console.log('📅 Nueva fecha de ingreso:', nuevaFechaIngreso);
+    
+    // Obtener todos los pagos pendientes de esta vivienda
+    const pagosPendientes = await Pago.find({
+      vivienda: viviendaId,
+      estado: { $in: ['Pendiente', 'Vencido', 'Parcial'] }
+    }).sort({ año: 1, mes: 1 });
+    
+    console.log(`📊 Pagos pendientes encontrados: ${pagosPendientes.length}`);
+    
+    if (pagosPendientes.length === 0) {
+      console.log('ℹ️ No hay pagos pendientes para recalcular');
+      return;
+    }
+    
+    // Calcular la nueva fecha de inicio del período
+    const fechaIngreso = new Date(nuevaFechaIngreso);
+    const añoIngreso = fechaIngreso.getFullYear();
+    const mesIngreso = fechaIngreso.getMonth() + 1;
+    
+    console.log(`📅 Fecha de ingreso: ${mesIngreso}/${añoIngreso}`);
+    
+    // Recalcular cada pago pendiente
+    for (const pago of pagosPendientes) {
+      // Calcular la nueva fecha de inicio del período basada en la fecha de ingreso
+      const nuevoMesInicio = mesIngreso;
+      const nuevoAñoInicio = añoIngreso;
+      
+      // Calcular cuántos meses han pasado desde el ingreso hasta este pago
+      const mesesTranscurridos = (pago.año - nuevoAñoInicio) * 12 + (pago.mes - nuevoMesInicio);
+      
+      if (mesesTranscurridos >= 0) {
+        // Recalcular fechas del período
+        const nuevaFechaInicio = new Date(nuevoAñoInicio, nuevoMesInicio - 1 + mesesTranscurridos, 1);
+        const nuevaFechaFin = new Date(nuevoAñoInicio, nuevoMesInicio + mesesTranscurridos, 0);
+        const nuevaFechaLimite = new Date(nuevoAñoInicio, nuevoMesInicio + mesesTranscurridos, 0);
+        
+        // Actualizar el pago
+        await Pago.findByIdAndUpdate(pago._id, {
+          fechaInicioPeriodo: nuevaFechaInicio,
+          fechaFinPeriodo: nuevaFechaFin,
+          fechaLimite: nuevaFechaLimite
+        });
+        
+        console.log(`✅ Pago ${pago.mes}/${pago.año} recalculado con nuevas fechas`);
+      } else {
+        console.log(`⚠️ Pago ${pago.mes}/${pago.año} es anterior a la fecha de ingreso, no se recalcula`);
+      }
+    }
+    
+    console.log('✅ Recálculo de pagos completado');
+    
+  } catch (error) {
+    console.error('❌ Error recalculando pagos:', error);
+    throw error;
+  }
+}
 
 module.exports = router; 
