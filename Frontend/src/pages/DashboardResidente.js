@@ -1,59 +1,69 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '../hooks/useAuth';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import api from '../services/api';
 
 const DashboardResidente = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [residente, setResidente] = useState(null);
   const [claveAcceso, setClaveAcceso] = useState('');
 
   useEffect(() => {
-    const residenteData = localStorage.getItem('residente');
-    const token = localStorage.getItem('residenteToken');
-    
-    if (!residenteData || !token) {
+    // Verificar si hay usuario autenticado
+    if (!user) {
+      console.log('❌ No hay usuario autenticado, redirigiendo al login');
       navigate('/residente/login');
       return;
     }
 
-    setResidente(JSON.parse(residenteData));
-    // Extraer clave de acceso del token (base64)
-    try {
-      const decoded = atob(token);
-      const clave = decoded.split(':')[1];
-      setClaveAcceso(clave);
-    } catch (error) {
-      console.error('Error decodificando token:', error);
+    // Verificar si el usuario es residente
+    if (user.rol !== 'Residente') {
+      console.log('❌ Usuario no es residente, redirigiendo al login');
+      navigate('/residente/login');
+      return;
     }
-  }, [navigate]);
+
+    console.log('✅ Usuario residente autenticado:', user);
+    setResidente(user);
+
+    // Para el sistema unificado, necesitamos obtener la clave de acceso del residente
+    // Por ahora, usaremos el ID del usuario como identificador
+    setClaveAcceso(user.id);
+  }, [user, navigate]);
 
   // Query para obtener perfil completo
   const { data: perfilData, isLoading: perfilLoading } = useQuery({
-    queryKey: ['perfil-residente', claveAcceso],
-    queryFn: () => api.get(`/api/residentes/perfil/${claveAcceso}`),
-    enabled: !!claveAcceso,
+    queryKey: ['perfil-residente', user?.id],
+    queryFn: () => api.get(`/api/usuarios/perfil`),
+    enabled: !!user,
   });
 
-  // Query para obtener pagos
+  // Query para obtener pagos (usando el ID del residente asociado)
   const { data: pagosData, isLoading: pagosLoading } = useQuery({
-    queryKey: ['pagos-residente', claveAcceso],
-    queryFn: () => api.get(`/api/residentes/pagos/${claveAcceso}`),
-    enabled: !!claveAcceso,
+    queryKey: ['pagos-residente', user?.residente],
+    queryFn: () => {
+      // Necesitamos obtener la clave de acceso del residente
+      // Por ahora, vamos a usar un endpoint diferente o crear uno nuevo
+      return api.get(`/api/residentes/pagos/${user.residente}`);
+    },
+    enabled: !!user?.residente,
   });
 
   // Query para obtener proyectos
   const { data: proyectosData, isLoading: proyectosLoading } = useQuery({
-    queryKey: ['proyectos-residente', claveAcceso],
-    queryFn: () => api.get(`/api/residentes/proyectos/${claveAcceso}`),
-    enabled: !!claveAcceso,
+    queryKey: ['proyectos-residente', user?.residente],
+    queryFn: () => api.get(`/api/residentes/proyectos/${user.residente}`),
+    enabled: !!user?.residente,
   });
 
   const handleLogout = () => {
-    localStorage.removeItem('residente');
-    localStorage.removeItem('residenteToken');
+    // Limpiar datos del sistema unificado
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
     localStorage.removeItem('isResidente');
     navigate('/residente/login');
   };
@@ -66,7 +76,7 @@ const DashboardResidente = () => {
     );
   }
 
-  const perfil = perfilData?.data?.residente;
+  const perfil = perfilData?.data;
   const pagos = pagosData?.data;
   const proyectos = proyectosData?.data;
 
@@ -86,7 +96,7 @@ const DashboardResidente = () => {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-500">
-                Vivienda: {residente.vivienda.numero}
+                {residente.residente ? 'Usuario: Residente' : 'Usuario: ' + residente.rol}
               </span>
               <button
                 onClick={handleLogout}
@@ -116,14 +126,14 @@ const DashboardResidente = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p><strong>Nombre:</strong> {perfil.nombre} {perfil.apellidos}</p>
-                  <p><strong>Tipo:</strong> {perfil.tipo}</p>
+                  <p><strong>Email:</strong> {perfil.email}</p>
                   <p><strong>Teléfono:</strong> {perfil.telefono}</p>
-                  <p><strong>Fecha de Ingreso:</strong> {format(new Date(perfil.fechaIngreso), 'dd/MM/yyyy', { locale: es })}</p>
+                  <p><strong>Rol:</strong> {perfil.rol}</p>
                 </div>
                 <div>
-                  <p><strong>Vivienda:</strong> {perfil.vivienda.numero}</p>
-                  <p><strong>Estado:</strong> {perfil.vivienda.estado}</p>
-                  <p><strong>Tipo de Ocupación:</strong> {perfil.vivienda.tipoOcupacion}</p>
+                  <p><strong>ID Usuario:</strong> {perfil.id}</p>
+                  <p><strong>Residente ID:</strong> {perfil.residente || 'No asociado'}</p>
+                  <p><strong>Estado:</strong> {perfil.activo ? 'Activo' : 'Inactivo'}</p>
                 </div>
               </div>
             ) : (
