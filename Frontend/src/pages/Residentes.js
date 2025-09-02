@@ -225,6 +225,7 @@ const ResidenteModal = ({ residente, viviendasDisponibles, onSubmit, onClose, is
     crearUsuario: false,
     activo: residente?.activo ?? true,
     observaciones: residente?.observaciones || '',
+    fechaIngreso: residente?.fechaIngreso ? new Date(residente.fechaIngreso).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
   });
 
   const handleChange = (e) => {
@@ -320,6 +321,21 @@ const ResidenteModal = ({ residente, viviendasDisponibles, onSubmit, onClose, is
                 className="input"
                 required
               />
+            </div>
+
+            <div>
+              <label className="form-label">Fecha de Ingreso al Sistema</label>
+              <input
+                type="date"
+                name="fechaIngreso"
+                value={formData.fechaIngreso}
+                onChange={handleChange}
+                className="input"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Esta fecha se usará para calcular la morosidad desde el ingreso del residente
+              </p>
             </div>
 
             <div>

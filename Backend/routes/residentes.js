@@ -513,6 +513,120 @@ router.get('/perfil/:clave', async (req, res) => {
   }
 });
 
+// GET /api/residentes/dashboard/:id - Dashboard del residente (sistema unificado)
+router.get('/dashboard/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const residente = await Residente.findById(id)
+      .populate('vivienda');
+
+    if (!residente) {
+      return res.status(404).json({ message: 'Residente no encontrado' });
+    }
+
+    // Calcular morosidad desde la fecha de ingreso
+    const fechaActual = new Date();
+    const fechaIngreso = new Date(residente.fechaIngreso);
+    
+    // Calcular meses desde el ingreso
+    const mesesDesdeIngreso = (fechaActual.getFullYear() - fechaIngreso.getFullYear()) * 12 + 
+                             (fechaActual.getMonth() - fechaIngreso.getMonth());
+    
+    // Obtener pagos del residente
+    const pagos = await Pago.find({ 
+      vivienda: residente.vivienda._id,
+      residente: residente._id 
+    }).sort({ año: -1, mes: -1 });
+
+    // Calcular estadísticas
+    let totalPagos = 0;
+    let totalAtrasados = 0;
+    let totalMorosos = 0;
+    let pagosAtrasados = [];
+    let pagosMorosos = [];
+
+    // Verificar pagos desde la fecha de ingreso
+    for (let i = 0; i <= mesesDesdeIngreso; i++) {
+      const fechaPago = new Date(fechaIngreso);
+      fechaPago.setMonth(fechaIngreso.getMonth() + i);
+      
+      const año = fechaPago.getFullYear();
+      const mes = fechaPago.getMonth() + 1;
+      
+      const pago = pagos.find(p => p.año === año && p.mes === mes);
+      
+      if (!pago) {
+        totalAtrasados++;
+        const mesesAtraso = mesesDesdeIngreso - i;
+        
+        if (mesesAtraso >= 2) {
+          totalMorosos++;
+          pagosMorosos.push({
+            mes: mes,
+            año: año,
+            mesesAtraso: mesesAtraso,
+            monto: 200 // Monto típico
+          });
+        } else {
+          pagosAtrasados.push({
+            mes: mes,
+            año: año,
+            mesesAtraso: mesesAtraso,
+            monto: 200
+          });
+        }
+      } else {
+        totalPagos++;
+      }
+    }
+
+    // Obtener proyectos especiales
+    const proyectos = await ProyectoPagoEspecial.find({ activo: true });
+    const pagosEspeciales = await PagoEspecial.find({ 
+      residente: residente._id 
+    }).populate('proyecto');
+
+    const proyectosPendientes = pagosEspeciales.filter(p => !p.pagado).length;
+    const proyectosVencidos = pagosEspeciales.filter(p => {
+      if (p.pagado) return false;
+      const fechaLimite = new Date(p.fechaLimite);
+      return fechaLimite < fechaActual;
+    }).length;
+
+    res.json({
+      residente: {
+        id: residente._id,
+        nombre: residente.nombre,
+        apellidos: residente.apellidos,
+        tipo: residente.tipo,
+        telefono: residente.telefono,
+        fechaIngreso: residente.fechaIngreso,
+        vivienda: {
+          id: residente.vivienda._id,
+          numero: residente.vivienda.numero,
+          estado: residente.vivienda.estado,
+          tipoOcupacion: residente.vivienda.tipoOcupacion
+        }
+      },
+      estadisticas: {
+        totalPagos,
+        totalAtrasados,
+        totalMorosos,
+        pagosAtrasados,
+        pagosMorosos,
+        proyectosPendientes,
+        proyectosVencidos,
+        mesesDesdeIngreso
+      }
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo dashboard de residente:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
 // GET /api/residentes/pagos/:clave - Historial de pagos del residente
 router.get('/pagos/:clave', async (req, res) => {
   try {
