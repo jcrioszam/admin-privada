@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -9,6 +10,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [usePhone, setUsePhone] = useState(false);
   const { login } = useAuth();
+  const navigate = useNavigate();
   
   const {
     register,
@@ -29,7 +31,7 @@ const Login = () => {
       const effectiveUser = storedUser || null;
       if (effectiveUser && effectiveUser.rol === 'Residente') {
         localStorage.setItem('isResidente', 'true');
-        window.location.href = '/residente/dashboard';
+        navigate('/residente/dashboard');
       }
     } catch (error) {
       console.error('Error de login:', error);
@@ -163,7 +165,14 @@ const Login = () => {
         </form>
         
         <div className="text-center">
-          <p className="text-xs text-gray-500">© 2024 Admin Privada. Todos los derechos reservados.</p>
+          <button
+            type="button"
+            onClick={() => navigate('/residente/login')}
+            className="text-sm text-primary-600 hover:text-primary-500"
+          >
+            ¿Eres residente? Accede aquí
+          </button>
+          <p className="text-xs text-gray-500 mt-2">© 2024 Admin Privada. Todos los derechos reservados.</p>
         </div>
       </div>
     </div>

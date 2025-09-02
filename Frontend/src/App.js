@@ -32,18 +32,23 @@ function App() {
   const isResidente = localStorage.getItem('isResidente') === 'true';
   const location = useLocation();
 
-  // Rutas de residentes (solo para usuarios no autenticados como admin)
-  if (location.pathname.startsWith('/residente') && !user) {
+  // Si el usuario es residente, redirigir al dashboard de residente
+  if (user && user.rol === 'Residente' && !location.pathname.startsWith('/residente')) {
+    return <Navigate to="/residente/dashboard" replace />;
+  }
+
+  // Rutas de residentes (solo para usuarios no autenticados como admin o usuarios residentes)
+  if (location.pathname.startsWith('/residente') && (!user || user.rol === 'Residente')) {
     return (
       <Routes>
         <Route path="/residente/login" element={<LoginResidente />} />
         <Route
           path="/residente/dashboard"
-          element={isResidente ? <DashboardResidente /> : <Navigate to="/residente/login" replace />}
+          element={(isResidente || (user && user.rol === 'Residente')) ? <DashboardResidente /> : <Navigate to="/residente/login" replace />}
         />
         <Route
           path="/residente/*"
-          element={<Navigate to={isResidente ? '/residente/dashboard' : '/residente/login'} replace />}
+          element={<Navigate to={(isResidente || (user && user.rol === 'Residente')) ? '/residente/dashboard' : '/residente/login'} replace />}
         />
         <Route path="*" element={<Navigate to="/residente/login" replace />} />
       </Routes>
