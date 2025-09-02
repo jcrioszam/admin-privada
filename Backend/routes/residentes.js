@@ -585,7 +585,7 @@ router.get('/dashboard/:id', async (req, res) => {
     const proyectos = await ProyectoPagoEspecial.find({ activo: true });
     const pagosEspeciales = await PagoEspecial.find({ 
       residente: residente._id 
-    }).populate('proyecto');
+    });
 
     const proyectosPendientes = pagosEspeciales.filter(p => !p.pagado).length;
     const proyectosVencidos = pagosEspeciales.filter(p => {

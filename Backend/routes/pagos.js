@@ -213,6 +213,69 @@ router.post('/:id/registrar-pago', [
   }
 });
 
+// Registrar pago múltiple
+router.post('/pago-multiple', [
+  body('pagoIds').isArray().withMessage('Debe ser un array de IDs de pagos'),
+  body('metodoPago').isIn(['Efectivo', 'Transferencia', 'Tarjeta', 'Cheque', 'Otro']).withMessage('Método de pago inválido'),
+  body('referenciaPago').optional().notEmpty().withMessage('La referencia no puede estar vacía'),
+  body('montoPagado').isNumeric().withMessage('Monto inválido')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { pagoIds, metodoPago, referenciaPago, montoPagado } = req.body;
+
+    // Verificar que todos los pagos existan
+    const pagos = await Pago.find({ _id: { $in: pagoIds } });
+    if (pagos.length !== pagoIds.length) {
+      return res.status(404).json({ message: 'Uno o más pagos no encontrados' });
+    }
+
+    // Calcular total de los pagos seleccionados
+    const totalPagos = pagos.reduce((sum, pago) => {
+      const recargo = pago.estaVencido ? (pago.calcularRecargo?.() || 0) : 0;
+      return sum + pago.monto + recargo;
+    }, 0);
+
+    // Verificar que el monto pagado sea suficiente
+    if (parseFloat(montoPagado) < totalPagos) {
+      return res.status(400).json({ 
+        message: `El monto pagado (${montoPagado}) es menor al total requerido (${totalPagos})` 
+      });
+    }
+
+    // Actualizar todos los pagos
+    const pagosActualizados = [];
+    for (const pago of pagos) {
+      pago.estado = 'Pagado';
+      pago.fechaPago = new Date();
+      pago.metodoPago = metodoPago;
+      pago.referenciaPago = referenciaPago;
+      pago.registradoPor = req.body.registradoPor || '64f1a2b3c4d5e6f7g8h9i0j1';
+      
+      const pagoActualizado = await pago.save();
+      const pagoPopulado = await Pago.findById(pagoActualizado._id)
+        .populate('vivienda', 'numero calle')
+        .populate('residente', 'nombre apellidos');
+      
+      pagosActualizados.push(pagoPopulado);
+    }
+
+    res.json({
+      message: `${pagosActualizados.length} pagos registrados exitosamente`,
+      pagos: pagosActualizados,
+      totalPagado: montoPagado,
+      excedente: parseFloat(montoPagado) - totalPagos
+    });
+  } catch (error) {
+    console.error('Error registrando pago múltiple:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Registrar pago adelantado
 router.post('/:id/pago-adelantado', [
   body('mes').isInt({ min: 1, max: 12 }).withMessage('Mes inválido'),

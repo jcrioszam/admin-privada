@@ -7,7 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { formatCurrency } from '../utils/currencyFormatter';
 
 const HistorialPagos = () => {
-  const [selectedVivienda, setSelectedVivienda] = useState('');
+  const [selectedVivienda, setSelectedVivienda] = useState('todos');
   const [filterEstado, setFilterEstado] = useState('todos');
   const [filterFecha, setFilterFecha] = useState('todos');
 

@@ -256,12 +256,37 @@ const Pagos = () => {
     actualizarResidentesMutation.mutate();
   };
 
-  const handleSubmitPago = (formData) => {
-    const pagoId = formData.pagoId || selectedPago._id;
-    registerPagoMutation.mutate({
-      id: pagoId,
-      ...formData
-    });
+  const handleSubmitPago = async (formData) => {
+    try {
+      if (formData.esPagoMultiple && formData.pagoIds) {
+        // Manejar pago múltiple
+        const response = await api.post('/api/pagos/pago-multiple', {
+          pagoIds: formData.pagoIds,
+          metodoPago: formData.metodoPago,
+          referenciaPago: formData.referenciaPago,
+          montoPagado: formData.montoPagado,
+          registradoPor: '64f1a2b3c4d5e6f7g8h9i0j1' // ID temporal
+        });
+        
+        console.log('✅', response.data.message);
+        queryClient.invalidateQueries(['pagos']);
+        closeModal();
+      } else {
+        // Manejar pago individual
+        const pagoId = formData.pagoId || selectedPago._id;
+        const response = await api.post(`/api/pagos/${pagoId}/registrar-pago`, {
+          metodoPago: formData.metodoPago,
+          referenciaPago: formData.referenciaPago,
+          registradoPor: '64f1a2b3c4d5e6f7g8h9i0j1' // ID temporal
+        });
+        
+        console.log('✅', 'Pago registrado exitosamente');
+        queryClient.invalidateQueries(['pagos']);
+        closeModal();
+      }
+    } catch (error) {
+      console.error('❌', error.response?.data?.message || 'Error al registrar pago');
+    }
   };
 
   const closeModal = () => {
@@ -690,6 +715,8 @@ const RegistrarPagoModal = ({ pago, onSubmit, onClose, isLoading, obtenerPagosPe
   const [pagosPendientes, setPagosPendientes] = useState([]);
   const [pagoSeleccionado, setPagoSeleccionado] = useState(pago);
   const [mostrarSeleccion, setMostrarSeleccion] = useState(false);
+  const [pagosSeleccionados, setPagosSeleccionados] = useState([]);
+  const [modoSeleccionMultiple, setModoSeleccionMultiple] = useState(false);
 
   // Cargar pagos pendientes cuando se abre el modal
   useEffect(() => {
@@ -697,9 +724,35 @@ const RegistrarPagoModal = ({ pago, onSubmit, onClose, isLoading, obtenerPagosPe
       const pagos = await obtenerPagosPendientes(pago.vivienda._id);
       setPagosPendientes(pagos);
       setMostrarSeleccion(pagos.length > 1);
+      
+      // Activar modo selección múltiple si hay más de 1 mes de atraso
+      const pagosAtrasados = pagos.filter(p => p.diasAtraso > 30); // Más de 30 días de atraso
+      setModoSeleccionMultiple(pagosAtrasados.length > 1);
+      
+      // Si hay múltiples meses atrasados, seleccionar el primero por defecto
+      if (pagosAtrasados.length > 1) {
+        setPagosSeleccionados([pagosAtrasados[0]._id]);
+        setPagoSeleccionado(pagosAtrasados[0]);
+        const totalInicial = pagosAtrasados[0].monto + (pagosAtrasados[0].estaVencido ? (pagosAtrasados[0].calcularRecargo?.() || 0) : 0);
+        setFormData(prev => ({
+          ...prev,
+          montoPagado: totalInicial
+        }));
+      }
     };
     cargarPagosPendientes();
   }, [pago.vivienda._id, obtenerPagosPendientes]);
+
+  // Actualizar monto cuando cambien los pagos seleccionados
+  useEffect(() => {
+    if (modoSeleccionMultiple && pagosSeleccionados.length > 0) {
+      const nuevoTotal = calcularTotalSeleccionado();
+      setFormData(prev => ({
+        ...prev,
+        montoPagado: nuevoTotal
+      }));
+    }
+  }, [pagosSeleccionados, modoSeleccionMultiple]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -709,17 +762,49 @@ const RegistrarPagoModal = ({ pago, onSubmit, onClose, isLoading, obtenerPagosPe
     }));
   };
 
+  // Manejar selección múltiple de pagos
+  const handleSeleccionarPago = (pagoId, isSelected) => {
+    if (isSelected) {
+      setPagosSeleccionados(prev => [...prev, pagoId]);
+    } else {
+      setPagosSeleccionados(prev => prev.filter(id => id !== pagoId));
+    }
+  };
+
+  // Calcular total de pagos seleccionados
+  const calcularTotalSeleccionado = () => {
+    return pagosSeleccionados.reduce((total, pagoId) => {
+      const pago = pagosPendientes.find(p => p._id === pagoId);
+      if (pago) {
+        const recargo = pago.estaVencido ? (pago.calcularRecargo?.() || 0) : 0;
+        return total + pago.monto + recargo;
+      }
+      return total;
+    }, 0);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit({
-      ...formData,
-      pagoId: pagoSeleccionado._id
-    });
+    
+    if (modoSeleccionMultiple && pagosSeleccionados.length > 0) {
+      // Enviar múltiples pagos
+      onSubmit({
+        ...formData,
+        pagoIds: pagosSeleccionados,
+        esPagoMultiple: true
+      });
+    } else {
+      // Enviar un solo pago
+      onSubmit({
+        ...formData,
+        pagoId: pagoSeleccionado._id
+      });
+    }
   };
 
   // Calcular total a pagar (monto + recargo si está vencido)
-  const recargo = pagoSeleccionado.estaVencido ? (pagoSeleccionado.calcularRecargo?.() || 0) : 0;
-  const totalAPagar = pagoSeleccionado.monto + recargo;
+  const totalAPagar = modoSeleccionMultiple ? calcularTotalSeleccionado() : 
+    (pagoSeleccionado.monto + (pagoSeleccionado.estaVencido ? (pagoSeleccionado.calcularRecargo?.() || 0) : 0));
   const excedente = parseFloat(formData.montoPagado) > totalAPagar ? parseFloat(formData.montoPagado) - totalAPagar : 0;
 
   const seleccionarPago = (pagoSeleccion) => {
@@ -743,38 +828,78 @@ const RegistrarPagoModal = ({ pago, onSubmit, onClose, isLoading, obtenerPagosPe
           {mostrarSeleccion && (
             <div className="mb-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
               <h4 className="text-sm font-medium text-yellow-800 mb-2">
-                Selecciona el período a pagar:
+                {modoSeleccionMultiple ? 'Selecciona los períodos a pagar (múltiples meses atrasados):' : 'Selecciona el período a pagar:'}
               </h4>
               <div className="space-y-2 max-h-32 overflow-y-auto">
                 {pagosPendientes.map((pagoPendiente) => {
                   const diasAtraso = pagoPendiente.diasAtraso || 0;
                   const recargoPendiente = pagoPendiente.calcularRecargo ? pagoPendiente.calcularRecargo() : 0;
                   const totalPendiente = pagoPendiente.monto + recargoPendiente;
+                  const isSelected = modoSeleccionMultiple ? 
+                    pagosSeleccionados.includes(pagoPendiente._id) : 
+                    pagoSeleccionado._id === pagoPendiente._id;
                   
                   return (
-                    <button
+                    <div
                       key={pagoPendiente._id}
-                      onClick={() => seleccionarPago(pagoPendiente)}
-                      className={`w-full text-left p-2 rounded border ${
-                        pagoSeleccionado._id === pagoPendiente._id
+                      className={`w-full p-2 rounded border ${
+                        isSelected
                           ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
-                      <div className="text-sm">
-                        <div className="font-medium">
-                          {pagoPendiente.mes}/{pagoPendiente.año}
-                        </div>
-                        <div className="text-xs text-gray-600">
-                          {formatCurrency(pagoPendiente.monto)}
-                          {recargoPendiente > 0 && ` + ${formatCurrency(recargoPendiente)} recargo`}
-                          {diasAtraso > 0 && ` (${diasAtraso} días atrasado)`}
-                        </div>
-                      </div>
-                    </button>
+                      {modoSeleccionMultiple ? (
+                        <label className="flex items-center space-x-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => handleSeleccionarPago(pagoPendiente._id, e.target.checked)}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                          <div className="text-sm flex-1">
+                            <div className="font-medium">
+                              {pagoPendiente.mes}/{pagoPendiente.año}
+                            </div>
+                            <div className="text-xs text-gray-600">
+                              {formatCurrency(pagoPendiente.monto)}
+                              {recargoPendiente > 0 && ` + ${formatCurrency(recargoPendiente)} recargo`}
+                              {diasAtraso > 0 && ` (${diasAtraso} días atrasado)`}
+                            </div>
+                          </div>
+                        </label>
+                      ) : (
+                        <button
+                          onClick={() => seleccionarPago(pagoPendiente)}
+                          className="w-full text-left"
+                        >
+                          <div className="text-sm">
+                            <div className="font-medium">
+                              {pagoPendiente.mes}/{pagoPendiente.año}
+                            </div>
+                            <div className="text-xs text-gray-600">
+                              {formatCurrency(pagoPendiente.monto)}
+                              {recargoPendiente > 0 && ` + ${formatCurrency(recargoPendiente)} recargo`}
+                              {diasAtraso > 0 && ` (${diasAtraso} días atrasado)`}
+                            </div>
+                          </div>
+                        </button>
+                      )}
+                    </div>
                   );
                 })}
               </div>
+              
+              {/* Mostrar total de pagos seleccionados */}
+              {modoSeleccionMultiple && pagosSeleccionados.length > 0 && (
+                <div className="mt-3 p-2 bg-blue-100 rounded border border-blue-200">
+                  <div className="text-sm font-medium text-blue-800">
+                    Total seleccionado: {formatCurrency(calcularTotalSeleccionado())}
+                  </div>
+                  <div className="text-xs text-blue-600">
+                    {pagosSeleccionados.length} período{pagosSeleccionados.length > 1 ? 's' : ''} seleccionado{pagosSeleccionados.length > 1 ? 's' : ''}
+                  </div>
+                </div>
+              )}
             </div>
           )}
           
