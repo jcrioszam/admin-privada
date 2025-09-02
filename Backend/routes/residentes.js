@@ -217,7 +217,17 @@ router.put('/:id', [
     // Si se cambió la fecha de ingreso, recalcular pagos pendientes
     if (updateData.fechaIngreso && residente.vivienda) {
       console.log('🔄 Recalculando pagos por cambio de fecha de ingreso...');
-      await recalcularPagosPorFechaIngreso(residente._id, residente.vivienda._id, updateData.fechaIngreso);
+      console.log('🔄 Residente ID:', residente._id);
+      console.log('🔄 Vivienda ID:', residente.vivienda._id);
+      console.log('🔄 Nueva fecha de ingreso:', updateData.fechaIngreso);
+      try {
+        await recalcularPagosPorFechaIngreso(residente._id, residente.vivienda._id, updateData.fechaIngreso);
+        console.log('✅ Recálculo de pagos completado exitosamente');
+      } catch (error) {
+        console.error('❌ Error en recálculo de pagos:', error);
+      }
+    } else {
+      console.log('ℹ️ No se recalculan pagos - fecha de ingreso no cambió o no hay vivienda');
     }
 
     // Si se solicita crear usuario de residente y no existe
@@ -876,6 +886,8 @@ async function recalcularPagosPorFechaIngreso(residenteId, viviendaId, nuevaFech
     
     // Recalcular cada pago pendiente
     for (const pago of pagosPendientes) {
+      console.log(`🔄 Procesando pago ${pago.mes}/${pago.año} - Estado: ${pago.estado}`);
+      
       // Calcular la nueva fecha de inicio del período basada en la fecha de ingreso
       const nuevoMesInicio = mesIngreso;
       const nuevoAñoInicio = añoIngreso;
@@ -883,20 +895,31 @@ async function recalcularPagosPorFechaIngreso(residenteId, viviendaId, nuevaFech
       // Calcular cuántos meses han pasado desde el ingreso hasta este pago
       const mesesTranscurridos = (pago.año - nuevoAñoInicio) * 12 + (pago.mes - nuevoMesInicio);
       
+      console.log(`📊 Meses transcurridos desde ingreso: ${mesesTranscurridos}`);
+      
       if (mesesTranscurridos >= 0) {
         // Recalcular fechas del período
         const nuevaFechaInicio = new Date(nuevoAñoInicio, nuevoMesInicio - 1 + mesesTranscurridos, 1);
         const nuevaFechaFin = new Date(nuevoAñoInicio, nuevoMesInicio + mesesTranscurridos, 0);
         const nuevaFechaLimite = new Date(nuevoAñoInicio, nuevoMesInicio + mesesTranscurridos, 0);
         
+        console.log(`📅 Nuevas fechas - Inicio: ${nuevaFechaInicio.toISOString()}, Fin: ${nuevaFechaFin.toISOString()}, Límite: ${nuevaFechaLimite.toISOString()}`);
+        
         // Actualizar el pago
-        await Pago.findByIdAndUpdate(pago._id, {
+        const pagoActualizado = await Pago.findByIdAndUpdate(pago._id, {
           fechaInicioPeriodo: nuevaFechaInicio,
           fechaFinPeriodo: nuevaFechaFin,
           fechaLimite: nuevaFechaLimite
-        });
+        }, { new: true });
         
         console.log(`✅ Pago ${pago.mes}/${pago.año} recalculado con nuevas fechas`);
+        console.log(`📊 Pago actualizado:`, {
+          id: pagoActualizado._id,
+          mes: pagoActualizado.mes,
+          año: pagoActualizado.año,
+          estado: pagoActualizado.estado,
+          fechaLimite: pagoActualizado.fechaLimite
+        });
       } else {
         console.log(`⚠️ Pago ${pago.mes}/${pago.año} es anterior a la fecha de ingreso, no se recalcula`);
       }
@@ -909,5 +932,56 @@ async function recalcularPagosPorFechaIngreso(residenteId, viviendaId, nuevaFech
     throw error;
   }
 }
+
+// Endpoint temporal para verificar pagos de una vivienda específica
+router.get('/debug/pagos/:viviendaId', async (req, res) => {
+  try {
+    const { viviendaId } = req.params;
+    
+    console.log(`🔍 Verificando pagos para vivienda: ${viviendaId}`);
+    
+    // Obtener todos los pagos de esta vivienda
+    const pagos = await Pago.find({ vivienda: viviendaId })
+      .populate('vivienda', 'numero')
+      .populate('residente', 'nombre apellidos')
+      .sort({ año: 1, mes: 1 });
+    
+    console.log(`📊 Total de pagos encontrados: ${pagos.length}`);
+    
+    // Obtener información de la vivienda
+    const vivienda = await Vivienda.findById(viviendaId)
+      .populate('residente', 'nombre apellidos fechaIngreso');
+    
+    const resultado = {
+      vivienda: vivienda ? {
+        numero: vivienda.numero,
+        residente: vivienda.residente
+      } : null,
+      totalPagos: pagos.length,
+      pagos: pagos.map(pago => ({
+        id: pago._id,
+        mes: pago.mes,
+        año: pago.año,
+        monto: pago.monto,
+        montoPagado: pago.montoPagado,
+        saldoPendiente: pago.monto - (pago.montoPagado || 0),
+        estado: pago.estado,
+        fechaInicioPeriodo: pago.fechaInicioPeriodo,
+        fechaFinPeriodo: pago.fechaFinPeriodo,
+        fechaLimite: pago.fechaLimite,
+        diasAtraso: pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente' ? 0 : 
+                   new Date() > pago.fechaLimite ? Math.ceil((new Date() - pago.fechaLimite) / (1000 * 60 * 60 * 24)) : 0
+      }))
+    };
+    
+    console.log('📊 Resultado:', JSON.stringify(resultado, null, 2));
+    
+    res.json(resultado);
+    
+  } catch (error) {
+    console.error('❌ Error verificando pagos:', error);
+    res.status(500).json({ message: 'Error verificando pagos', error: error.message });
+  }
+});
 
 module.exports = router; 
