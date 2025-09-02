@@ -947,6 +947,7 @@ router.get('/debug/viviendas', async (req, res) => {
       numero: vivienda.numero,
       calle: vivienda.calle,
       residente: vivienda.residente ? {
+        id: vivienda.residente._id,
         nombre: vivienda.residente.nombre,
         apellidos: vivienda.residente.apellidos,
         fechaIngreso: vivienda.residente.fechaIngreso
@@ -963,6 +964,63 @@ router.get('/debug/viviendas', async (req, res) => {
   } catch (error) {
     console.error('❌ Error listando viviendas:', error);
     res.status(500).json({ message: 'Error listando viviendas', error: error.message });
+  }
+});
+
+// Endpoint temporal para verificar pagos de un residente específico
+router.get('/debug/residente/:residenteId', async (req, res) => {
+  try {
+    const { residenteId } = req.params;
+    
+    console.log(`🔍 Verificando residente: ${residenteId}`);
+    
+    // Obtener información del residente
+    const residente = await Residente.findById(residenteId)
+      .populate('vivienda', 'numero');
+    
+    if (!residente) {
+      return res.status(404).json({ message: 'Residente no encontrado' });
+    }
+    
+    // Obtener todos los pagos de este residente
+    const pagos = await Pago.find({ residente: residenteId })
+      .populate('vivienda', 'numero')
+      .sort({ año: 1, mes: 1 });
+    
+    console.log(`📊 Pagos del residente ${residente.nombre}: ${pagos.length}`);
+    
+    const resultado = {
+      residente: {
+        id: residente._id,
+        nombre: residente.nombre,
+        apellidos: residente.apellidos,
+        fechaIngreso: residente.fechaIngreso,
+        vivienda: residente.vivienda
+      },
+      totalPagos: pagos.length,
+      pagos: pagos.map(pago => ({
+        id: pago._id,
+        mes: pago.mes,
+        año: pago.año,
+        monto: pago.monto,
+        montoPagado: pago.montoPagado,
+        saldoPendiente: pago.monto - (pago.montoPagado || 0),
+        estado: pago.estado,
+        fechaInicioPeriodo: pago.fechaInicioPeriodo,
+        fechaFinPeriodo: pago.fechaFinPeriodo,
+        fechaLimite: pago.fechaLimite,
+        diasAtraso: pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente' ? 0 : 
+                   new Date() > pago.fechaLimite ? Math.ceil((new Date() - pago.fechaLimite) / (1000 * 60 * 60 * 24)) : 0
+      }))
+    };
+    
+    console.log('📊 Resultado:', JSON.stringify(resultado, null, 2));
+    
+    res.json(resultado);
+    
+  } catch (error) {
+    console.error('❌ Error verificando residente:', error);
+    res.status(500).json({ message: 'Error verificando residente', error: error.message });
   }
 });
 
@@ -1044,6 +1102,49 @@ router.get('/debug/pagos/:viviendaId', async (req, res) => {
   } catch (error) {
     console.error('❌ Error verificando pagos:', error);
     res.status(500).json({ message: 'Error verificando pagos', error: error.message });
+  }
+});
+
+// Endpoint temporal para forzar recálculo de pagos de un residente
+router.post('/debug/recalcular-pagos/:residenteId', async (req, res) => {
+  try {
+    const { residenteId } = req.params;
+    
+    console.log(`🔄 Forzando recálculo de pagos para residente: ${residenteId}`);
+    
+    // Obtener información del residente
+    const residente = await Residente.findById(residenteId)
+      .populate('vivienda', 'numero');
+    
+    if (!residente) {
+      return res.status(404).json({ message: 'Residente no encontrado' });
+    }
+    
+    if (!residente.vivienda) {
+      return res.status(400).json({ message: 'El residente no tiene vivienda asignada' });
+    }
+    
+    console.log(`📊 Residente: ${residente.nombre} ${residente.apellidos}`);
+    console.log(`📊 Vivienda: ${residente.vivienda.numero}`);
+    console.log(`📊 Fecha de ingreso: ${residente.fechaIngreso}`);
+    
+    // Forzar recálculo de pagos
+    await recalcularPagosPorFechaIngreso(residenteId, residente.vivienda._id, residente.fechaIngreso);
+    
+    res.json({ 
+      message: 'Recálculo de pagos completado',
+      residente: {
+        id: residente._id,
+        nombre: residente.nombre,
+        apellidos: residente.apellidos,
+        fechaIngreso: residente.fechaIngreso,
+        vivienda: residente.vivienda.numero
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error forzando recálculo:', error);
+    res.status(500).json({ message: 'Error forzando recálculo', error: error.message });
   }
 });
 
