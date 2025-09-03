@@ -375,7 +375,41 @@ const Pagos = () => {
     return <LoadingSpinner />;
   }
 
-  const mesesPendientes = selectedResidente ? generarMesesPendientes(selectedResidente) : [];
+  // Generar meses pendientes basados en datos reales de la BD
+  const mesesPendientes = selectedResidente ? (() => {
+    const pagosResidente = pagos?.filter(pago => 
+      pago.residente && pago.residente._id === selectedResidente._id
+    ) || [];
+    
+    return pagosResidente
+      .filter(pago => {
+        const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+        return saldoPendiente > 0;
+      })
+      .map(pago => {
+        const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+        const fechaLimite = new Date(pago.fechaLimite);
+        const hoy = new Date();
+        const diasAtraso = hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
+        
+        return {
+          mes: pago.mes,
+          año: pago.año,
+          monto: pago.monto,
+          montoPagado: pago.montoPagado || 0,
+          saldoPendiente,
+          estado: pago.estado,
+          diasAtraso,
+          fechaLimite,
+          pagoId: pago._id,
+          existe: true
+        };
+      })
+      .sort((a, b) => {
+        if (a.año !== b.año) return a.año - b.año;
+        return a.mes - b.mes;
+      });
+  })() : [];
 
   return (
     <div className="p-6">
