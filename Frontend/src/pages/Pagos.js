@@ -300,6 +300,7 @@ const Pagos = () => {
         fechaLimite: new Date(mes.año, mes.mes, 0),
         estado: 'Pendiente',
         metodoPago: 'Efectivo'
+        // No incluir registradoPor - se manejará en el backend
       }));
 
       // Crear pagos uno por uno

@@ -151,7 +151,7 @@ router.post('/', [
       ...req.body,
       fechaVencimiento,
       fechaLimite,
-      registradoPor: req.body.registradoPor || '64f1a2b3c4d5e6f7g8h9i0j1' // ID temporal, se debe obtener del token
+      registradoPor: req.body.registradoPor || new mongoose.Types.ObjectId() // ID temporal válido
     });
     
     const nuevoPago = await pago.save();
@@ -217,7 +217,7 @@ router.post('/:id/registrar-pago', [
     pago.fechaPago = new Date();
     pago.metodoPago = req.body.metodoPago;
     pago.referenciaPago = req.body.referenciaPago;
-    pago.registradoPor = req.body.registradoPor || '64f1a2b3c4d5e6f7g8h9i0j1';
+    pago.registradoPor = req.body.registradoPor || new mongoose.Types.ObjectId();
 
     const pagoActualizado = await pago.save();
     
@@ -272,7 +272,7 @@ router.post('/pago-multiple', [
       pago.fechaPago = new Date();
       pago.metodoPago = metodoPago;
       pago.referenciaPago = referenciaPago;
-      pago.registradoPor = req.body.registradoPor || '64f1a2b3c4d5e6f7g8h9i0j1';
+      pago.registradoPor = req.body.registradoPor || new mongoose.Types.ObjectId();
       
       const pagoActualizado = await pago.save();
       const pagoPopulado = await Pago.findById(pagoActualizado._id)
