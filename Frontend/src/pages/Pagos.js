@@ -49,66 +49,49 @@ const Pagos = () => {
 
       if (filter === 'todos') {
         return pagosResidente.some(pago => {
-          // Si el pago está completamente pagado, no mostrarlo
-          if (pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente') {
-            return false;
-          }
-          
           const saldoPendiente = pago.monto - (pago.montoPagado || 0);
-          const fechaLimite = new Date(pago.fechaLimite);
-          const hoy = new Date();
-          const diasAtraso = hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
           
-          return saldoPendiente > 0 || diasAtraso > 0 || pago.estado === 'Parcial';
+          // Si hay saldo pendiente, mostrarlo en "todos"
+          return saldoPendiente > 0;
         });
       }
            
       if (filter === 'vencidas') {
         return pagosResidente.some(pago => {
-          // Si el pago está completamente pagado, no mostrarlo
-          if (pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente') {
-            return false;
-          }
-          
           const saldoPendiente = pago.monto - (pago.montoPagado || 0);
           const fechaLimite = new Date(pago.fechaLimite);
           const hoy = new Date();
           const diasAtraso = hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
           
+          // Solo mostrar si hay saldo pendiente Y está vencido
           return saldoPendiente > 0 && diasAtraso > 0;
         });
       }
 
       if (filter === 'pendientes') {
         return pagosResidente.some(pago => {
-          // Si el pago está completamente pagado, no mostrarlo
-          if (pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente') {
-            return false;
-          }
-          
           const saldoPendiente = pago.monto - (pago.montoPagado || 0);
           const fechaLimite = new Date(pago.fechaLimite);
           const hoy = new Date();
           const diasAtraso = hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
           
+          // Solo mostrar si hay saldo pendiente Y NO está vencido
           return saldoPendiente > 0 && diasAtraso <= 0;
         });
       }
 
       if (filter === 'al-dia') {
-        // Un residente está al día si NO tiene pagos pendientes
+        // Un residente está al día si NO tiene saldo pendiente
         return !pagosResidente.some(pago => {
-          // Si el pago está completamente pagado, no es pendiente
-          if (pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente') {
+          const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+          
+          // Si no hay saldo pendiente, está al día
+          if (saldoPendiente <= 0) {
             return false;
           }
           
-          const saldoPendiente = pago.monto - (pago.montoPagado || 0);
-          const fechaLimite = new Date(pago.fechaLimite);
-          const hoy = new Date();
-          const diasAtraso = hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
-          
-          return saldoPendiente > 0 || diasAtraso > 0 || pago.estado === 'Parcial';
+          // Si hay saldo pendiente, no está al día
+          return true;
         }) && pagosResidente.length > 0;
       }
 
