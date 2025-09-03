@@ -30,8 +30,8 @@ const Pagos = () => {
   const { data: pagos, isLoading: loadingPagos } = useQuery({
     queryKey: ['pagos'],
     queryFn: async () => {
-      const response = await api.get('/api/pagos');
-      return response.data;
+        const response = await api.get('/api/pagos');
+        return response.data;
     }
   });
 
@@ -46,18 +46,18 @@ const Pagos = () => {
 
       if (filter === 'todos') {
         return pagosResidente.some(pago => {
-          const saldoPendiente = pago.monto - (pago.montoPagado || 0);
-          const fechaLimite = new Date(pago.fechaLimite);
-          const hoy = new Date();
-          const diasAtraso = pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente' || 
-                             hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
+           const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+           const fechaLimite = new Date(pago.fechaLimite);
+           const hoy = new Date();
+           const diasAtraso = pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente' || 
+                              hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
           return saldoPendiente > 0 || diasAtraso > 0 || pago.estado === 'Parcial';
         });
       }
-
+           
       if (filter === 'vencidas') {
         return pagosResidente.some(pago => {
-          const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+           const saldoPendiente = pago.monto - (pago.montoPagado || 0);
           const fechaLimite = new Date(pago.fechaLimite);
           const hoy = new Date();
           const diasAtraso = pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente' || 
@@ -69,10 +69,10 @@ const Pagos = () => {
       if (filter === 'pendientes') {
         return pagosResidente.some(pago => {
           const saldoPendiente = pago.monto - (pago.montoPagado || 0);
-          const fechaLimite = new Date(pago.fechaLimite);
-          const hoy = new Date();
-          const diasAtraso = pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente' || 
-                             hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
+        const fechaLimite = new Date(pago.fechaLimite);
+        const hoy = new Date();
+        const diasAtraso = pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente' || 
+                           hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
           return saldoPendiente > 0 && diasAtraso <= 0;
         });
       }
@@ -80,7 +80,15 @@ const Pagos = () => {
       if (filter === 'al-dia') {
         return pagosResidente.every(pago => {
           const saldoPendiente = pago.monto - (pago.montoPagado || 0);
-          return saldoPendiente <= 0;
+        const fechaLimite = new Date(pago.fechaLimite);
+        const hoy = new Date();
+        const diasAtraso = pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente' || 
+                           hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
+        
+          // Un residente está "al día" si:
+          // 1. No tiene saldo pendiente Y
+          // 2. No tiene días de atraso
+          return saldoPendiente <= 0 && diasAtraso <= 0;
         }) && pagosResidente.length > 0;
       }
 
@@ -212,8 +220,8 @@ const Pagos = () => {
         referenciaPago: '',
         montoPagado: 0
       });
-    },
-    onError: (error) => {
+      },
+      onError: (error) => {
       console.error('Error al registrar pagos:', error);
       console.error('Error response:', error.response?.data);
       console.error('Error config:', error.config?.data);
@@ -251,50 +259,50 @@ const Pagos = () => {
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-4">Gestión de Pagos</h1>
-        
-        {/* Filtros */}
+
+      {/* Filtros */}
         <div className="flex gap-2 mb-4">
-          <button
+                 <button
             onClick={() => setFilter('todos')}
-            className={`px-4 py-2 rounded-md text-sm font-medium ${
+           className={`px-4 py-2 rounded-md text-sm font-medium ${
               filter === 'todos' 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
+               ? 'bg-blue-600 text-white'
+               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+           }`}
+         >
             Todos
-          </button>
-          <button
+         </button>
+        <button
             onClick={() => setFilter('vencidas')}
-            className={`px-4 py-2 rounded-md text-sm font-medium ${
+          className={`px-4 py-2 rounded-md text-sm font-medium ${
               filter === 'vencidas' 
-                ? 'bg-red-600 text-white' 
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
+              ? 'bg-red-600 text-white'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
             Vencidas
-          </button>
-          <button
+        </button>
+                 <button
             onClick={() => setFilter('pendientes')}
-            className={`px-4 py-2 rounded-md text-sm font-medium ${
+           className={`px-4 py-2 rounded-md text-sm font-medium ${
               filter === 'pendientes' 
                 ? 'bg-yellow-600 text-white' 
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
+               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+           }`}
+         >
             Pendientes
-          </button>
-          <button
+         </button>
+         <button
             onClick={() => setFilter('al-dia')}
-            className={`px-4 py-2 rounded-md text-sm font-medium ${
+           className={`px-4 py-2 rounded-md text-sm font-medium ${
               filter === 'al-dia' 
-                ? 'bg-green-600 text-white' 
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
+               ? 'bg-green-600 text-white'
+               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+           }`}
+         >
             Al día
-          </button>
-        </div>
+             </button>
+           </div>
       </div>
 
       {/* Lista de residentes */}
@@ -303,6 +311,8 @@ const Pagos = () => {
           const mesesPendientesResidente = generarMesesPendientes(residente);
           const totalSaldo = mesesPendientesResidente.reduce((sum, mes) => sum + mes.saldoPendiente, 0);
           const tieneVencidos = mesesPendientesResidente.some(mes => mes.diasAtraso > 0);
+          const tienePendientes = mesesPendientesResidente.some(mes => mes.saldoPendiente > 0);
+          const estaAlDia = !tienePendientes && !tieneVencidos;
 
           return (
             <div
@@ -315,13 +325,13 @@ const Pagos = () => {
                   {residente.nombre} {residente.apellidos}
                 </h3>
                 <UserIcon className="h-5 w-5 text-gray-400" />
-              </div>
-              
+      </div>
+
               <div className="text-sm text-gray-600 mb-2">
                 <p>Vivienda: {residente.vivienda?.numero}</p>
                 <p>Ingreso: {new Date(residente.fechaIngreso).toLocaleDateString()}</p>
-              </div>
-
+           </div>
+          
               <div className="flex items-center justify-between">
                 <div className="text-sm">
                   <p className="text-gray-600">
@@ -330,22 +340,22 @@ const Pagos = () => {
                   <p className={`font-semibold ${tieneVencidos ? 'text-red-600' : 'text-gray-900'}`}>
                     {formatCurrency(totalSaldo)}
                   </p>
-                </div>
-                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          </div>
+                                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
                   tieneVencidos 
                     ? 'bg-red-100 text-red-800' 
-                    : totalSaldo > 0 
+                    : tienePendientes 
                       ? 'bg-yellow-100 text-yellow-800' 
                       : 'bg-green-100 text-green-800'
                 }`}>
-                  {tieneVencidos ? 'Vencido' : totalSaldo > 0 ? 'Pendiente' : 'Al día'}
+                  {tieneVencidos ? 'Vencido' : tienePendientes ? 'Pendiente' : 'Al día'}
                 </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
+                                  </div>
+                                </div>
+                   );
+                 })}
+          </div>
+          
       {/* Modal de pagos */}
       {isModalOpen && selectedResidente && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -360,7 +370,7 @@ const Pagos = () => {
               >
                 ✕
               </button>
-            </div>
+      </div>
 
             <div className="mb-4">
               <button
@@ -369,7 +379,7 @@ const Pagos = () => {
               >
                 {selectedMeses.length === mesesPendientes.length ? 'Deseleccionar Todos' : 'Seleccionar Todos'}
               </button>
-            </div>
+    </div>
 
             {/* Lista de meses pendientes */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
@@ -378,14 +388,14 @@ const Pagos = () => {
                 const recargo = mes.diasAtraso > 0 ? (mes.monto * 0.1 * Math.ceil(mes.diasAtraso / 30)) : 0;
                 const total = mes.saldoPendiente + recargo;
 
-                return (
+  return (
                   <div
                     key={`${mes.mes}-${mes.año}`}
                     className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                       isSelected 
-                        ? 'border-blue-500 bg-blue-50' 
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
                     onClick={() => handleSeleccionarMes(mes)}
                   >
                     <div className="flex items-center justify-between">
@@ -420,12 +430,12 @@ const Pagos = () => {
                             +{formatCurrency(recargo)} recargo
                           </p>
                         )}
+                        </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
 
             {/* Formulario de pago */}
             {selectedMeses.length > 0 && (
@@ -434,49 +444,49 @@ const Pagos = () => {
                   <h3 className="text-lg font-semibold mb-2">Detalles del Pago</h3>
                   <p className="text-sm text-gray-600 mb-4">
                     Total a pagar: <span className="font-bold text-lg">{formatCurrency(calcularTotalSeleccionado())}</span>
-                  </p>
-                </div>
-
+            </p>
+          </div>
+          
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
+            <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Método de Pago
                     </label>
-                    <select
-                      value={formData.metodoPago}
+              <select
+                value={formData.metodoPago}
                       onChange={(e) => setFormData({...formData, metodoPago: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="Efectivo">Efectivo</option>
-                      <option value="Transferencia">Transferencia</option>
-                      <option value="Tarjeta">Tarjeta</option>
-                      <option value="Cheque">Cheque</option>
-                      <option value="Otro">Otro</option>
-                    </select>
-                  </div>
+              >
+                <option value="Efectivo">Efectivo</option>
+                <option value="Transferencia">Transferencia</option>
+                <option value="Tarjeta">Tarjeta</option>
+                <option value="Cheque">Cheque</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
 
-                  <div>
+            <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Referencia de Pago
                     </label>
-                    <input
-                      type="text"
-                      value={formData.referenciaPago}
+              <input
+                type="text"
+                value={formData.referenciaPago}
                       onChange={(e) => setFormData({...formData, referenciaPago: e.target.value})}
                       placeholder="Opcional"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                  </div>
                 </div>
+              </div>
 
                 <div className="flex justify-end gap-3">
-                  <button
+              <button
                     onClick={() => setIsModalOpen(false)}
                     className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-                  >
-                    Cancelar
-                  </button>
-                  <button
+              >
+                Cancelar
+              </button>
+              <button
                     onClick={handlePagarSeleccionados}
                     disabled={pagosMultiplesMutation.isPending}
                     className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
@@ -492,15 +502,15 @@ const Pagos = () => {
                         Registrar Pago
                       </>
                     )}
-                  </button>
-                </div>
+              </button>
+            </div>
               </div>
             )}
-          </div>
         </div>
+      </div>
       )}
     </div>
   );
 };
 
-export default Pagos;
+export default Pagos; 
