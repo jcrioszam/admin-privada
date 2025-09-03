@@ -8,6 +8,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 const Pagos = () => {
+  // Deploy trigger - correcciones de filtros aplicadas
   const [selectedResidente, setSelectedResidente] = useState(null);
   const [selectedMeses, setSelectedMeses] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -807,4 +808,4 @@ const Pagos = () => {
   );
 };
 
-export default Pagos; "// Deploy trigger $(date)" 
+export default Pagos; 
