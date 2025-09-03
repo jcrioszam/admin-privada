@@ -257,27 +257,75 @@ const Pagos = () => {
     console.log('Meses existentes:', mesesExistentes);
     console.log('Meses no existentes:', mesesNoExistentes);
 
-    // Si hay meses que no existen, primero crearlos
-    if (mesesNoExistentes.length > 0) {
-      // Por ahora, solo procesar meses existentes
-      // TODO: Implementar creación de pagos faltantes
-      alert('Algunos meses seleccionados no existen en la base de datos. Por favor, contacte al administrador para crear estos pagos.');
+    // Si solo hay meses que no existen, crear pagos primero
+    if (mesesExistentes.length === 0 && mesesNoExistentes.length > 0) {
+      // Crear pagos para meses que no existen
+      crearPagosFaltantes(mesesNoExistentes);
       return;
     }
 
-    const pagoIds = mesesExistentes.map(mes => mes.pagoId);
+    // Si hay meses existentes, procesarlos
+    if (mesesExistentes.length > 0) {
+      const pagoIds = mesesExistentes.map(mes => mes.pagoId);
 
-    const data = {
-      pagoIds,
-      metodoPago: formData.metodoPago,
-      referenciaPago: formData.referenciaPago || undefined,
-      montoPagado: calcularTotalSeleccionado()
-    };
+      const data = {
+        pagoIds,
+        metodoPago: formData.metodoPago,
+        referenciaPago: formData.referenciaPago || undefined,
+        montoPagado: calcularTotalSeleccionado()
+      };
 
-    console.log('Datos a enviar:', data);
-    console.log('Meses seleccionados:', selectedMeses);
+      console.log('Datos a enviar:', data);
+      console.log('Meses seleccionados:', selectedMeses);
 
-    pagosMultiplesMutation.mutate(data);
+      pagosMultiplesMutation.mutate(data);
+    }
+  };
+
+  // Función para crear pagos faltantes
+  const crearPagosFaltantes = async (mesesNoExistentes) => {
+    try {
+      console.log('Creando pagos faltantes para:', mesesNoExistentes);
+      
+      // Crear pagos en el backend
+      const pagosACrear = mesesNoExistentes.map(mes => ({
+        vivienda: selectedResidente.vivienda._id,
+        residente: selectedResidente._id,
+        mes: mes.mes,
+        año: mes.año,
+        monto: mes.monto,
+        montoPagado: 0,
+        fechaInicioPeriodo: new Date(mes.año, mes.mes - 1, 1),
+        fechaFinPeriodo: new Date(mes.año, mes.mes, 0),
+        fechaLimite: new Date(mes.año, mes.mes, 0),
+        estado: 'Pendiente',
+        metodoPago: 'Efectivo'
+      }));
+
+      // Crear pagos uno por uno
+      const pagosCreados = [];
+      for (const pagoData of pagosACrear) {
+        const response = await api.post('/api/pagos', pagoData);
+        pagosCreados.push(response.data);
+      }
+
+      console.log('Pagos creados:', pagosCreados);
+
+      // Ahora procesar el pago
+      const pagoIds = pagosCreados.map(pago => pago._id);
+      const data = {
+        pagoIds,
+        metodoPago: formData.metodoPago,
+        referenciaPago: formData.referenciaPago || undefined,
+        montoPagado: calcularTotalSeleccionado()
+      };
+
+      pagosMultiplesMutation.mutate(data);
+
+    } catch (error) {
+      console.error('Error creando pagos faltantes:', error);
+      alert('Error al crear los pagos faltantes: ' + (error.response?.data?.message || 'Error desconocido'));
+    }
   };
 
   if (loadingResidentes || loadingPagos) {
