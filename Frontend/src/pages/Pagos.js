@@ -1,9 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { PlusIcon, CreditCardIcon, CheckIcon, UserIcon, CalendarIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, CreditCardIcon, CheckIcon, UserIcon, CalendarIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatCurrency } from '../utils/currencyFormatter';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const Pagos = () => {
   const [selectedResidente, setSelectedResidente] = useState(null);
@@ -207,6 +209,50 @@ const Pagos = () => {
     // Estados para mensaje de confirmación y comprobante
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [comprobanteData, setComprobanteData] = useState(null);
+  const comprobanteRef = useRef(null);
+
+  // Función para generar PDF del comprobante
+  const generarPDF = async () => {
+    if (!comprobanteRef.current) return;
+
+    try {
+      const canvas = await html2canvas(comprobanteRef.current, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const imgWidth = 210;
+      const pageHeight = 295;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      
+      let position = 0;
+      
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      
+      // Generar nombre del archivo
+      const fecha = new Date().toISOString().split('T')[0];
+      const residente = comprobanteData?.pagos?.[0]?.residente;
+      const nombreArchivo = `comprobante_${residente?.nombre || 'pago'}_${fecha}.pdf`;
+      
+      pdf.save(nombreArchivo);
+    } catch (error) {
+      console.error('Error generando PDF:', error);
+      alert('Error al generar el PDF. Inténtalo de nuevo.');
+    }
+  };
 
   // Mutación para pagos múltiples
   const pagosMultiplesMutation = useMutation({
@@ -609,57 +655,113 @@ const Pagos = () => {
             </div>
 
             {/* Comprobante */}
-            <div className="border-2 border-gray-200 rounded-lg p-6 mb-6">
-              <div className="text-center mb-4">
-                <h3 className="text-lg font-bold text-gray-900">COMPROBANTE DE PAGO</h3>
-                <p className="text-sm text-gray-600">Fecha: {new Date().toLocaleDateString()}</p>
+            <div ref={comprobanteRef} className="bg-white border-2 border-gray-300 rounded-lg p-6 mb-6 max-w-md mx-auto">
+              {/* Header del ticket */}
+              <div className="text-center mb-6 border-b-2 border-dashed border-gray-400 pb-4">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">COMPROBANTE DE PAGO</h3>
+                <p className="text-sm text-gray-600">Administración de Condominios</p>
+                <p className="text-xs text-gray-500">Fecha: {new Date().toLocaleDateString('es-ES')}</p>
+                <p className="text-xs text-gray-500">Hora: {new Date().toLocaleTimeString('es-ES')}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <p className="text-sm text-gray-600">Residente:</p>
-                  <p className="font-semibold">{selectedResidente?.nombre} {selectedResidente?.apellidos}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Vivienda:</p>
-                  <p className="font-semibold">{selectedResidente?.vivienda?.numero}</p>
-                </div>
-              </div>
-
+              {/* Información del residente */}
               <div className="mb-4">
-                <p className="text-sm text-gray-600 mb-2">Meses pagados:</p>
-                <div className="space-y-1">
-                  {selectedMeses.map((mes, index) => (
-                    <div key={index} className="flex justify-between text-sm">
-                      <span>{new Date(mes.año, mes.mes - 1).toLocaleDateString('es-ES', { 
-                        month: 'long', 
-                        year: 'numeric' 
-                      })}</span>
-                      <span>{formatCurrency(mes.saldoPendiente)}</span>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-semibold text-gray-700">Residente:</span>
+                  <span className="text-sm font-bold text-gray-900">
+                    {comprobanteData?.pagos?.[0]?.residente?.nombre} {comprobanteData?.pagos?.[0]?.residente?.apellidos}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-semibold text-gray-700">Vivienda:</span>
+                  <span className="text-sm font-bold text-gray-900">
+                    {comprobanteData?.pagos?.[0]?.vivienda?.numero}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-semibold text-gray-700">Dirección:</span>
+                  <span className="text-sm text-gray-900">
+                    {comprobanteData?.pagos?.[0]?.vivienda?.calle}
+                  </span>
+                </div>
+              </div>
+
+              {/* Detalle de pagos */}
+              <div className="mb-4 border-t border-gray-300 pt-4">
+                <h4 className="text-sm font-bold text-gray-700 mb-3">DETALLE DE PAGOS:</h4>
+                <div className="space-y-2">
+                  {comprobanteData?.pagos?.map((pago, index) => (
+                    <div key={index} className="flex justify-between items-center text-sm">
+                      <div>
+                        <span className="font-semibold">
+                          {new Date(pago.año, pago.mes - 1).toLocaleDateString('es-ES', { 
+                            month: 'long', 
+                            year: 'numeric' 
+                          })}
+                        </span>
+                        {pago.recargo > 0 && (
+                          <span className="text-xs text-red-600 ml-2">(+ recargo)</span>
+                        )}
+                      </div>
+                      <span className="font-bold">{formatCurrency(pago.monto + (pago.recargo || 0))}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="border-t pt-4">
+              {/* Información de pago */}
+              <div className="mb-4 border-t border-gray-300 pt-4">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-600">Método de pago:</span>
-                  <span className="font-semibold">{formData.metodoPago}</span>
+                  <span className="text-sm font-semibold text-gray-700">Método de pago:</span>
+                  <span className="text-sm font-bold text-gray-900">
+                    {comprobanteData?.pagos?.[0]?.metodoPago}
+                  </span>
                 </div>
-                {formData.referenciaPago && (
+                {comprobanteData?.pagos?.[0]?.referenciaPago && (
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-gray-600">Referencia:</span>
-                    <span className="font-semibold">{formData.referenciaPago}</span>
+                    <span className="text-sm font-semibold text-gray-700">Referencia:</span>
+                    <span className="text-sm font-bold text-gray-900">
+                      {comprobanteData.pagos[0].referenciaPago}
+                    </span>
                   </div>
                 )}
-                <div className="flex justify-between items-center text-lg font-bold">
-                  <span>Total pagado:</span>
-                  <span className="text-green-600">{formatCurrency(calcularTotalSeleccionado())}</span>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-semibold text-gray-700">Fecha de pago:</span>
+                  <span className="text-sm font-bold text-gray-900">
+                    {new Date(comprobanteData?.pagos?.[0]?.fechaPago).toLocaleDateString('es-ES')}
+                  </span>
                 </div>
+              </div>
+
+              {/* Total */}
+              <div className="border-t-2 border-dashed border-gray-400 pt-4">
+                <div className="flex justify-between items-center text-lg font-bold">
+                  <span>TOTAL PAGADO:</span>
+                  <span className="text-green-600">{formatCurrency(comprobanteData?.totalPagado || 0)}</span>
+                </div>
+                {comprobanteData?.excedente > 0 && (
+                  <div className="flex justify-between items-center text-sm text-blue-600 mt-1">
+                    <span>Excedente:</span>
+                    <span>{formatCurrency(comprobanteData.excedente)}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer del ticket */}
+              <div className="text-center mt-6 pt-4 border-t border-gray-300">
+                <p className="text-xs text-gray-500">¡Gracias por su pago!</p>
+                <p className="text-xs text-gray-500">Conserve este comprobante</p>
               </div>
             </div>
 
-            <div className="flex justify-center">
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={generarPDF}
+                className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center space-x-2"
+              >
+                <DocumentArrowDownIcon className="h-5 w-5" />
+                <span>Descargar PDF</span>
+              </button>
               <button
                 onClick={() => {
                   setShowSuccessMessage(false);
