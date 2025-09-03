@@ -204,27 +204,45 @@ const Pagos = () => {
     }, 0);
   };
 
+    // Estados para mensaje de confirmación y comprobante
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [comprobanteData, setComprobanteData] = useState(null);
+
   // Mutación para pagos múltiples
   const pagosMultiplesMutation = useMutation({
     mutationFn: async (data) => {
       return api.post('/api/pagos/pago-multiple', data);
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
+      console.log('✅ Pago registrado exitosamente:', response.data);
+      
+      // Mostrar mensaje de confirmación
+      setComprobanteData(response.data);
+      setShowSuccessMessage(true);
+      
+      // Actualizar datos
       queryClient.invalidateQueries(['pagos']);
       queryClient.invalidateQueries(['residentes']);
-      setIsModalOpen(false);
-      setSelectedResidente(null);
-      setSelectedMeses([]);
-      setFormData({
-        metodoPago: 'Efectivo',
-        referenciaPago: '',
-        montoPagado: 0
-      });
-      },
-      onError: (error) => {
+      
+      // Cerrar modal después de un delay
+      setTimeout(() => {
+        setIsModalOpen(false);
+        setSelectedResidente(null);
+        setSelectedMeses([]);
+        setFormData({
+          metodoPago: 'Efectivo',
+          referenciaPago: '',
+          montoPagado: 0
+        });
+      }, 2000);
+    },
+    onError: (error) => {
       console.error('Error al registrar pagos:', error);
       console.error('Error response:', error.response?.data);
       console.error('Error config:', error.config?.data);
+      
+      // Mostrar mensaje de error
+      alert('Error al registrar el pago: ' + (error.response?.data?.message || 'Error desconocido'));
     }
   });
 
@@ -232,9 +250,22 @@ const Pagos = () => {
   const handlePagarSeleccionados = () => {
     if (selectedMeses.length === 0) return;
 
-    const pagoIds = selectedMeses
-      .filter(mes => mes.existe)
-      .map(mes => mes.pagoId);
+    // Separar meses existentes y no existentes
+    const mesesExistentes = selectedMeses.filter(mes => mes.existe);
+    const mesesNoExistentes = selectedMeses.filter(mes => !mes.existe);
+
+    console.log('Meses existentes:', mesesExistentes);
+    console.log('Meses no existentes:', mesesNoExistentes);
+
+    // Si hay meses que no existen, primero crearlos
+    if (mesesNoExistentes.length > 0) {
+      // Por ahora, solo procesar meses existentes
+      // TODO: Implementar creación de pagos faltantes
+      alert('Algunos meses seleccionados no existen en la base de datos. Por favor, contacte al administrador para crear estos pagos.');
+      return;
+    }
+
+    const pagoIds = mesesExistentes.map(mes => mes.pagoId);
 
     const data = {
       pagoIds,
@@ -506,8 +537,92 @@ const Pagos = () => {
             </div>
               </div>
             )}
+                  </div>
         </div>
-      </div>
+      )}
+
+      {/* Modal de confirmación y comprobante */}
+      {showSuccessMessage && comprobanteData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                <CheckIcon className="h-6 w-6 text-green-600" />
+              </div>
+              
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                ¡Pago Registrado Exitosamente!
+              </h2>
+              
+              <p className="text-gray-600 mb-6">
+                Gracias por su pago. A continuación se muestra el comprobante:
+              </p>
+            </div>
+
+            {/* Comprobante */}
+            <div className="border-2 border-gray-200 rounded-lg p-6 mb-6">
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-bold text-gray-900">COMPROBANTE DE PAGO</h3>
+                <p className="text-sm text-gray-600">Fecha: {new Date().toLocaleDateString()}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p className="text-sm text-gray-600">Residente:</p>
+                  <p className="font-semibold">{selectedResidente?.nombre} {selectedResidente?.apellidos}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Vivienda:</p>
+                  <p className="font-semibold">{selectedResidente?.vivienda?.numero}</p>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-2">Meses pagados:</p>
+                <div className="space-y-1">
+                  {selectedMeses.map((mes, index) => (
+                    <div key={index} className="flex justify-between text-sm">
+                      <span>{new Date(mes.año, mes.mes - 1).toLocaleDateString('es-ES', { 
+                        month: 'long', 
+                        year: 'numeric' 
+                      })}</span>
+                      <span>{formatCurrency(mes.saldoPendiente)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-gray-600">Método de pago:</span>
+                  <span className="font-semibold">{formData.metodoPago}</span>
+                </div>
+                {formData.referenciaPago && (
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-gray-600">Referencia:</span>
+                    <span className="font-semibold">{formData.referenciaPago}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center text-lg font-bold">
+                  <span>Total pagado:</span>
+                  <span className="text-green-600">{formatCurrency(calcularTotalSeleccionado())}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-center">
+              <button
+                onClick={() => {
+                  setShowSuccessMessage(false);
+                  setComprobanteData(null);
+                }}
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
