@@ -130,10 +130,10 @@ const Pagos = () => {
 
     const mesesPendientes = [];
 
-    // Generar meses desde la fecha de ingreso hasta el mes actual
+    // Generar meses desde la fecha de ingreso hasta el mes anterior (no generar meses futuros)
     for (let año = añoIngreso; año <= añoActual; año++) {
       const mesInicio = año === añoIngreso ? mesIngreso : 1;
-      const mesFin = año === añoActual ? mesActual : 12;
+      const mesFin = año === añoActual ? mesActual - 1 : 12; // No generar mes actual automáticamente
 
       for (let mes = mesInicio; mes <= mesFin; mes++) {
         // Verificar si ya existe un pago para este mes
