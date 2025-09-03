@@ -136,6 +136,11 @@ const Pagos = () => {
         const diasAtraso = hoy > fechaLimite ? Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24)) : 0;
 
         if (pagoExistente) {
+          // Si el pago está completamente pagado, no incluirlo en pendientes
+          if (pagoExistente.estado === 'Pagado' || pagoExistente.estado === 'Pagado con excedente') {
+            continue; // Saltar este mes, ya está pagado
+          }
+          
           const saldoPendiente = pagoExistente.monto - (pagoExistente.montoPagado || 0);
           if (saldoPendiente > 0 || diasAtraso > 0 || pagoExistente.estado === 'Parcial') {
             mesesPendientes.push({
