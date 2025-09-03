@@ -416,11 +416,33 @@ const Pagos = () => {
       {/* Lista de residentes */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {residentesFiltrados.map((residente) => {
-          const mesesPendientesResidente = generarMesesPendientes(residente);
-          const totalSaldo = mesesPendientesResidente.reduce((sum, mes) => sum + mes.saldoPendiente, 0);
-          const tieneVencidos = mesesPendientesResidente.some(mes => mes.diasAtraso > 0);
-          const tienePendientes = mesesPendientesResidente.some(mes => mes.saldoPendiente > 0);
-          const estaAlDia = !tienePendientes && !tieneVencidos;
+          // Calcular estado basado en datos reales de la BD (igual que en el filtro)
+          const pagosResidente = pagos.filter(pago => 
+            pago.residente && pago.residente._id === residente._id
+          );
+          
+          let totalSaldo = 0;
+          let tieneVencidos = false;
+          let tienePendientes = false;
+          
+          for (const pago of pagosResidente) {
+            const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+            const fechaLimite = new Date(pago.fechaLimite);
+            const hoy = new Date();
+            const diasAtraso = hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
+            
+            if (saldoPendiente > 0) {
+              totalSaldo += saldoPendiente;
+              
+              if (diasAtraso > 0) {
+                tieneVencidos = true;
+              } else {
+                tienePendientes = true;
+              }
+            }
+          }
+          
+          const estaAlDia = totalSaldo === 0;
 
           // Determinar color del borde y estado
           let borderColor = 'border-blue-500';
