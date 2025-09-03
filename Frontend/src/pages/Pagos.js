@@ -266,9 +266,11 @@ const Pagos = () => {
       setComprobanteData(response.data);
       setShowSuccessMessage(true);
       
-      // Actualizar datos
+      // Actualizar datos - Forzar refetch inmediato
       queryClient.invalidateQueries(['pagos']);
       queryClient.invalidateQueries(['residentes']);
+      queryClient.refetchQueries(['pagos']);
+      queryClient.refetchQueries(['residentes']);
       
       // Cerrar modal después de un delay
       setTimeout(() => {
@@ -280,6 +282,10 @@ const Pagos = () => {
           referenciaPago: '',
           montoPagado: 0
         });
+        
+        // Refetch adicional después de cerrar el modal
+        queryClient.refetchQueries(['pagos']);
+        queryClient.refetchQueries(['residentes']);
       }, 2000);
     },
     onError: (error) => {
