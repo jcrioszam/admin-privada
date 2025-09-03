@@ -214,7 +214,7 @@ const Pagos = () => {
   const calcularTotalSeleccionado = () => {
     return selectedMeses.reduce((total, mes) => {
       const recargo = mes.diasAtraso > 0 ? (mes.monto * 0.1 * Math.ceil(mes.diasAtraso / 30)) : 0;
-      return total + mes.saldoPendiente + recargo;
+      return total + mes.monto + recargo;
     }, 0);
   };
 
