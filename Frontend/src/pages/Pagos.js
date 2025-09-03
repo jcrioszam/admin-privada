@@ -8,7 +8,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 const Pagos = () => {
-  // Deploy trigger - correcciones de filtros aplicadas - v2
+  // Deploy trigger - correcciones de filtros aplicadas - v3
   const [selectedResidente, setSelectedResidente] = useState(null);
   const [selectedMeses, setSelectedMeses] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
