@@ -57,11 +57,12 @@ const Pagos = () => {
 
       if (filter === 'vencidas') {
         return pagosResidente.some(pago => {
+          const saldoPendiente = pago.monto - (pago.montoPagado || 0);
           const fechaLimite = new Date(pago.fechaLimite);
           const hoy = new Date();
           const diasAtraso = pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente' || 
                              hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
-          return diasAtraso > 0;
+          return saldoPendiente > 0 && diasAtraso > 0;
         });
       }
 
@@ -80,7 +81,7 @@ const Pagos = () => {
         return pagosResidente.every(pago => {
           const saldoPendiente = pago.monto - (pago.montoPagado || 0);
           return saldoPendiente <= 0;
-        });
+        }) && pagosResidente.length > 0;
       }
 
       return true;
