@@ -50,10 +50,9 @@ const Residentes = () => {
         queryClient.invalidateQueries(['residentes']);
         queryClient.invalidateQueries(['pagos']); // Invalidar pagos para reflejar cambios
         queryClient.invalidateQueries(['viviendas']);
-        // Forzar refresh de la página de pagos
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+        // Forzar refetch de todas las queries
+        queryClient.refetchQueries(['pagos']);
+        queryClient.refetchQueries(['residentes']);
         setIsModalOpen(false);
         setEditingResidente(null);
         console.log('✅', editingResidente ? 'Residente actualizado' : 'Residente creado');
