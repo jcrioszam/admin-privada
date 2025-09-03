@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { PlusIcon, CreditCardIcon, CheckIcon, UserIcon, CalendarIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline';
+import { CreditCardIcon, CheckIcon, UserIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatCurrency } from '../utils/currencyFormatter';
@@ -64,15 +64,9 @@ const Pagos = () => {
         const diasAtraso = hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
 
         // Solo considerar pagos que realmente tienen saldo pendiente
-        if (saldoPendiente > 0) {
-          tieneSaldoPendiente = true;
-          
-          if (diasAtraso > 0) {
-            tieneVencidos = true;
-          } else {
-            tienePendientes = true;
+                  if (saldoPendiente > 0) {
+            tieneSaldoPendiente = true;
           }
-        }
       }
 
       // Aplicar filtros basados en el estado calculado
@@ -424,6 +418,7 @@ const Pagos = () => {
           let totalSaldo = 0;
           let tieneVencidos = false;
           let tienePendientes = false;
+          let mesesPendientesCount = 0;
           
           for (const pago of pagosResidente) {
             const saldoPendiente = pago.monto - (pago.montoPagado || 0);
@@ -433,6 +428,7 @@ const Pagos = () => {
             
             if (saldoPendiente > 0) {
               totalSaldo += saldoPendiente;
+              mesesPendientesCount++;
               
               if (diasAtraso > 0) {
                 tieneVencidos = true;
@@ -441,8 +437,6 @@ const Pagos = () => {
               }
             }
           }
-          
-          const estaAlDia = totalSaldo === 0;
 
           // Determinar color del borde y estado
           let borderColor = 'border-blue-500';
@@ -483,7 +477,7 @@ const Pagos = () => {
               <div className="flex items-center justify-between">
                 <div className="text-sm">
                   <p className="text-gray-600">
-                    {mesesPendientesResidente.length} mes(es) pendiente(s)
+                    {mesesPendientesCount} mes(es) pendiente(s)
                   </p>
                   <p className={`font-semibold ${montoColor}`}>
                     {formatCurrency(totalSaldo)}
