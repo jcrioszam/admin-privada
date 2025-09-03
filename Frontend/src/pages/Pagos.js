@@ -77,13 +77,7 @@ const Pagos = () => {
       // Aplicar filtros basados en el estado calculado
       switch (filter) {
         case 'todos':
-          return tieneSaldoPendiente; // Solo residentes con saldo pendiente
-          
-        case 'vencidas':
-          return tieneVencidos; // Solo residentes con pagos vencidos
-          
-        case 'pendientes':
-          return tienePendientes && !tieneVencidos; // Solo pendientes sin vencidos
+          return true; // Mostrar todos los residentes
           
         case 'al-dia':
           return !tieneSaldoPendiente; // Solo residentes sin saldo pendiente
@@ -395,47 +389,27 @@ const Pagos = () => {
 
       {/* Filtros */}
         <div className="flex gap-2 mb-4">
-                 <button
+          <button
             onClick={() => setFilter('todos')}
-           className={`px-4 py-2 rounded-md text-sm font-medium ${
+            className={`px-4 py-2 rounded-md text-sm font-medium ${
               filter === 'todos' 
-               ? 'bg-blue-600 text-white'
-               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-           }`}
-         >
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
             Todos
-         </button>
-        <button
-            onClick={() => setFilter('vencidas')}
-          className={`px-4 py-2 rounded-md text-sm font-medium ${
-              filter === 'vencidas' 
-              ? 'bg-red-600 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-          }`}
-        >
-            Vencidas
-        </button>
-                 <button
-            onClick={() => setFilter('pendientes')}
-           className={`px-4 py-2 rounded-md text-sm font-medium ${
-              filter === 'pendientes' 
-                ? 'bg-yellow-600 text-white' 
-               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-           }`}
-         >
-            Pendientes
-         </button>
-         <button
+          </button>
+          <button
             onClick={() => setFilter('al-dia')}
-           className={`px-4 py-2 rounded-md text-sm font-medium ${
+            className={`px-4 py-2 rounded-md text-sm font-medium ${
               filter === 'al-dia' 
-               ? 'bg-green-600 text-white'
-               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-           }`}
-         >
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
             Al día
-             </button>
-           </div>
+          </button>
+        </div>
       </div>
 
       {/* Lista de residentes */}
@@ -447,10 +421,28 @@ const Pagos = () => {
           const tienePendientes = mesesPendientesResidente.some(mes => mes.saldoPendiente > 0);
           const estaAlDia = !tienePendientes && !tieneVencidos;
 
+          // Determinar color del borde y estado
+          let borderColor = 'border-blue-500';
+          let estadoTexto = 'Al día';
+          let estadoColor = 'bg-green-100 text-green-800';
+          let montoColor = 'text-gray-900';
+
+          if (tieneVencidos) {
+            borderColor = 'border-red-500';
+            estadoTexto = 'Vencido';
+            estadoColor = 'bg-red-100 text-red-800';
+            montoColor = 'text-red-600';
+          } else if (tienePendientes) {
+            borderColor = 'border-yellow-500';
+            estadoTexto = 'Pendiente';
+            estadoColor = 'bg-yellow-100 text-yellow-800';
+            montoColor = 'text-yellow-600';
+          }
+
           return (
             <div
               key={residente._id}
-              className="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500 hover:shadow-lg transition-shadow cursor-pointer"
+              className={`bg-white rounded-lg shadow-md p-4 border-l-4 ${borderColor} hover:shadow-lg transition-shadow cursor-pointer`}
               onClick={() => handleSeleccionarResidente(residente)}
             >
               <div className="flex items-center justify-between mb-2">
@@ -458,35 +450,29 @@ const Pagos = () => {
                   {residente.nombre} {residente.apellidos}
                 </h3>
                 <UserIcon className="h-5 w-5 text-gray-400" />
-      </div>
+              </div>
 
               <div className="text-sm text-gray-600 mb-2">
                 <p>Vivienda: {residente.vivienda?.numero}</p>
                 <p>Ingreso: {new Date(residente.fechaIngreso).toLocaleDateString()}</p>
-           </div>
+              </div>
           
               <div className="flex items-center justify-between">
                 <div className="text-sm">
                   <p className="text-gray-600">
                     {mesesPendientesResidente.length} mes(es) pendiente(s)
                   </p>
-                  <p className={`font-semibold ${tieneVencidos ? 'text-red-600' : 'text-gray-900'}`}>
+                  <p className={`font-semibold ${montoColor}`}>
                     {formatCurrency(totalSaldo)}
                   </p>
-                          </div>
-                                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  tieneVencidos 
-                    ? 'bg-red-100 text-red-800' 
-                    : tienePendientes 
-                      ? 'bg-yellow-100 text-yellow-800' 
-                      : 'bg-green-100 text-green-800'
-                }`}>
-                  {tieneVencidos ? 'Vencido' : tienePendientes ? 'Pendiente' : 'Al día'}
                 </div>
-                                  </div>
-                                </div>
-                   );
-                 })}
+                <div className={`px-2 py-1 rounded-full text-xs font-medium ${estadoColor}`}>
+                  {estadoTexto}
+                </div>
+              </div>
+            </div>
+          );
+        })}
           </div>
           
       {/* Modal de pagos */}
