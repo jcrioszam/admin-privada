@@ -1,15 +1,15 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { PlusIcon, CreditCardIcon, CheckIcon, PrinterIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, CreditCardIcon, CheckIcon, UserIcon, CalendarIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatCurrency } from '../utils/currencyFormatter';
 
 const Pagos = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedVivienda, setSelectedVivienda] = useState(null);
+  const [selectedResidente, setSelectedResidente] = useState(null);
   const [selectedMeses, setSelectedMeses] = useState([]);
-  const [filter, setFilter] = useState('pendientes');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [filter, setFilter] = useState('todos');
   const [formData, setFormData] = useState({
     metodoPago: 'Efectivo',
     referenciaPago: '',
@@ -17,487 +17,489 @@ const Pagos = () => {
   });
   const queryClient = useQueryClient();
 
-  // Obtener pagos
-  const { data: pagos, isLoading, error } = useQuery({
-    queryKey: ['pagos'],
+  // Obtener residentes con vivienda
+  const { data: residentes, isLoading: loadingResidentes } = useQuery({
+    queryKey: ['residentes'],
     queryFn: async () => {
-        const response = await api.get('/api/pagos');
-      console.log('📥 Pagos obtenidos del backend:', response.data);
-      console.log('📥 Total de pagos:', response.data.length);
-      
-      // Buscar pagos de la vivienda 5
-      const pagosVivienda5 = response.data.filter(pago => 
-        pago.vivienda && pago.vivienda.numero === 5
-      );
-      console.log('📥 Pagos de vivienda 5:', pagosVivienda5);
-      
-        return response.data;
-    },
-    refetchInterval: 30000,
-    staleTime: 10000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true
+      const response = await api.get('/api/residentes');
+      return response.data.filter(residente => residente.vivienda);
+    }
   });
 
-    // Agrupar pagos por vivienda
-  const viviendasConPagos = useMemo(() => {
-    if (!pagos) return [];
-    
-    // Filtrar pagos con vivienda válida
-    const pagosConVivienda = pagos.filter(pago => pago.vivienda);
-    
-    // Filtrar según el estado seleccionado
-    let pagosFiltrados = [];
-    switch (filter) {
-             case 'pendientes':
-         pagosFiltrados = pagosConVivienda.filter(pago => {
-           const saldoPendiente = pago.monto - (pago.montoPagado || 0);
-           return saldoPendiente > 0 && pago.estado !== 'Pagado' && pago.estado !== 'Pagado con excedente';
-         });
-        break;
-             case 'vencidos':
-         pagosFiltrados = pagosConVivienda.filter(pago => {
-           const fechaLimite = new Date(pago.fechaLimite);
-           const hoy = new Date();
-           const diasAtraso = pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente' || 
-                              hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
-           const saldoPendiente = pago.monto - (pago.montoPagado || 0);
-           return diasAtraso > 0 && saldoPendiente > 0 && pago.estado !== 'Pagado' && pago.estado !== 'Pagado con excedente';
-         });
-        break;
-                          case 'todos':
-        // Para "todos", mostrar pagos con saldo pendiente O pagos vencidos (aunque estén pagados)
-          pagosFiltrados = pagosConVivienda.filter(pago => {
-           const saldoPendiente = pago.monto - (pago.montoPagado || 0);
-           const fechaLimite = new Date(pago.fechaLimite);
-           const hoy = new Date();
-           const diasAtraso = pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente' || 
-                              hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
-           
-           // Mostrar si tiene saldo pendiente O si está vencido (aunque esté pagado) O si es Parcial
-           return saldoPendiente > 0 || diasAtraso > 0 || pago.estado === 'Parcial';
-         });
-         break;
-      case 'al-dia':
-        // Para "al día", mostrar viviendas que están al día (sin saldo pendiente)
-          pagosFiltrados = pagosConVivienda.filter(pago => {
-           const saldoPendiente = pago.monto - (pago.montoPagado || 0);
-          return saldoPendiente === 0 || pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente';
-         });
-         break;
-      default:
-        pagosFiltrados = pagosConVivienda;
+  // Obtener pagos
+  const { data: pagos, isLoading: loadingPagos } = useQuery({
+    queryKey: ['pagos'],
+    queryFn: async () => {
+      const response = await api.get('/api/pagos');
+      return response.data;
     }
-    
-    // Agrupar por vivienda
-    const agrupados = {};
-    
-    pagosFiltrados.forEach(pago => {
-      const viviendaId = pago.vivienda._id;
-      
-      if (!agrupados[viviendaId]) {
-        agrupados[viviendaId] = {
-          vivienda: pago.vivienda,
-          residente: pago.residente,
-          pagos: [],
-          totalSaldo: 0,
-          totalMonto: 0,
-          mesesPendientes: 0,
-          estadoGeneral: 'Pendiente'
-        };
+  });
+
+  // Filtrar residentes según el filtro
+  const residentesFiltrados = useMemo(() => {
+    if (!residentes || !pagos) return [];
+
+    return residentes.filter(residente => {
+      const pagosResidente = pagos.filter(pago => 
+        pago.residente && pago.residente._id === residente._id
+      );
+
+      if (filter === 'todos') {
+        return pagosResidente.some(pago => {
+          const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+          const fechaLimite = new Date(pago.fechaLimite);
+          const hoy = new Date();
+          const diasAtraso = pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente' || 
+                             hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
+          return saldoPendiente > 0 || diasAtraso > 0 || pago.estado === 'Parcial';
+        });
       }
-      
-      // Calcular días de atraso
-        const fechaLimite = new Date(pago.fechaLimite);
-        const hoy = new Date();
-        const diasAtraso = pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente' || 
-                           hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
-        
-        const saldoPendiente = pago.monto - (pago.montoPagado || 0);
-      
-      agrupados[viviendaId].pagos.push({
-        ...pago,
-        diasAtraso,
-        saldoPendiente
-      });
-      
-      agrupados[viviendaId].totalSaldo += saldoPendiente;
-      agrupados[viviendaId].totalMonto += pago.monto;
-      agrupados[viviendaId].mesesPendientes += 1;
-      
-      if (diasAtraso > 0 || pago.estado === 'Parcial') {
-        agrupados[viviendaId].estadoGeneral = 'Vencida';
+
+      if (filter === 'vencidas') {
+        return pagosResidente.some(pago => {
+          const fechaLimite = new Date(pago.fechaLimite);
+          const hoy = new Date();
+          const diasAtraso = pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente' || 
+                             hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
+          return diasAtraso > 0;
+        });
       }
-    });
-    
-    // Convertir a array y ordenar por número de vivienda
-    const resultado = Object.values(agrupados).sort((a, b) => a.vivienda.numero - b.vivienda.numero);
-    
-    console.log('📊 Viviendas agrupadas:', resultado);
-    console.log('📊 Total de viviendas con pagos:', resultado.length);
-    
-    // Buscar específicamente la vivienda 5
-    const vivienda5 = resultado.find(v => v.vivienda.numero === 5);
-    console.log('📊 Vivienda 5 encontrada:', vivienda5);
-    
-    // Log detallado de todos los pagos de la vivienda 5
-    const pagosVivienda5 = pagos.filter(p => p.vivienda && p.vivienda.numero === 5);
-    console.log('📊 Pagos de vivienda 5:', pagosVivienda5);
-    console.log('📊 Total pagos vivienda 5:', pagosVivienda5.length);
-    
-    // Log de filtros aplicados
-    console.log('📊 Filtro actual:', filter);
-    console.log('📊 Pagos filtrados:', pagos.filter(p => {
-      // Verificar que pago y vivienda existan
-      if (!p || !p.vivienda) return false;
-      
-      if (filter === 'todos') return p.saldoPendiente > 0;
-      if (filter === 'vencidas') return p.estado === 'Vencido' || (p.estado === 'Pendiente' && p.diasAtraso > 0);
-      if (filter === 'pendientes') return p.estado === 'Pendiente' && p.diasAtraso <= 0;
-      if (filter === 'al-dia') return p.saldoPendiente <= 0;
+
+      if (filter === 'pendientes') {
+        return pagosResidente.some(pago => {
+          const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+          const fechaLimite = new Date(pago.fechaLimite);
+          const hoy = new Date();
+          const diasAtraso = pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente' || 
+                             hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
+          return saldoPendiente > 0 && diasAtraso <= 0;
+        });
+      }
+
+      if (filter === 'al-dia') {
+        return pagosResidente.every(pago => {
+          const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+          return saldoPendiente <= 0;
+        });
+      }
+
       return true;
-    }));
-    
-    return resultado;
-  }, [pagos, filter]);
-
-  // Mutación para pagos múltiples
-  const pagosMultiplesMutation = useMutation(
-    (data) => api.post('/api/pagos/pago-multiple', data),
-    {
-             onSuccess: async (response) => {
-         await queryClient.invalidateQueries('pagos');
-         setIsModalOpen(false);
-        setSelectedVivienda(null);
-        setSelectedMeses([]);
-        console.log('✅ Pagos múltiples registrados exitosamente');
-          },
-          onError: (error) => {
-        console.error('❌ Error al registrar pagos múltiples:', error.response?.data?.message || error.message);
-        console.error('❌ Detalles del error:', error.response?.data);
-        console.error('❌ Datos enviados:', error.config?.data);
-      },
-    }
-  );
-
-  const handleSeleccionarVivienda = (vivienda) => {
-    setSelectedVivienda(vivienda);
-    setSelectedMeses([]);
-    setFormData({
-      metodoPago: 'Efectivo',
-      referenciaPago: '',
-      montoPagado: 0
     });
+  }, [residentes, pagos, filter]);
+
+  // Generar meses pendientes para un residente
+  const generarMesesPendientes = (residente) => {
+    if (!residente || !residente.fechaIngreso) return [];
+
+    const fechaIngreso = new Date(residente.fechaIngreso);
+    const añoIngreso = fechaIngreso.getFullYear();
+    const mesIngreso = fechaIngreso.getMonth() + 1;
+
+    const hoy = new Date();
+    const añoActual = hoy.getFullYear();
+    const mesActual = hoy.getMonth() + 1;
+
+    const mesesPendientes = [];
+
+    // Generar meses desde la fecha de ingreso hasta el mes actual
+    for (let año = añoIngreso; año <= añoActual; año++) {
+      const mesInicio = año === añoIngreso ? mesIngreso : 1;
+      const mesFin = año === añoActual ? mesActual : 12;
+
+      for (let mes = mesInicio; mes <= mesFin; mes++) {
+        // Verificar si ya existe un pago para este mes
+        const pagoExistente = pagos?.find(pago => 
+          pago.residente && pago.residente._id === residente._id &&
+          pago.mes === mes && pago.año === año
+        );
+
+        const fechaLimite = new Date(año, mes, 0); // Último día del mes
+        const hoy = new Date();
+        const diasAtraso = hoy > fechaLimite ? Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24)) : 0;
+
+        if (pagoExistente) {
+          const saldoPendiente = pagoExistente.monto - (pagoExistente.montoPagado || 0);
+          if (saldoPendiente > 0 || diasAtraso > 0 || pagoExistente.estado === 'Parcial') {
+            mesesPendientes.push({
+              mes,
+              año,
+              monto: pagoExistente.monto,
+              montoPagado: pagoExistente.montoPagado || 0,
+              saldoPendiente,
+              estado: pagoExistente.estado,
+              diasAtraso,
+              fechaLimite,
+              pagoId: pagoExistente._id,
+              existe: true
+            });
+          }
+        } else {
+          // Crear mes pendiente que no existe en la base de datos
+          const montoMantenimiento = 200; // Valor por defecto
+          mesesPendientes.push({
+            mes,
+            año,
+            monto: montoMantenimiento,
+            montoPagado: 0,
+            saldoPendiente: montoMantenimiento,
+            estado: 'Pendiente',
+            diasAtraso,
+            fechaLimite,
+            pagoId: null,
+            existe: false
+          });
+        }
+      }
+    }
+
+    return mesesPendientes.sort((a, b) => {
+      if (a.año !== b.año) return a.año - b.año;
+      return a.mes - b.mes;
+    });
+  };
+
+  // Manejar selección de residente
+  const handleSeleccionarResidente = (residente) => {
+    setSelectedResidente(residente);
+    setSelectedMeses([]);
     setIsModalOpen(true);
   };
 
-  const handleSeleccionarMes = (pagoId) => {
+  // Manejar selección de mes
+  const handleSeleccionarMes = (mes) => {
     setSelectedMeses(prev => {
-      if (prev.includes(pagoId)) {
-        return prev.filter(id => id !== pagoId);
+      const existe = prev.find(m => m.mes === mes.mes && m.año === mes.año);
+      if (existe) {
+        return prev.filter(m => !(m.mes === mes.mes && m.año === mes.año));
       } else {
-        return [...prev, pagoId];
+        return [...prev, mes];
       }
     });
   };
 
+  // Manejar seleccionar todos
   const handleSeleccionarTodos = () => {
-    if (selectedMeses.length === selectedVivienda?.pagos.length) {
+    const mesesPendientes = generarMesesPendientes(selectedResidente);
+    if (selectedMeses.length === mesesPendientes.length) {
       setSelectedMeses([]);
     } else {
-      const todosLosIds = selectedVivienda?.pagos.map(pago => pago._id) || [];
-      setSelectedMeses(todosLosIds);
+      setSelectedMeses(mesesPendientes);
     }
   };
 
+  // Calcular total seleccionado
   const calcularTotalSeleccionado = () => {
-    if (!selectedVivienda || selectedMeses.length === 0) return 0;
-    
-    return selectedMeses.reduce((total, pagoId) => {
-      const pago = selectedVivienda.pagos.find(p => p._id === pagoId);
-      if (pago) {
-        // Calcular recargo igual que en el backend: 10% por cada 30 días de atraso
-        const recargo = pago.diasAtraso > 0 ? (pago.monto * 0.10) * Math.ceil(pago.diasAtraso / 30) : 0;
-        // El total debe ser monto + recargo, no saldoPendiente + recargo
-        return total + pago.monto + recargo;
-      }
-      return total;
+    return selectedMeses.reduce((total, mes) => {
+      const recargo = mes.diasAtraso > 0 ? (mes.monto * 0.1 * Math.ceil(mes.diasAtraso / 30)) : 0;
+      return total + mes.saldoPendiente + recargo;
     }, 0);
   };
 
-  const handlePagarSeleccionados = (formData) => {
-    if (selectedMeses.length === 0) {
-      console.error('❌ Selecciona al menos un mes para pagar');
-      return;
+  // Mutación para pagos múltiples
+  const pagosMultiplesMutation = useMutation({
+    mutationFn: async (data) => {
+      return api.post('/api/pagos/pago-multiple', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['pagos']);
+      queryClient.invalidateQueries(['residentes']);
+      setIsModalOpen(false);
+      setSelectedResidente(null);
+      setSelectedMeses([]);
+      setFormData({
+        metodoPago: 'Efectivo',
+        referenciaPago: '',
+        montoPagado: 0
+      });
+    },
+    onError: (error) => {
+      console.error('Error al registrar pagos:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error config:', error.config?.data);
     }
+  });
+
+  // Manejar pago de meses seleccionados
+  const handlePagarSeleccionados = () => {
+    if (selectedMeses.length === 0) return;
+
+    const pagoIds = selectedMeses
+      .filter(mes => mes.existe)
+      .map(mes => mes.pagoId);
 
     const data = {
-      pagoIds: selectedMeses,
+      pagoIds,
       metodoPago: formData.metodoPago,
-      referenciaPago: formData.referenciaPago || undefined, // Enviar undefined si está vacío
-      montoPagado: formData.montoPagado
+      referenciaPago: formData.referenciaPago || undefined,
+      montoPagado: calcularTotalSeleccionado()
     };
 
-    console.log('📤 Datos a enviar:', data);
-    console.log('📤 IDs de pagos seleccionados:', selectedMeses);
-    console.log('📤 Total calculado:', formData.montoPagado);
+    console.log('Datos a enviar:', data);
+    console.log('Meses seleccionados:', selectedMeses);
 
     pagosMultiplesMutation.mutate(data);
   };
 
-  if (isLoading) return <LoadingSpinner />;
-  if (error) return <div className="text-red-500">Error al cargar pagos: {error.message}</div>;
+  if (loadingResidentes || loadingPagos) {
+    return <LoadingSpinner />;
+  }
 
-    return (
+  const mesesPendientes = selectedResidente ? generarMesesPendientes(selectedResidente) : [];
+
+  return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Gestión de Pagos</h1>
-                <div className="flex gap-2">
-          <button 
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">Gestión de Pagos</h1>
+        
+        {/* Filtros */}
+        <div className="flex gap-2 mb-4">
+          <button
             onClick={() => setFilter('todos')}
-            className={`px-4 py-2 rounded-lg ${filter === 'todos' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+            className={`px-4 py-2 rounded-md text-sm font-medium ${
+              filter === 'todos' 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
           >
             Todos
           </button>
-                 <button
-           onClick={() => setFilter('pendientes')}
-            className={`px-4 py-2 rounded-lg ${filter === 'pendientes' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
-         >
-           Pendientes
-         </button>
-        <button
-          onClick={() => setFilter('vencidos')}
-            className={`px-4 py-2 rounded-lg ${filter === 'vencidos' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+          <button
+            onClick={() => setFilter('vencidas')}
+            className={`px-4 py-2 rounded-md text-sm font-medium ${
+              filter === 'vencidas' 
+                ? 'bg-red-600 text-white' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
           >
-            Vencidos
-        </button>
-                 <button
+            Vencidas
+          </button>
+          <button
+            onClick={() => setFilter('pendientes')}
+            className={`px-4 py-2 rounded-md text-sm font-medium ${
+              filter === 'pendientes' 
+                ? 'bg-yellow-600 text-white' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Pendientes
+          </button>
+          <button
             onClick={() => setFilter('al-dia')}
-            className={`px-4 py-2 rounded-lg ${filter === 'al-dia' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+            className={`px-4 py-2 rounded-md text-sm font-medium ${
+              filter === 'al-dia' 
+                ? 'bg-green-600 text-white' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
           >
             Al día
-             </button>
-           </div>
+          </button>
+        </div>
       </div>
 
-      {/* Tabla de viviendas */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Vivienda
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Residente
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Meses Pendientes
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Saldo Total
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Estado
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Acciones
-                    </th>
-                  </tr>
-               </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {viviendasConPagos.map((vivienda) => (
-              <tr key={vivienda.vivienda._id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  Vivienda {vivienda.vivienda.numero}
-                        </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {vivienda.residente ? `${vivienda.residente.nombre} ${vivienda.residente.apellidos}` : 'Sin residente'}
-                        </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {vivienda.mesesPendientes} mes(es)
-                        </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {formatCurrency(vivienda.totalSaldo)}
-                        </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    vivienda.estadoGeneral === 'Vencida' 
-                      ? 'bg-red-100 text-red-800' 
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {vivienda.estadoGeneral}
-                          </span>
-                        </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button
-                    onClick={() => handleSeleccionarVivienda(vivienda)}
-                    className="text-blue-600 hover:text-blue-900"
-                  >
-                    Seleccionar Meses
-                  </button>
-                         </td>
-                       </tr>
-            ))}
-               </tbody>
-            </table>
-          </div>
-          
-      {/* Modal para seleccionar meses */}
-      {isModalOpen && selectedVivienda && (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-        <div className="mt-3">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Seleccionar Meses - Vivienda {selectedVivienda.vivienda.numero}
-          </h3>
-          
-              {/* Checkbox para seleccionar todos */}
-              <div className="mb-4">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={selectedMeses.length === selectedVivienda.pagos.length}
-                    onChange={handleSeleccionarTodos}
-                    className="mr-2"
-                  />
-                  <span className="font-medium">Seleccionar todos los meses</span>
-                </label>
+      {/* Lista de residentes */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {residentesFiltrados.map((residente) => {
+          const mesesPendientesResidente = generarMesesPendientes(residente);
+          const totalSaldo = mesesPendientesResidente.reduce((sum, mes) => sum + mes.saldoPendiente, 0);
+          const tieneVencidos = mesesPendientesResidente.some(mes => mes.diasAtraso > 0);
+
+          return (
+            <div
+              key={residente._id}
+              className="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500 hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => handleSeleccionarResidente(residente)}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {residente.nombre} {residente.apellidos}
+                </h3>
+                <UserIcon className="h-5 w-5 text-gray-400" />
+              </div>
+              
+              <div className="text-sm text-gray-600 mb-2">
+                <p>Vivienda: {residente.vivienda?.numero}</p>
+                <p>Ingreso: {new Date(residente.fechaIngreso).toLocaleDateString()}</p>
               </div>
 
-              {/* Lista de meses */}
-              <div className="space-y-2 mb-6">
-                {selectedVivienda.pagos.map((pago) => (
-                  <div key={pago._id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <label className="flex items-center flex-1">
-                      <input
-                        type="checkbox"
-                        checked={selectedMeses.includes(pago._id)}
-                        onChange={() => handleSeleccionarMes(pago._id)}
-                        className="mr-3"
-                      />
-                      <div>
-                        <div className="font-medium">
-                          {pago.mes}/{pago.año}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {pago.diasAtraso > 0 ? `${pago.diasAtraso} días de atraso` : 'Al día'}
-                        </div>
-                      </div>
-                    </label>
-                                        <div className="text-right">
-                      <div className="font-medium">{formatCurrency(pago.monto)}</div>
-                      {pago.diasAtraso > 0 && (
-                        <div className="text-sm text-red-500">
-                          +{formatCurrency((pago.monto * 0.10) * Math.ceil(pago.diasAtraso / 30))} recargo
-                        </div>
-                      )}
-                      <div className="text-sm text-gray-500">
-                        Total: {formatCurrency(pago.monto + ((pago.diasAtraso > 0 ? (pago.monto * 0.10) * Math.ceil(pago.diasAtraso / 30) : 0)))}
-                        </div>
-                        </div>
-                      </div>
-                ))}
-              </div>
-
-              {/* Total seleccionado */}
-              {selectedMeses.length > 0 && (
-                <div className="bg-blue-50 p-4 rounded-lg mb-4">
-                  <div className="text-lg font-medium text-blue-900">
-                    Total a pagar: {formatCurrency(calcularTotalSeleccionado())}
-                  </div>
-                  <div className="text-sm text-blue-700">
-                    {selectedMeses.length} mes(es) seleccionado(s)
+              <div className="flex items-center justify-between">
+                <div className="text-sm">
+                  <p className="text-gray-600">
+                    {mesesPendientesResidente.length} mes(es) pendiente(s)
+                  </p>
+                  <p className={`font-semibold ${tieneVencidos ? 'text-red-600' : 'text-gray-900'}`}>
+                    {formatCurrency(totalSaldo)}
+                  </p>
+                </div>
+                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  tieneVencidos 
+                    ? 'bg-red-100 text-red-800' 
+                    : totalSaldo > 0 
+                      ? 'bg-yellow-100 text-yellow-800' 
+                      : 'bg-green-100 text-green-800'
+                }`}>
+                  {tieneVencidos ? 'Vencido' : totalSaldo > 0 ? 'Pendiente' : 'Al día'}
+                </div>
               </div>
             </div>
-          )}
-          
-                            {/* Formulario de pago */}
-              {selectedMeses.length > 0 && (
-                <div className="space-y-4">
-            <div>
+          );
+        })}
+      </div>
+
+      {/* Modal de pagos */}
+      {isModalOpen && selectedResidente && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900">
+                Pagos de {selectedResidente.nombre} {selectedResidente.apellidos}
+              </h2>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <button
+                onClick={handleSeleccionarTodos}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                {selectedMeses.length === mesesPendientes.length ? 'Deseleccionar Todos' : 'Seleccionar Todos'}
+              </button>
+            </div>
+
+            {/* Lista de meses pendientes */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+              {mesesPendientes.map((mes) => {
+                const isSelected = selectedMeses.some(m => m.mes === mes.mes && m.año === mes.año);
+                const recargo = mes.diasAtraso > 0 ? (mes.monto * 0.1 * Math.ceil(mes.diasAtraso / 30)) : 0;
+                const total = mes.saldoPendiente + recargo;
+
+                return (
+                  <div
+                    key={`${mes.mes}-${mes.año}`}
+                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                      isSelected 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => handleSeleccionarMes(mes)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleSeleccionarMes(mes)}
+                          className="mr-3"
+                        />
+                        <div>
+                          <p className="font-medium">
+                            {new Date(mes.año, mes.mes - 1).toLocaleDateString('es-ES', { 
+                              month: 'long', 
+                              year: 'numeric' 
+                            })}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {mes.existe ? 'Pago existente' : 'Pago a crear'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold">{formatCurrency(total)}</p>
+                        {mes.diasAtraso > 0 && (
+                          <p className="text-sm text-red-600">
+                            {mes.diasAtraso} días de atraso
+                          </p>
+                        )}
+                        {recargo > 0 && (
+                          <p className="text-sm text-orange-600">
+                            +{formatCurrency(recargo)} recargo
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Formulario de pago */}
+            {selectedMeses.length > 0 && (
+              <div className="border-t pt-4">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold mb-2">Detalles del Pago</h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Total a pagar: <span className="font-bold text-lg">{formatCurrency(calcularTotalSeleccionado())}</span>
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Método de Pago
                     </label>
-              <select
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                value={formData.metodoPago}
-                      onChange={(e) => setFormData(prev => ({ ...prev, metodoPago: e.target.value }))}
-              >
-                <option value="Efectivo">Efectivo</option>
-                <option value="Transferencia">Transferencia</option>
-                <option value="Tarjeta">Tarjeta</option>
-                <option value="Cheque">Cheque</option>
-                <option value="Otro">Otro</option>
-              </select>
-            </div>
-
-            <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Referencia de Pago
-                    </label>
-              <input
-                type="text"
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                      placeholder="Ej: Transferencia 123456"
-                value={formData.referenciaPago}
-                      onChange={(e) => setFormData(prev => ({ ...prev, referenciaPago: e.target.value }))}
-              />
-            </div>
+                    <select
+                      value={formData.metodoPago}
+                      onChange={(e) => setFormData({...formData, metodoPago: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="Efectivo">Efectivo</option>
+                      <option value="Transferencia">Transferencia</option>
+                      <option value="Tarjeta">Tarjeta</option>
+                      <option value="Cheque">Cheque</option>
+                      <option value="Otro">Otro</option>
+                    </select>
+                  </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Monto a Pagar
+                      Referencia de Pago
                     </label>
                     <input
-                      type="number"
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                      value={calcularTotalSeleccionado()}
-                      readOnly
+                      type="text"
+                      value={formData.referenciaPago}
+                      onChange={(e) => setFormData({...formData, referenciaPago: e.target.value})}
+                      placeholder="Opcional"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handlePagarSeleccionados}
+                    disabled={pagosMultiplesMutation.isPending}
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {pagosMultiplesMutation.isPending ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Procesando...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCardIcon className="h-4 w-4" />
+                        Registrar Pago
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             )}
-
-              {/* Botones */}
-              <div className="flex justify-end space-x-3 mt-6">
-              <button
-                   onClick={() => {
-                     setIsModalOpen(false);
-                     setSelectedVivienda(null);
-                     setSelectedMeses([]);
-                     setFormData({
-                       metodoPago: 'Efectivo',
-                       referenciaPago: '',
-                       montoPagado: 0
-                     });
-                   }}
-                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-              >
-                Cancelar
-              </button>
-                                 {selectedMeses.length > 0 && (
-              <button
-                     onClick={() => {
-                       const dataToSend = {
-                         ...formData,
-                         montoPagado: calcularTotalSeleccionado()
-                       };
-                       handlePagarSeleccionados(dataToSend);
-                     }}
-                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                     disabled={pagosMultiplesMutation.isPending}
-                   >
-                     {pagosMultiplesMutation.isPending ? 'Procesando...' : 'Registrar Pago'}
-              </button>
-                 )}
-            </div>
-        </div>
-      </div>
+          </div>
         </div>
       )}
     </div>
   );
 };
 
-export default Pagos; 
+export default Pagos;
