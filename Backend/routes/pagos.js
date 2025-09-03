@@ -239,27 +239,38 @@ router.post('/pago-multiple', [
   body('montoPagado').isNumeric().withMessage('Monto inválido')
 ], async (req, res) => {
   try {
+    console.log('🔍 Iniciando pago múltiple con datos:', req.body);
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.error('❌ Errores de validación:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
     const { pagoIds, metodoPago, referenciaPago, montoPagado } = req.body;
+    console.log('📋 Datos recibidos:', { pagoIds, metodoPago, referenciaPago, montoPagado });
 
     // Verificar que todos los pagos existan
     const pagos = await Pago.find({ _id: { $in: pagoIds } });
+    console.log(`🔍 Pagos encontrados: ${pagos.length} de ${pagoIds.length} solicitados`);
+    
     if (pagos.length !== pagoIds.length) {
+      console.error('❌ No se encontraron todos los pagos solicitados');
       return res.status(404).json({ message: 'Uno o más pagos no encontrados' });
     }
 
     // Calcular total de los pagos seleccionados
     const totalPagos = pagos.reduce((sum, pago) => {
-      const recargo = pago.estaVencido ? (pago.calcularRecargo?.() || 0) : 0;
+      const recargo = pago.estaVencido() ? pago.calcularRecargo() : 0;
+      console.log(`💰 Pago ${pago._id}: monto=${pago.monto}, recargo=${recargo}, total=${pago.monto + recargo}`);
       return sum + pago.monto + recargo;
     }, 0);
 
+    console.log(`💰 Total calculado: ${totalPagos}, Monto pagado: ${montoPagado}`);
+
     // Verificar que el monto pagado sea suficiente
     if (parseFloat(montoPagado) < totalPagos) {
+      console.error(`❌ Monto insuficiente: ${montoPagado} < ${totalPagos}`);
       return res.status(400).json({ 
         message: `El monto pagado (${montoPagado}) es menor al total requerido (${totalPagos})` 
       });
@@ -268,19 +279,33 @@ router.post('/pago-multiple', [
     // Actualizar todos los pagos
     const pagosActualizados = [];
     for (const pago of pagos) {
+      console.log(`🔄 Actualizando pago ${pago._id}...`);
+      
+      // Calcular recargo si está vencido
+      const recargo = pago.estaVencido() ? pago.calcularRecargo() : 0;
+      
       pago.estado = 'Pagado';
       pago.fechaPago = new Date();
       pago.metodoPago = metodoPago;
-      pago.referenciaPago = referenciaPago;
+      pago.referenciaPago = referenciaPago || '';
+      pago.montoPagado = pago.monto + recargo;
+      pago.montoAdicional = recargo;
+      pago.conceptoAdicional = recargo > 0 ? 'Recargo por atraso' : '';
       pago.registradoPor = req.body.registradoPor || new mongoose.Types.ObjectId();
       
+      console.log(`💾 Guardando pago ${pago._id} con estado: ${pago.estado}, montoPagado: ${pago.montoPagado}`);
+      
       const pagoActualizado = await pago.save();
+      console.log(`✅ Pago ${pago._id} guardado exitosamente`);
+      
       const pagoPopulado = await Pago.findById(pagoActualizado._id)
         .populate('vivienda', 'numero calle')
         .populate('residente', 'nombre apellidos');
       
       pagosActualizados.push(pagoPopulado);
     }
+
+    console.log(`✅ ${pagosActualizados.length} pagos registrados exitosamente`);
 
     res.json({
       message: `${pagosActualizados.length} pagos registrados exitosamente`,
@@ -289,7 +314,7 @@ router.post('/pago-multiple', [
       excedente: parseFloat(montoPagado) - totalPagos
     });
   } catch (error) {
-    console.error('Error registrando pago múltiple:', error);
+    console.error('❌ Error registrando pago múltiple:', error);
     res.status(500).json({ message: error.message });
   }
 });
