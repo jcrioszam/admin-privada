@@ -95,9 +95,19 @@ const Pagos = () => {
       }
 
       if (filter === 'al-dia') {
-        return pagosResidente.every(pago => {
-          // Un residente está al día si todos sus pagos están pagados
-          return pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente';
+        // Un residente está al día si NO tiene pagos pendientes
+        return !pagosResidente.some(pago => {
+          // Si el pago está completamente pagado, no es pendiente
+          if (pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente') {
+            return false;
+          }
+          
+          const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+          const fechaLimite = new Date(pago.fechaLimite);
+          const hoy = new Date();
+          const diasAtraso = hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
+          
+          return saldoPendiente > 0 || diasAtraso > 0 || pago.estado === 'Parcial';
         }) && pagosResidente.length > 0;
       }
 
