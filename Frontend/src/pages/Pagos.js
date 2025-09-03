@@ -52,7 +52,7 @@ const Pagos = () => {
         return false;
       }
 
-      // Calcular estado del residente
+      // Calcular estado del residente basado en datos reales de la BD
       let tieneSaldoPendiente = false;
       let tieneVencidos = false;
       let tienePendientes = false;
@@ -63,6 +63,7 @@ const Pagos = () => {
         const hoy = new Date();
         const diasAtraso = hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
 
+        // Solo considerar pagos que realmente tienen saldo pendiente
         if (saldoPendiente > 0) {
           tieneSaldoPendiente = true;
           
