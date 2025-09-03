@@ -47,55 +47,50 @@ const Pagos = () => {
         pago.residente && pago.residente._id === residente._id
       );
 
-      if (filter === 'todos') {
-        return pagosResidente.some(pago => {
-          const saldoPendiente = pago.monto - (pago.montoPagado || 0);
-          
-          // Si hay saldo pendiente, mostrarlo en "todos"
-          return saldoPendiente > 0;
-        });
-      }
-           
-      if (filter === 'vencidas') {
-        return pagosResidente.some(pago => {
-          const saldoPendiente = pago.monto - (pago.montoPagado || 0);
-          const fechaLimite = new Date(pago.fechaLimite);
-          const hoy = new Date();
-          const diasAtraso = hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
-          
-          // Solo mostrar si hay saldo pendiente Y está vencido
-          return saldoPendiente > 0 && diasAtraso > 0;
-        });
+      // Si no tiene pagos, no mostrar en ningún filtro
+      if (pagosResidente.length === 0) {
+        return false;
       }
 
-      if (filter === 'pendientes') {
-        return pagosResidente.some(pago => {
-          const saldoPendiente = pago.monto - (pago.montoPagado || 0);
-          const fechaLimite = new Date(pago.fechaLimite);
-          const hoy = new Date();
-          const diasAtraso = hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
-          
-          // Solo mostrar si hay saldo pendiente Y NO está vencido
-          return saldoPendiente > 0 && diasAtraso <= 0;
-        });
-      }
+      // Calcular estado del residente
+      let tieneSaldoPendiente = false;
+      let tieneVencidos = false;
+      let tienePendientes = false;
 
-      if (filter === 'al-dia') {
-        // Un residente está al día si NO tiene saldo pendiente
-        return !pagosResidente.some(pago => {
-          const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+      for (const pago of pagosResidente) {
+        const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+        const fechaLimite = new Date(pago.fechaLimite);
+        const hoy = new Date();
+        const diasAtraso = hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
+
+        if (saldoPendiente > 0) {
+          tieneSaldoPendiente = true;
           
-          // Si no hay saldo pendiente, está al día
-          if (saldoPendiente <= 0) {
-            return false;
+          if (diasAtraso > 0) {
+            tieneVencidos = true;
+          } else {
+            tienePendientes = true;
           }
-          
-          // Si hay saldo pendiente, no está al día
-          return true;
-        }) && pagosResidente.length > 0;
+        }
       }
 
-      return true;
+      // Aplicar filtros basados en el estado calculado
+      switch (filter) {
+        case 'todos':
+          return tieneSaldoPendiente; // Solo residentes con saldo pendiente
+          
+        case 'vencidas':
+          return tieneVencidos; // Solo residentes con pagos vencidos
+          
+        case 'pendientes':
+          return tienePendientes && !tieneVencidos; // Solo pendientes sin vencidos
+          
+        case 'al-dia':
+          return !tieneSaldoPendiente; // Solo residentes sin saldo pendiente
+          
+        default:
+          return true;
+      }
     });
   }, [residentes, pagos, filter]);
 
