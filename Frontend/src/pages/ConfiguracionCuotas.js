@@ -60,6 +60,22 @@ const ConfiguracionCuotas = () => {
     }
   });
 
+  // Mutación para actualizar pagos pendientes
+  const actualizarPagosMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.post('/api/pagos/actualizar-con-nuevas-cuotas');
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['pagos']);
+      queryClient.invalidateQueries(['residentes']);
+      alert('✅ Pagos actualizados correctamente con las nuevas cuotas');
+    },
+    onError: (error) => {
+      alert('❌ Error al actualizar pagos: ' + error.message);
+    }
+  });
+
   const handleSelectVivienda = (viviendaId) => {
     setSelectedViviendas(prev => 
       prev.includes(viviendaId) 
@@ -218,6 +234,41 @@ const ConfiguracionCuotas = () => {
           <span className="text-sm text-gray-600">
             {selectedViviendas.length} vivienda(s) seleccionada(s)
           </span>
+        </div>
+      </div>
+
+      {/* Actualizar Pagos Pendientes */}
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-yellow-800 mb-2">
+              🔄 Actualizar Pagos Pendientes
+            </h3>
+            <p className="text-yellow-700 text-sm">
+              Actualiza todos los pagos pendientes con las nuevas cuotas configuradas
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              if (window.confirm('¿Estás seguro de que quieres actualizar todos los pagos pendientes con las nuevas cuotas? Esta acción no se puede deshacer.')) {
+                actualizarPagosMutation.mutate();
+              }
+            }}
+            disabled={actualizarPagosMutation.isPending}
+            className="bg-yellow-600 text-white px-6 py-3 rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+          >
+            {actualizarPagosMutation.isPending ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span>Actualizando...</span>
+              </>
+            ) : (
+              <>
+                <CurrencyDollarIcon className="h-5 w-5" />
+                <span>Actualizar Pagos</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
