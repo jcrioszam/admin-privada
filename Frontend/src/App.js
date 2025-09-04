@@ -40,8 +40,8 @@ function App() {
     return <Navigate to="/residente/dashboard" replace />;
   }
 
-  // Rutas de residentes (solo para usuarios no autenticados como admin o usuarios residentes)
-  if (location.pathname.startsWith('/residente') && (!user || user.rol === 'Residente')) {
+  // Rutas de residentes (solo para usuarios residentes o cuando se accede a /residente)
+  if (location.pathname.startsWith('/residente')) {
     return (
       <Routes>
         <Route path="/residente/login" element={<LoginResidente />} />
