@@ -44,6 +44,14 @@ const actualizarPagosConNuevasCuotas = async () => {
 
     for (const pago of pagosPendientes) {
       const vivienda = pago.vivienda;
+      
+      // Verificar si la vivienda existe
+      if (!vivienda || !vivienda.numero) {
+        console.log(`⚠️  Pago ${pago._id} sin vivienda asociada - saltando`);
+        sinCambios++;
+        continue;
+      }
+      
       const nuevaCuota = cuotasPorVivienda[vivienda.numero];
       const cuotaActual = pago.monto;
 
