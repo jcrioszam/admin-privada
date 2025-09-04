@@ -7,18 +7,11 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(async () => {
     console.log('🔗 Conectado a MongoDB');
     
-    console.log('🔧 ACTUALIZANDO CUOTAS DE VIVIENDAS');
-    console.log('=====================================');
+    console.log('🔧 FORZANDO ACTUALIZACIÓN DE CUOTAS DE VIVIENDAS');
+    console.log('================================================');
     
     const viviendas = await Vivienda.find();
     console.log(`📋 Total de viviendas a actualizar: ${viviendas.length}`);
-    
-    // Configuración de cuotas por tipo
-    const configuracionCuotas = {
-      'Estandar': 200,    // Viviendas 1-3, 5-8, 9-15
-      'Economica': 50,    // Viviendas 4, 16-25
-      'Premium': 300      // Para futuras viviendas premium
-    };
     
     let viviendasActualizadas = 0;
     
@@ -40,21 +33,17 @@ mongoose.connect(process.env.MONGODB_URI)
         cuotaMantenimiento = 200;
       }
       
-      // Actualizar vivienda si es necesario
-      if (vivienda.cuotaMantenimiento !== cuotaMantenimiento || vivienda.tipoCuota !== tipoCuota) {
-        console.log(`🔧 Actualizando vivienda ${vivienda.numero}:`);
-        console.log(`   Tipo: ${vivienda.tipoCuota || 'No definido'} → ${tipoCuota}`);
-        console.log(`   Cuota: $${vivienda.cuotaMantenimiento || 'No definido'} → $${cuotaMantenimiento}`);
-        
-        vivienda.cuotaMantenimiento = cuotaMantenimiento;
-        vivienda.tipoCuota = tipoCuota;
-        
-        await vivienda.save();
-        viviendasActualizadas++;
-        console.log('   ✅ Actualizada');
-      } else {
-        console.log(`✅ Vivienda ${vivienda.numero} ya tiene la configuración correcta`);
-      }
+      // Forzar actualización de todas las viviendas
+      console.log(`🔧 Actualizando vivienda ${vivienda.numero}:`);
+      console.log(`   Tipo: ${vivienda.tipoCuota || 'No definido'} → ${tipoCuota}`);
+      console.log(`   Cuota: $${vivienda.cuotaMantenimiento || 'No definido'} → $${cuotaMantenimiento}`);
+      
+      vivienda.cuotaMantenimiento = cuotaMantenimiento;
+      vivienda.tipoCuota = tipoCuota;
+      
+      await vivienda.save();
+      viviendasActualizadas++;
+      console.log('   ✅ Actualizada');
     }
     
     console.log('\n📊 RESUMEN DE ACTUALIZACIÓN:');
@@ -68,10 +57,10 @@ mongoose.connect(process.env.MONGODB_URI)
     const viviendasEstandar = await Vivienda.find({ tipoCuota: 'Estandar' });
     const viviendasEconomicas = await Vivienda.find({ tipoCuota: 'Economica' });
     
-    console.log(`🏠 Viviendas Estándar ($${configuracionCuotas.Estandar}): ${viviendasEstandar.length}`);
+    console.log(`🏠 Viviendas Estándar ($200): ${viviendasEstandar.length}`);
     viviendasEstandar.forEach(v => console.log(`   - Vivienda ${v.numero}: $${v.cuotaMantenimiento}`));
     
-    console.log(`🏠 Viviendas Económicas ($${configuracionCuotas.Economica}): ${viviendasEconomicas.length}`);
+    console.log(`🏠 Viviendas Económicas ($50): ${viviendasEconomicas.length}`);
     viviendasEconomicas.forEach(v => console.log(`   - Vivienda ${v.numero}: $${v.cuotaMantenimiento}`));
     
   })
