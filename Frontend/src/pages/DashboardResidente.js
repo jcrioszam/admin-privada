@@ -7,6 +7,7 @@ import { es } from 'date-fns/locale';
 import api from '../services/api';
 
 const DashboardResidente = () => {
+  // Trigger deploy - corrección de datos del dashboard
   const navigate = useNavigate();
   const { user } = useAuth();
   const [residente, setResidente] = useState(null);
