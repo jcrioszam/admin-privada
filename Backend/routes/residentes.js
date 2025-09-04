@@ -711,9 +711,8 @@ router.get('/pagos/:clave', async (req, res) => {
 
     const pagosAtrasados = [];
     if (!pagoMesActual) {
-      // Obtener configuración para monto de cuota
-      const conf = await Configuracion.findOne({ activo: true });
-      const montoCuota = conf?.cuotaMantenimientoMensual || 500;
+      // Usar la cuota de mantenimiento de la vivienda
+      const montoCuota = residente.vivienda.cuotaMantenimiento || 200;
 
       pagosAtrasados.push({
         tipo: 'Mantenimiento',
@@ -727,8 +726,7 @@ router.get('/pagos/:clave', async (req, res) => {
     // Calcular próximo pago (siguiente mes)
     const siguienteMes = mesActual === 12 ? 1 : mesActual + 1;
     const añoSiguiente = mesActual === 12 ? añoActual + 1 : añoActual;
-    const conf = await Configuracion.findOne({ activo: true });
-    const montoCuota = conf?.cuotaMantenimientoMensual || 500;
+    const montoCuota = residente.vivienda.cuotaMantenimiento || 200;
     const fechaLimiteProximo = new Date(añoSiguiente, siguienteMes - 1, 1); // primer día del mes siguiente
 
     const proximoPago = {
