@@ -22,7 +22,7 @@ const ConfiguracionCuotas = () => {
   const { data: configuracion, isLoading, error } = useQuery({
     queryKey: ['configuracion-cuotas'],
     queryFn: async () => {
-      const response = await api.get('/viviendas/configuracion/cuotas');
+      const response = await api.get('/api/viviendas/configuracion/cuotas');
       return response.data;
     }
   });
@@ -30,7 +30,7 @@ const ConfiguracionCuotas = () => {
   // Mutación para actualizar cuota individual
   const actualizarCuotaMutation = useMutation({
     mutationFn: async ({ viviendaId, cuotaMantenimiento, tipoCuota }) => {
-      const response = await api.put(`/viviendas/${viviendaId}/cuota`, {
+      const response = await api.put(`/api/viviendas/${viviendaId}/cuota`, {
         cuotaMantenimiento,
         tipoCuota
       });
@@ -46,7 +46,7 @@ const ConfiguracionCuotas = () => {
   // Mutación para actualización masiva
   const actualizacionMasivaMutation = useMutation({
     mutationFn: async ({ tipoCuota, cuotaMantenimiento, viviendas }) => {
-      const response = await api.put('/viviendas/configuracion/cuotas-masivo', {
+      const response = await api.put('/api/viviendas/configuracion/cuotas-masivo', {
         tipoCuota,
         cuotaMantenimiento,
         viviendas
