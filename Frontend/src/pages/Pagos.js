@@ -170,6 +170,9 @@ const Pagos = () => {
 
     const mesesFuturos = [];
 
+    // Obtener la cuota de mantenimiento de la vivienda
+    const cuotaMantenimiento = residente.vivienda.cuotaMantenimiento || 200; // Valor por defecto
+
     // Generar todos los meses restantes del año actual
     for (let mes = mesActual; mes <= 12; mes++) {
       // Verificar si ya existe un pago para este mes
@@ -182,8 +185,8 @@ const Pagos = () => {
         mesesFuturos.push({
           mes,
           año: añoActual,
-          monto: residente.vivienda.cuotaMantenimiento,
-          saldoPendiente: residente.vivienda.cuotaMantenimiento,
+          monto: cuotaMantenimiento,
+          saldoPendiente: cuotaMantenimiento,
           fechaInicio: new Date(añoActual, mes - 1, 1),
           fechaFin: new Date(añoActual, mes, 0),
           fechaLimite: new Date(añoActual, mes, 0),

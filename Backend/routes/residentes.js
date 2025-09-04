@@ -19,7 +19,7 @@ router.get('/', async (req, res) => {
     if (vivienda) filtro.vivienda = vivienda;
     
     const residentes = await Residente.find(filtro)
-      .populate('vivienda', 'numero calle')
+      .populate('vivienda', 'numero calle cuotaMantenimiento tipoCuota')
       .sort({ apellidos: 1, nombre: 1 });
     
     res.json(residentes);
@@ -32,7 +32,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const residente = await Residente.findById(req.params.id)
-      .populate('vivienda', 'numero calle tipo');
+      .populate('vivienda', 'numero calle tipo cuotaMantenimiento tipoCuota');
     
     if (!residente) {
       return res.status(404).json({ message: 'Residente no encontrado' });
