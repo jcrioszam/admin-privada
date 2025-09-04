@@ -97,6 +97,10 @@ const pagoSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Usuario',
     required: true
+  },
+  esAdelanto: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

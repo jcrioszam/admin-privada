@@ -18,6 +18,8 @@ const Pagos = () => {
     referenciaPago: '',
     montoPagado: 0
   });
+  const [modoAdelanto, setModoAdelanto] = useState(false);
+  const [mesesAdelanto, setMesesAdelanto] = useState(1);
   const queryClient = useQueryClient();
 
   // Obtener residentes con vivienda
@@ -159,10 +161,50 @@ const Pagos = () => {
     });
   };
 
+  // Generar meses futuros para adelanto
+  const generarMesesFuturos = (residente, cantidadMeses) => {
+    if (!residente || !residente.vivienda) return [];
+
+    const hoy = new Date();
+    const añoActual = hoy.getFullYear();
+    const mesActual = hoy.getMonth() + 1;
+
+    const mesesFuturos = [];
+
+    for (let i = 0; i < cantidadMeses; i++) {
+      const mes = mesActual + i;
+      const año = añoActual + Math.floor((mes - 1) / 12);
+      const mesAjustado = ((mes - 1) % 12) + 1;
+
+      // Verificar si ya existe un pago para este mes
+      const pagoExistente = pagos?.find(pago => 
+        pago.residente && pago.residente._id === residente._id &&
+        pago.mes === mesAjustado && pago.año === año
+      );
+
+      if (!pagoExistente) {
+        mesesFuturos.push({
+          mes: mesAjustado,
+          año,
+          monto: residente.vivienda.cuotaMantenimiento,
+          saldoPendiente: residente.vivienda.cuotaMantenimiento,
+          fechaInicio: new Date(año, mesAjustado - 1, 1),
+          fechaFin: new Date(año, mesAjustado, 0),
+          fechaLimite: new Date(año, mesAjustado, 0),
+          esAdelanto: true
+        });
+      }
+    }
+
+    return mesesFuturos;
+  };
+
   // Manejar selección de residente
   const handleSeleccionarResidente = (residente) => {
     setSelectedResidente(residente);
     setSelectedMeses([]);
+    setModoAdelanto(false);
+    setMesesAdelanto(1);
     setIsModalOpen(true);
   };
 
@@ -180,18 +222,22 @@ const Pagos = () => {
 
   // Manejar seleccionar todos
   const handleSeleccionarTodos = () => {
-    const mesesPendientes = generarMesesPendientes(selectedResidente);
-    if (selectedMeses.length === mesesPendientes.length) {
+    const meses = modoAdelanto ? 
+      generarMesesFuturos(selectedResidente, mesesAdelanto) : 
+      generarMesesPendientes(selectedResidente);
+    
+    if (selectedMeses.length === meses.length) {
       setSelectedMeses([]);
     } else {
-      setSelectedMeses(mesesPendientes);
+      setSelectedMeses(meses);
     }
   };
 
   // Calcular total seleccionado
   const calcularTotalSeleccionado = () => {
     return selectedMeses.reduce((total, mes) => {
-      const recargo = mes.diasAtraso > 0 ? (mes.monto * 0.1 * Math.ceil(mes.diasAtraso / 30)) : 0;
+      // No aplicar recargos a meses de adelanto
+      const recargo = (mes.esAdelanto || !mes.diasAtraso || mes.diasAtraso <= 0) ? 0 : (mes.monto * 0.1 * Math.ceil(mes.diasAtraso / 30));
       return total + mes.monto + recargo;
     }, 0);
   };
@@ -341,7 +387,8 @@ const Pagos = () => {
         fechaFinPeriodo: new Date(mes.año, mes.mes, 0),
         fechaLimite: new Date(mes.año, mes.mes, 0),
         estado: 'Pendiente',
-        metodoPago: 'Efectivo'
+        metodoPago: 'Efectivo',
+        esAdelanto: mes.esAdelanto || false
         // No incluir registradoPor - se manejará en el backend
       }));
 
@@ -542,18 +589,69 @@ const Pagos = () => {
               </button>
       </div>
 
+            {/* Controles de modo de pago */}
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center space-x-4 mb-4">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="modoPago"
+                    checked={!modoAdelanto}
+                    onChange={() => {
+                      setModoAdelanto(false);
+                      setSelectedMeses([]);
+                    }}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium">Pagos Pendientes</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="modoPago"
+                    checked={modoAdelanto}
+                    onChange={() => {
+                      setModoAdelanto(true);
+                      setSelectedMeses([]);
+                    }}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium">Pagos Adelantados</span>
+                </label>
+              </div>
+              
+              {modoAdelanto && (
+                <div className="flex items-center space-x-4">
+                  <label className="text-sm font-medium">Meses a adelantar:</label>
+                  <select
+                    value={mesesAdelanto}
+                    onChange={(e) => {
+                      setMesesAdelanto(parseInt(e.target.value));
+                      setSelectedMeses([]);
+                    }}
+                    className="border border-gray-300 rounded-md px-3 py-1 text-sm"
+                  >
+                    <option value={1}>1 mes</option>
+                    <option value={3}>3 meses</option>
+                    <option value={6}>6 meses</option>
+                    <option value={12}>12 meses (año completo)</option>
+                  </select>
+                </div>
+              )}
+            </div>
+
             <div className="mb-4">
               <button
                 onClick={handleSeleccionarTodos}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
-                {selectedMeses.length === mesesPendientes.length ? 'Deseleccionar Todos' : 'Seleccionar Todos'}
+                {selectedMeses.length === (modoAdelanto ? generarMesesFuturos(selectedResidente, mesesAdelanto).length : mesesPendientes.length) ? 'Deseleccionar Todos' : 'Seleccionar Todos'}
               </button>
     </div>
 
-            {/* Lista de meses pendientes */}
+            {/* Lista de meses */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
-              {mesesPendientes.map((mes) => {
+              {(modoAdelanto ? generarMesesFuturos(selectedResidente, mesesAdelanto) : mesesPendientes).map((mes) => {
                 const isSelected = selectedMeses.some(m => m.mes === mes.mes && m.año === mes.año);
                 const recargo = mes.diasAtraso > 0 ? (mes.monto * 0.1 * Math.ceil(mes.diasAtraso / 30)) : 0;
                 const total = mes.saldoPendiente + recargo;
@@ -582,22 +680,32 @@ const Pagos = () => {
                               month: 'long', 
                               year: 'numeric' 
                             })}
+                            {mes.esAdelanto && (
+                              <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                Adelanto
+                              </span>
+                            )}
             </p>
             <p className="text-sm text-gray-600">
-                            {mes.existe ? 'Pago existente' : 'Pago a crear'}
+                            {mes.existe ? 'Pago existente' : mes.esAdelanto ? 'Pago adelantado' : 'Pago a crear'}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="font-semibold">{formatCurrency(total)}</p>
-                        {mes.diasAtraso > 0 && (
+                        {mes.diasAtraso > 0 && !mes.esAdelanto && (
               <p className="text-sm text-red-600">
                             {mes.diasAtraso} días de atraso
               </p>
             )}
-                        {recargo > 0 && (
+                        {recargo > 0 && !mes.esAdelanto && (
                           <p className="text-sm text-orange-600">
                             +{formatCurrency(recargo)} recargo
+                          </p>
+                        )}
+                        {mes.esAdelanto && (
+                          <p className="text-sm text-blue-600">
+                            Pago adelantado
                           </p>
                         )}
                         </div>
@@ -612,9 +720,17 @@ const Pagos = () => {
               <div className="border-t pt-4">
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold mb-2">Detalles del Pago</h3>
-                  <p className="text-sm text-gray-600 mb-4">
+                  <p className="text-sm text-gray-600 mb-2">
                     Total a pagar: <span className="font-bold text-lg">{formatCurrency(calcularTotalSeleccionado())}</span>
-            </p>
+                  </p>
+                  {modoAdelanto && (
+                    <p className="text-sm text-blue-600 mb-4">
+                      💡 Pago adelantado - No se aplicarán recargos por atraso
+                    </p>
+                  )}
+                  <p className="text-sm text-gray-500">
+                    {selectedMeses.length} mes(es) seleccionado(s)
+                  </p>
             </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
