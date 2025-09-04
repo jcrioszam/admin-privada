@@ -274,6 +274,36 @@ const DashboardResidente = () => {
           </div>
         )}
 
+        {/* Acciones Rápidas */}
+        <div className="bg-white overflow-hidden shadow rounded-lg mb-6">
+          <div className="px-4 py-5 sm:p-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+              Acciones Rápidas
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <button
+                onClick={() => navigate('/residente/estado-cuenta')}
+                className="flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Ver Estado de Cuenta
+              </button>
+              
+              <button
+                onClick={() => navigate('/residente/comprobantes')}
+                className="flex items-center justify-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Descargar Comprobantes
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Historial de Pagos */}
         {estadisticas?.totalPagos > 0 && (
           <div className="bg-white overflow-hidden shadow rounded-lg">
@@ -286,7 +316,7 @@ const DashboardResidente = () => {
                   Has realizado {estadisticas.totalPagos} pagos de mantenimiento
                 </p>
                 <p className="text-sm text-gray-500 mt-2">
-                  Contacta a la administración para ver el historial completo
+                  Usa el botón "Ver Estado de Cuenta" para ver el historial completo
                 </p>
               </div>
             </div>
