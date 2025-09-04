@@ -58,9 +58,9 @@ const Pagos = () => {
       let tienePendientes = false;
 
       for (const pago of pagosResidente) {
-        const saldoPendiente = pago.monto - (pago.montoPagado || 0);
-        const fechaLimite = new Date(pago.fechaLimite);
-        const hoy = new Date();
+           const saldoPendiente = pago.monto - (pago.montoPagado || 0);
+           const fechaLimite = new Date(pago.fechaLimite);
+           const hoy = new Date();
         const diasAtraso = hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
 
         // Solo considerar pagos que realmente tienen saldo pendiente
@@ -277,8 +277,8 @@ const Pagos = () => {
         queryClient.refetchQueries(['pagos']);
         queryClient.refetchQueries(['residentes']);
       }, 2000);
-    },
-    onError: (error) => {
+      },
+      onError: (error) => {
       console.error('Error al registrar pagos:', error);
       console.error('Error response:', error.response?.data);
       console.error('Error config:', error.config?.data);
@@ -388,11 +388,11 @@ const Pagos = () => {
       })
       .map(pago => {
         const saldoPendiente = pago.monto - (pago.montoPagado || 0);
-        const fechaLimite = new Date(pago.fechaLimite);
-        const hoy = new Date();
+      const fechaLimite = new Date(pago.fechaLimite);
+      const hoy = new Date();
         const diasAtraso = hoy <= fechaLimite ? 0 : Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
-        
-        return {
+    
+    return {
           mes: pago.mes,
           año: pago.año,
           monto: pago.monto,
@@ -411,34 +411,34 @@ const Pagos = () => {
       });
   })() : [];
 
-  return (
+    return (
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-4">Gestión de Pagos</h1>
 
       {/* Filtros */}
         <div className="flex gap-2 mb-4">
-          <button
-            onClick={() => setFilter('todos')}
-            className={`px-4 py-2 rounded-md text-sm font-medium ${
-              filter === 'todos' 
+                 <button
+           onClick={() => setFilter('todos')}
+           className={`px-4 py-2 rounded-md text-sm font-medium ${
+             filter === 'todos'
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            Todos
-          </button>
-          <button
+               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+           }`}
+         >
+           Todos
+         </button>
+         <button
             onClick={() => setFilter('al-dia')}
-            className={`px-4 py-2 rounded-md text-sm font-medium ${
+           className={`px-4 py-2 rounded-md text-sm font-medium ${
               filter === 'al-dia' 
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
+               ? 'bg-green-600 text-white'
+               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+           }`}
+         >
             Al día
-          </button>
-        </div>
+             </button>
+           </div>
       </div>
 
       {/* Lista de residentes */}
@@ -489,8 +489,8 @@ const Pagos = () => {
             estadoColor = 'bg-yellow-100 text-yellow-800';
             montoColor = 'text-yellow-600';
           }
-
-          return (
+                            
+                            return (
             <div
               key={residente._id}
               className={`bg-white rounded-lg shadow-md p-4 border-l-4 ${borderColor} hover:shadow-lg transition-shadow cursor-pointer`}
@@ -501,12 +501,12 @@ const Pagos = () => {
                   {residente.nombre} {residente.apellidos}
                 </h3>
                 <UserIcon className="h-5 w-5 text-gray-400" />
-              </div>
+                                </div>
 
               <div className="text-sm text-gray-600 mb-2">
                 <p>Vivienda: {residente.vivienda?.numero}</p>
                 <p>Ingreso: {new Date(residente.fechaIngreso).toLocaleDateString()}</p>
-              </div>
+                                </div>
           
               <div className="flex items-center justify-between">
                 <div className="text-sm">
@@ -516,14 +516,14 @@ const Pagos = () => {
                   <p className={`font-semibold ${montoColor}`}>
                     {formatCurrency(totalSaldo)}
                   </p>
-                </div>
+                              </div>
                 <div className={`px-2 py-1 rounded-full text-xs font-medium ${estadoColor}`}>
                   {estadoTexto}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+                         </div>
+                         </div>
+                                 </div>
+                   );
+                 })}
           </div>
           
       {/* Modal de pagos */}
@@ -582,8 +582,8 @@ const Pagos = () => {
                               month: 'long', 
                               year: 'numeric' 
                             })}
-                          </p>
-                          <p className="text-sm text-gray-600">
+            </p>
+            <p className="text-sm text-gray-600">
                             {mes.existe ? 'Pago existente' : 'Pago a crear'}
                           </p>
                         </div>
@@ -591,10 +591,10 @@ const Pagos = () => {
                       <div className="text-right">
                         <p className="font-semibold">{formatCurrency(total)}</p>
                         {mes.diasAtraso > 0 && (
-                          <p className="text-sm text-red-600">
+              <p className="text-sm text-red-600">
                             {mes.diasAtraso} días de atraso
-                          </p>
-                        )}
+              </p>
+            )}
                         {recargo > 0 && (
                           <p className="text-sm text-orange-600">
                             +{formatCurrency(recargo)} recargo
@@ -605,8 +605,8 @@ const Pagos = () => {
                       </div>
                   );
                 })}
-              </div>
-
+          </div>
+          
             {/* Formulario de pago */}
             {selectedMeses.length > 0 && (
               <div className="border-t pt-4">
@@ -615,8 +615,8 @@ const Pagos = () => {
                   <p className="text-sm text-gray-600 mb-4">
                     Total a pagar: <span className="font-bold text-lg">{formatCurrency(calcularTotalSeleccionado())}</span>
             </p>
-          </div>
-          
+            </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -647,7 +647,7 @@ const Pagos = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
-              </div>
+            </div>
 
                 <div className="flex justify-end gap-3">
               <button
@@ -714,14 +714,14 @@ const Pagos = () => {
                   <span className="text-sm font-semibold text-gray-700">Residente:</span>
                   <span className="text-sm font-bold text-gray-900">
                     {comprobanteData?.pagos?.[0]?.residente?.nombre} {comprobanteData?.pagos?.[0]?.residente?.apellidos}
-                  </span>
+                    </span>
                 </div>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-semibold text-gray-700">Vivienda:</span>
                   <span className="text-sm font-bold text-gray-900">
                     {comprobanteData?.pagos?.[0]?.vivienda?.numero}
                   </span>
-                </div>
+              </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-semibold text-gray-700">Dirección:</span>
                   <span className="text-sm text-gray-900">
@@ -816,8 +816,8 @@ const Pagos = () => {
                 Cerrar
               </button>
             </div>
-          </div>
         </div>
+      </div>
       )}
     </div>
   );
