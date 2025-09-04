@@ -19,7 +19,6 @@ const Pagos = () => {
     montoPagado: 0
   });
   const [modoAdelanto, setModoAdelanto] = useState(false);
-  const [mesesAdelanto, setMesesAdelanto] = useState(1);
   const queryClient = useQueryClient();
 
   // Obtener residentes con vivienda
@@ -161,8 +160,8 @@ const Pagos = () => {
     });
   };
 
-  // Generar meses futuros para adelanto
-  const generarMesesFuturos = (residente, cantidadMeses) => {
+  // Generar meses futuros para adelanto (todos los meses restantes del año)
+  const generarMesesFuturos = (residente) => {
     if (!residente || !residente.vivienda) return [];
 
     const hoy = new Date();
@@ -171,26 +170,23 @@ const Pagos = () => {
 
     const mesesFuturos = [];
 
-    for (let i = 0; i < cantidadMeses; i++) {
-      const mes = mesActual + i;
-      const año = añoActual + Math.floor((mes - 1) / 12);
-      const mesAjustado = ((mes - 1) % 12) + 1;
-
+    // Generar todos los meses restantes del año actual
+    for (let mes = mesActual; mes <= 12; mes++) {
       // Verificar si ya existe un pago para este mes
       const pagoExistente = pagos?.find(pago => 
         pago.residente && pago.residente._id === residente._id &&
-        pago.mes === mesAjustado && pago.año === año
+        pago.mes === mes && pago.año === añoActual
       );
 
       if (!pagoExistente) {
         mesesFuturos.push({
-          mes: mesAjustado,
-          año,
+          mes,
+          año: añoActual,
           monto: residente.vivienda.cuotaMantenimiento,
           saldoPendiente: residente.vivienda.cuotaMantenimiento,
-          fechaInicio: new Date(año, mesAjustado - 1, 1),
-          fechaFin: new Date(año, mesAjustado, 0),
-          fechaLimite: new Date(año, mesAjustado, 0),
+          fechaInicio: new Date(añoActual, mes - 1, 1),
+          fechaFin: new Date(añoActual, mes, 0),
+          fechaLimite: new Date(añoActual, mes, 0),
           esAdelanto: true
         });
       }
@@ -204,7 +200,6 @@ const Pagos = () => {
     setSelectedResidente(residente);
     setSelectedMeses([]);
     setModoAdelanto(false);
-    setMesesAdelanto(1);
     setIsModalOpen(true);
   };
 
@@ -223,7 +218,7 @@ const Pagos = () => {
   // Manejar seleccionar todos
   const handleSeleccionarTodos = () => {
     const meses = modoAdelanto ? 
-      generarMesesFuturos(selectedResidente, mesesAdelanto) : 
+      generarMesesFuturos(selectedResidente) : 
       generarMesesPendientes(selectedResidente);
     
     if (selectedMeses.length === meses.length) {
@@ -621,21 +616,8 @@ const Pagos = () => {
               </div>
               
               {modoAdelanto && (
-                <div className="flex items-center space-x-4">
-                  <label className="text-sm font-medium">Meses a adelantar:</label>
-                  <select
-                    value={mesesAdelanto}
-                    onChange={(e) => {
-                      setMesesAdelanto(parseInt(e.target.value));
-                      setSelectedMeses([]);
-                    }}
-                    className="border border-gray-300 rounded-md px-3 py-1 text-sm"
-                  >
-                    <option value={1}>1 mes</option>
-                    <option value={3}>3 meses</option>
-                    <option value={6}>6 meses</option>
-                    <option value={12}>12 meses (año completo)</option>
-                  </select>
+                <div className="text-sm text-blue-600">
+                  💡 Selecciona los meses que quieres adelantar del año actual
                 </div>
               )}
             </div>
@@ -645,13 +627,13 @@ const Pagos = () => {
                 onClick={handleSeleccionarTodos}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
-                {selectedMeses.length === (modoAdelanto ? generarMesesFuturos(selectedResidente, mesesAdelanto).length : mesesPendientes.length) ? 'Deseleccionar Todos' : 'Seleccionar Todos'}
+                {selectedMeses.length === (modoAdelanto ? generarMesesFuturos(selectedResidente).length : mesesPendientes.length) ? 'Deseleccionar Todos' : 'Seleccionar Todos'}
               </button>
     </div>
 
             {/* Lista de meses */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
-              {(modoAdelanto ? generarMesesFuturos(selectedResidente, mesesAdelanto) : mesesPendientes).map((mes) => {
+              {(modoAdelanto ? generarMesesFuturos(selectedResidente) : mesesPendientes).map((mes) => {
                 const isSelected = selectedMeses.some(m => m.mes === mes.mes && m.año === mes.año);
                 const recargo = mes.diasAtraso > 0 ? (mes.monto * 0.1 * Math.ceil(mes.diasAtraso / 30)) : 0;
                 const total = mes.saldoPendiente + recargo;
