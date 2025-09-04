@@ -34,6 +34,7 @@ const navigation = [
   { name: 'Accesos', href: '/accesos', icon: KeyIcon, color: 'text-orange-500' },
   { name: 'Usuarios', href: '/usuarios', icon: UserGroupIcon, color: 'text-teal-500' },
   { name: 'Configuración', href: '/configuracion', icon: Cog6ToothIcon, color: 'text-gray-500' },
+  { name: 'Config. Cuotas', href: '/configuracion-cuotas', icon: CurrencyDollarIcon, color: 'text-green-600' },
 ];
 
 const reportes = [

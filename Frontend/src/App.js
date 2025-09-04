@@ -14,6 +14,7 @@ import CorteDiario from './pages/CorteDiario';
 import Accesos from './pages/Accesos';
 import Usuarios from './pages/Usuarios';
 import Configuracion from './pages/Configuracion';
+import ConfiguracionCuotas from './pages/ConfiguracionCuotas';
 import ReporteMorosidad from './pages/ReporteMorosidad';
 import PagosEspeciales from './pages/PagosEspeciales';
 import ReporteFlujoCaja from './pages/ReporteFlujoCaja';
@@ -84,6 +85,7 @@ function App() {
           <Route path="/accesos" element={<Accesos />} />
           <Route path="/usuarios" element={<Usuarios />} />
           <Route path="/configuracion" element={<Configuracion />} />
+          <Route path="/configuracion-cuotas" element={<ConfiguracionCuotas />} />
           <Route path="/reporte-proyectos" element={<ReporteProyectos />} />
           <Route path="/reporte-proyectos-especiales" element={<ReporteProyectosEspeciales />} />
           <Route path="/reporte-morosidad" element={<ReporteMorosidad />} />

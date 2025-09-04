@@ -323,4 +323,97 @@ router.get('/estadisticas/resumen', async (req, res) => {
   }
 });
 
+// Obtener configuración de cuotas por vivienda
+router.get('/configuracion/cuotas', async (req, res) => {
+  try {
+    const viviendas = await Vivienda.find({}, 'numero cuotaMantenimiento tipoCuota')
+      .sort({ numero: 1 });
+    
+    const configuracion = {
+      tiposCuota: [
+        { valor: 'Estandar', nombre: 'Estándar', monto: 200 },
+        { valor: 'Economica', nombre: 'Económica', monto: 50 },
+        { valor: 'Premium', nombre: 'Premium', monto: 300 }
+      ],
+      viviendas: viviendas.map(v => ({
+        _id: v._id,
+        numero: v.numero,
+        cuotaMantenimiento: v.cuotaMantenimiento,
+        tipoCuota: v.tipoCuota
+      }))
+    };
+    
+    res.json(configuracion);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Actualizar cuota de una vivienda específica
+router.put('/:id/cuota', [
+  body('cuotaMantenimiento').isNumeric().withMessage('La cuota debe ser un número'),
+  body('tipoCuota').isIn(['Estandar', 'Economica', 'Premium']).withMessage('Tipo de cuota inválido')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { cuotaMantenimiento, tipoCuota } = req.body;
+    
+    const vivienda = await Vivienda.findByIdAndUpdate(
+      req.params.id,
+      { cuotaMantenimiento, tipoCuota },
+      { new: true, runValidators: true }
+    );
+    
+    if (!vivienda) {
+      return res.status(404).json({ message: 'Vivienda no encontrada' });
+    }
+    
+    res.json({
+      message: 'Cuota actualizada correctamente',
+      vivienda: {
+        _id: vivienda._id,
+        numero: vivienda.numero,
+        cuotaMantenimiento: vivienda.cuotaMantenimiento,
+        tipoCuota: vivienda.tipoCuota
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Actualizar cuotas masivamente por tipo
+router.put('/configuracion/cuotas-masivo', [
+  body('tipoCuota').isIn(['Estandar', 'Economica', 'Premium']).withMessage('Tipo de cuota inválido'),
+  body('cuotaMantenimiento').isNumeric().withMessage('La cuota debe ser un número'),
+  body('viviendas').isArray().withMessage('Debe proporcionar un array de IDs de viviendas')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { tipoCuota, cuotaMantenimiento, viviendas } = req.body;
+    
+    const resultado = await Vivienda.updateMany(
+      { _id: { $in: viviendas } },
+      { cuotaMantenimiento, tipoCuota }
+    );
+    
+    res.json({
+      message: 'Cuotas actualizadas masivamente',
+      viviendasActualizadas: resultado.modifiedCount,
+      tipoCuota,
+      cuotaMantenimiento
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router; 

@@ -38,7 +38,17 @@ const viviendaSchema = new mongoose.Schema({
   residentes: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Residente'
-  }]
+  }],
+  cuotaMantenimiento: {
+    type: Number,
+    required: true,
+    default: 200
+  },
+  tipoCuota: {
+    type: String,
+    enum: ['Estandar', 'Economica', 'Premium'],
+    default: 'Estandar'
+  }
 }, {
   timestamps: true
 });
