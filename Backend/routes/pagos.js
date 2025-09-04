@@ -911,4 +911,68 @@ async function generarProximoPagoAutomatico(viviendaId) {
   }
 }
 
+// Actualizar pagos pendientes con nuevas cuotas
+router.post('/actualizar-con-nuevas-cuotas', async (req, res) => {
+  try {
+    console.log('🔄 Iniciando actualización de pagos con nuevas cuotas...');
+    
+    // Obtener todas las viviendas con sus cuotas
+    const viviendas = await Vivienda.find({}, 'numero cuotaMantenimiento tipoCuota');
+    const cuotasPorVivienda = {};
+    
+    viviendas.forEach(v => {
+      cuotasPorVivienda[v.numero] = v.cuotaMantenimiento;
+    });
+
+    console.log('📋 Cuotas por vivienda:', cuotasPorVivienda);
+
+    // Obtener todos los pagos pendientes
+    const pagosPendientes = await Pago.find({ 
+      estado: 'Pendiente' 
+    }).populate('vivienda', 'numero cuotaMantenimiento');
+
+    console.log(`📊 Total de pagos pendientes: ${pagosPendientes.length}`);
+
+    let actualizados = 0;
+    let sinCambios = 0;
+
+    for (const pago of pagosPendientes) {
+      const vivienda = pago.vivienda;
+      const nuevaCuota = cuotasPorVivienda[vivienda.numero];
+      const cuotaActual = pago.monto;
+
+      if (nuevaCuota && cuotaActual !== nuevaCuota) {
+        console.log(`🔧 Actualizando pago ${pago._id}: Vivienda ${vivienda.numero} - $${cuotaActual} → $${nuevaCuota}`);
+        
+        // Actualizar el monto del pago
+        await Pago.findByIdAndUpdate(pago._id, {
+          monto: nuevaCuota,
+          saldoPendiente: nuevaCuota - (pago.montoPagado || 0)
+        });
+
+        actualizados++;
+      } else {
+        sinCambios++;
+      }
+    }
+
+    console.log(`✅ Actualización completada: ${actualizados} pagos actualizados, ${sinCambios} sin cambios`);
+
+    res.json({
+      success: true,
+      message: 'Pagos actualizados correctamente',
+      actualizados,
+      sinCambios,
+      total: pagosPendientes.length
+    });
+
+  } catch (error) {
+    console.error('❌ Error actualizando pagos:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error actualizando pagos: ' + error.message 
+    });
+  }
+});
+
 module.exports = router; 
