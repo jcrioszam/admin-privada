@@ -983,4 +983,21 @@ router.post('/actualizar-con-nuevas-cuotas', async (req, res) => {
   }
 });
 
+// Obtener pagos de un residente específico
+router.get('/residente/:residenteId', async (req, res) => {
+  try {
+    const { residenteId } = req.params;
+    
+    const pagos = await Pago.find({ residente: residenteId })
+      .populate('vivienda', 'numero cuotaMantenimiento')
+      .populate('residente', 'nombre apellidos')
+      .sort({ año: -1, mes: -1 });
+    
+    res.json(pagos);
+  } catch (error) {
+    console.error('Error obteniendo pagos del residente:', error);
+    res.status(500).json({ message: 'Error obteniendo pagos del residente' });
+  }
+});
+
 module.exports = router; 

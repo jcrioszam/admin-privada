@@ -15,6 +15,7 @@ import Accesos from './pages/Accesos';
 import Usuarios from './pages/Usuarios';
 import Configuracion from './pages/Configuracion';
 import ConfiguracionCuotas from './pages/ConfiguracionCuotas';
+import EstadoCuenta from './pages/EstadoCuenta';
 import ReporteMorosidad from './pages/ReporteMorosidad';
 import PagosEspeciales from './pages/PagosEspeciales';
 import ReporteFlujoCaja from './pages/ReporteFlujoCaja';
@@ -86,6 +87,7 @@ function App() {
           <Route path="/usuarios" element={<Usuarios />} />
           <Route path="/configuracion" element={<Configuracion />} />
           <Route path="/configuracion-cuotas" element={<ConfiguracionCuotas />} />
+          <Route path="/estado-cuenta" element={<EstadoCuenta />} />
           <Route path="/reporte-proyectos" element={<ReporteProyectos />} />
           <Route path="/reporte-proyectos-especiales" element={<ReporteProyectosEspeciales />} />
           <Route path="/reporte-morosidad" element={<ReporteMorosidad />} />
