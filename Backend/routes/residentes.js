@@ -611,14 +611,14 @@ router.get('/dashboard/:id', async (req, res) => {
             mes: mes,
             año: año,
             mesesAtraso: mesesAtraso,
-            monto: 200 // Monto típico
+            monto: residente.vivienda.cuotaMantenimiento || 200
           });
         } else {
           pagosAtrasados.push({
             mes: mes,
             año: año,
             mesesAtraso: mesesAtraso,
-            monto: 200
+            monto: residente.vivienda.cuotaMantenimiento || 200
           });
         }
       } else {
