@@ -5,6 +5,7 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 
 const Layout = ({ children }) => {
+  console.log('🚀 Layout se está renderizando con children:', children);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useAuth();
   const location = useLocation();
