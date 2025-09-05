@@ -67,7 +67,6 @@ function App() {
           path="/residente/*"
           element={<Navigate to={(isResidente || (user && user.rol === 'Residente')) ? '/residente/dashboard' : '/residente/login'} replace />}
         />
-        <Route path="*" element={<Navigate to="/residente/login" replace />} />
       </Routes>
     );
   }
