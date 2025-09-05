@@ -86,7 +86,13 @@ function App() {
   }
 
   // Si hay usuario y NO es residente, mostrar el portal de administración
+  console.log('🔍 Verificando usuario para portal de administración:');
+  console.log('- user:', user);
+  console.log('- user.rol:', user?.rol);
+  console.log('- location.pathname:', location.pathname);
+  
   if (user && user.rol !== 'Residente') {
+    console.log('✅ Usuario es administrador, mostrando portal de administración');
     return (
       <Layout>
         <Routes>
@@ -120,9 +126,11 @@ function App() {
 
   // Si hay usuario residente pero no está en rutas de residente, redirigir
   if (user && user.rol === 'Residente') {
+    console.log('🔄 Usuario es residente, redirigiendo a dashboard de residente');
     return <Navigate to="/residente/dashboard" replace />;
   }
 
+  console.log('❌ No se cumplió ninguna condición, mostrando login');
   // Si no hay usuario, mostrar login de administrador
   return <Login />;
 }
