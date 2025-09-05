@@ -246,22 +246,6 @@ const Residentes = () => {
       )}
     </div>
   );
-  } catch (error) {
-    console.error('❌ Error en componente Residentes:', error);
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">Error en el componente: {error.message}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="btn-primary"
-          >
-            Reintentar
-          </button>
-        </div>
-      </div>
-    );
-  }
 };
 
 // Componente Modal
