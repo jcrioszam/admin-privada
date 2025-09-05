@@ -17,6 +17,8 @@ import Configuracion from './pages/Configuracion';
 import ConfiguracionCuotas from './pages/ConfiguracionCuotas';
 import EstadoCuenta from './pages/EstadoCuenta';
 import EstadoCuentaResidente from './pages/EstadoCuentaResidente';
+import ProyectosEspecialesResidente from './pages/ProyectosEspecialesResidente';
+import ComprobantesResidente from './pages/ComprobantesResidente';
 import ReporteMorosidad from './pages/ReporteMorosidad';
 import PagosEspeciales from './pages/PagosEspeciales';
 import ReporteFlujoCaja from './pages/ReporteFlujoCaja';
@@ -54,8 +56,12 @@ function App() {
           element={(isResidente || (user && user.rol === 'Residente')) ? <EstadoCuentaResidente /> : <Navigate to="/residente/login" replace />}
         />
         <Route
+          path="/residente/proyectos-especiales"
+          element={(isResidente || (user && user.rol === 'Residente')) ? <ProyectosEspecialesResidente /> : <Navigate to="/residente/login" replace />}
+        />
+        <Route
           path="/residente/comprobantes"
-          element={(isResidente || (user && user.rol === 'Residente')) ? <EstadoCuentaResidente /> : <Navigate to="/residente/login" replace />}
+          element={(isResidente || (user && user.rol === 'Residente')) ? <ComprobantesResidente /> : <Navigate to="/residente/login" replace />}
         />
         <Route
           path="/residente/*"
