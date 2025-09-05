@@ -6,11 +6,12 @@ import LoadingSpinner from '../components/LoadingSpinner';
 // import toast from 'react-hot-toast';
 
 const Residentes = () => {
-  console.log('🚀 Componente Residentes se está renderizando...');
-  
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingResidente, setEditingResidente] = useState(null);
-  const queryClient = useQueryClient();
+  try {
+    console.log('🚀 Componente Residentes se está renderizando...');
+    
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingResidente, setEditingResidente] = useState(null);
+    const queryClient = useQueryClient();
 
   // Obtener residentes
   const { data: residentes, isLoading, error } = useQuery({
@@ -497,6 +498,15 @@ const ResidenteModal = ({ residente, viviendasDisponibles, onSubmit, onClose, is
       </div>
     </div>
   );
+  } catch (error) {
+    console.error('❌ Error en componente Residentes:', error);
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold text-red-600">Error en Residentes</h1>
+        <p className="text-red-600">Error: {error.message}</p>
+      </div>
+    );
+  }
 };
 
 export default Residentes; 
