@@ -38,6 +38,13 @@ function App() {
   const isResidente = localStorage.getItem('isResidente') === 'true';
   const location = useLocation();
 
+  console.log('🚀 App.js se está ejecutando:');
+  console.log('- user:', user);
+  console.log('- user.rol:', user?.rol);
+  console.log('- isResidente:', isResidente);
+  console.log('- location.pathname:', location.pathname);
+  console.log('- loading:', loading);
+
   // Si el usuario es residente, redirigir al dashboard de residente
   if (user && user.rol === 'Residente' && !location.pathname.startsWith('/residente')) {
     return <Navigate to="/residente/dashboard" replace />;
