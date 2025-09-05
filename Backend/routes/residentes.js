@@ -570,61 +570,75 @@ router.get('/dashboard/:id', async (req, res) => {
       return res.status(404).json({ message: 'Residente no encontrado' });
     }
 
-    // Calcular morosidad desde la fecha de ingreso
+    // Obtener pagos del residente usando la misma lógica que el estado de cuenta
+    const pagos = await Pago.find({ 
+      residente: residente._id 
+    }).populate('vivienda', 'numero cuotaMantenimiento')
+      .sort({ año: -1, mes: -1 });
+
+    // Calcular estadísticas usando la misma lógica que EstadoCuenta.js
+    const calcularResumen = (pagos) => {
+      if (!pagos || pagos.length === 0) {
+        return { 
+          totalPagado: 0, 
+          totalPendiente: 0, 
+          totalVencido: 0, 
+          mesesPagados: 0, 
+          mesesPendientes: 0,
+          pagosAtrasados: [],
+          pagosMorosos: []
+        };
+      }
+
+      const resumen = pagos.reduce((acc, pago) => {
+        if (pago.estado === 'Pagado' || pago.estado === 'Pagado con excedente') {
+          acc.totalPagado += pago.montoPagado || 0;
+          acc.mesesPagados++;
+        } else if (pago.estado === 'Pendiente') {
+          const hoy = new Date();
+          const fechaLimite = new Date(pago.fechaLimite);
+          const diasVencido = Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
+          
+          if (diasVencido > 0) {
+            acc.totalVencido += pago.monto;
+            acc.pagosMorosos.push({
+              mes: pago.mes,
+              año: pago.año,
+              mesesAtraso: Math.ceil(diasVencido / 30),
+              monto: pago.monto
+            });
+          } else {
+            acc.totalPendiente += pago.monto;
+            acc.pagosAtrasados.push({
+              mes: pago.mes,
+              año: pago.año,
+              mesesAtraso: 0,
+              monto: pago.monto
+            });
+          }
+          acc.mesesPendientes++;
+        }
+        return acc;
+      }, { 
+        totalPagado: 0, 
+        totalPendiente: 0, 
+        totalVencido: 0, 
+        mesesPagados: 0, 
+        mesesPendientes: 0,
+        pagosAtrasados: [],
+        pagosMorosos: []
+      });
+
+      return resumen;
+    };
+
+    const resumen = calcularResumen(pagos);
+
+    // Calcular meses desde el ingreso
     const fechaActual = new Date();
     const fechaIngreso = new Date(residente.fechaIngreso);
-    
-    // Calcular meses desde el ingreso
     const mesesDesdeIngreso = (fechaActual.getFullYear() - fechaIngreso.getFullYear()) * 12 + 
                              (fechaActual.getMonth() - fechaIngreso.getMonth());
-    
-    // Obtener pagos del residente
-    const pagos = await Pago.find({ 
-      vivienda: residente.vivienda._id,
-      residente: residente._id 
-    }).sort({ año: -1, mes: -1 });
-
-    // Calcular estadísticas
-    let totalPagos = 0;
-    let totalAtrasados = 0;
-    let totalMorosos = 0;
-    let pagosAtrasados = [];
-    let pagosMorosos = [];
-
-    // Verificar pagos desde la fecha de ingreso
-    for (let i = 0; i <= mesesDesdeIngreso; i++) {
-      const fechaPago = new Date(fechaIngreso);
-      fechaPago.setMonth(fechaIngreso.getMonth() + i);
-      
-      const año = fechaPago.getFullYear();
-      const mes = fechaPago.getMonth() + 1;
-      
-      const pago = pagos.find(p => p.año === año && p.mes === mes);
-      
-      if (!pago) {
-        totalAtrasados++;
-        const mesesAtraso = mesesDesdeIngreso - i;
-        
-        if (mesesAtraso >= 2) {
-          totalMorosos++;
-          pagosMorosos.push({
-            mes: mes,
-            año: año,
-            mesesAtraso: mesesAtraso,
-            monto: residente.vivienda.cuotaMantenimiento || 200
-          });
-        } else {
-          pagosAtrasados.push({
-            mes: mes,
-            año: año,
-            mesesAtraso: mesesAtraso,
-            monto: residente.vivienda.cuotaMantenimiento || 200
-          });
-        }
-      } else {
-        totalPagos++;
-      }
-    }
 
     // Obtener proyectos especiales
     const proyectos = await ProyectoPagoEspecial.find({ activo: true });
@@ -655,11 +669,11 @@ router.get('/dashboard/:id', async (req, res) => {
         }
       },
       estadisticas: {
-        totalPagos,
-        totalAtrasados,
-        totalMorosos,
-        pagosAtrasados,
-        pagosMorosos,
+        totalPagos: resumen.mesesPagados,
+        totalAtrasados: resumen.mesesPendientes,
+        totalMorosos: resumen.pagosMorosos.length,
+        pagosAtrasados: resumen.pagosAtrasados,
+        pagosMorosos: resumen.pagosMorosos,
         proyectosPendientes,
         proyectosVencidos,
         mesesDesdeIngreso
