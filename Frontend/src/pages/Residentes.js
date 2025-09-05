@@ -11,10 +11,12 @@ const Residentes = () => {
   const queryClient = useQueryClient();
 
   // Obtener residentes
-  const { data: residentes, isLoading } = useQuery({
+  const { data: residentes, isLoading, error } = useQuery({
     queryKey: ['residentes'],
     queryFn: async () => {
+      console.log('🔍 Cargando residentes...');
       const response = await api.get('/api/residentes');
+      console.log('✅ Residentes cargados:', response.data);
       return response.data;
     }
   });
@@ -29,10 +31,12 @@ const Residentes = () => {
   });
 
   // Obtener viviendas disponibles
-  const { data: viviendasDisponibles } = useQuery({
+  const { data: viviendasDisponibles, error: errorViviendas } = useQuery({
     queryKey: ['viviendas-disponibles'],
     queryFn: async () => {
+      console.log('🔍 Cargando viviendas disponibles...');
       const response = await api.get('/api/residentes/viviendas/disponibles');
+      console.log('✅ Viviendas disponibles cargadas:', response.data);
       return response.data;
     }
   });
@@ -114,10 +118,34 @@ const Residentes = () => {
     });
   }, [viviendasDisponibles]);
 
+  // Logs de depuración
+  console.log('🔍 Estado del componente Residentes:');
+  console.log('- isLoading:', isLoading);
+  console.log('- residentes:', residentes);
+  console.log('- error:', error);
+  console.log('- viviendasDisponibles:', viviendasDisponibles);
+  console.log('- errorViviendas:', errorViviendas);
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error al cargar residentes: {error.message}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="btn-primary"
+          >
+            Reintentar
+          </button>
+        </div>
       </div>
     );
   }
