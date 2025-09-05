@@ -7,10 +7,13 @@ import LoadingSpinner from '../components/LoadingSpinner';
 
 const Residentes = () => {
   console.log('🚀 Componente Residentes se está renderizando...');
+  console.log('🔍 Estado inicial del componente Residentes');
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingResidente, setEditingResidente] = useState(null);
   const queryClient = useQueryClient();
+  
+  console.log('🔍 Hooks inicializados en Residentes');
 
   // Obtener residentes
   const { data: residentes, isLoading, error } = useQuery({
