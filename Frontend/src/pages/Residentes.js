@@ -6,6 +6,8 @@ import LoadingSpinner from '../components/LoadingSpinner';
 // import toast from 'react-hot-toast';
 
 const Residentes = () => {
+  console.log('🚀 Componente Residentes se está renderizando...');
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingResidente, setEditingResidente] = useState(null);
   const queryClient = useQueryClient();
@@ -150,24 +152,25 @@ const Residentes = () => {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Residentes</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Gestiona los residentes del fraccionamiento
-          </p>
+  try {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Residentes</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Gestiona los residentes del fraccionamiento
+            </p>
+          </div>
+          <button
+            onClick={() => openModal()}
+            className="btn-primary"
+          >
+            <PlusIcon className="h-5 w-5 mr-2" />
+            Nuevo Residente
+          </button>
         </div>
-        <button
-          onClick={() => openModal()}
-          className="btn-primary"
-        >
-          <PlusIcon className="h-5 w-5 mr-2" />
-          Nuevo Residente
-        </button>
-      </div>
 
       {/* Tabla */}
       <div className="card">
@@ -244,6 +247,22 @@ const Residentes = () => {
       )}
     </div>
   );
+  } catch (error) {
+    console.error('❌ Error en componente Residentes:', error);
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error en el componente: {error.message}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="btn-primary"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
 };
 
 // Componente Modal
