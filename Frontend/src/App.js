@@ -108,7 +108,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/viviendas" element={<Viviendas />} />
           <Route path="/residentes" element={<Dashboard />} />
-          <Route path="/residentes-copia" element={<ResidentesCopia />} />
+          <Route path="/residentes-copia" element={<Viviendas />} />
           <Route path="/pagos" element={<Pagos />} />
           <Route path="/gastos" element={<Gastos />} />
           <Route path="/historial" element={<HistorialPagos />} />
