@@ -25,7 +25,6 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon, color: 'text-blue-500' },
   { name: 'Viviendas', href: '/viviendas', icon: BuildingOfficeIcon, color: 'text-indigo-500' },
   { name: 'Residentes', href: '/gestion-residentes', icon: UsersIcon, color: 'text-green-500' },
-  { name: 'Test Residentes', href: '/test-residentes', icon: UsersIcon, color: 'text-red-500' },
   { name: 'Pagos', href: '/pagos', icon: CreditCardIcon, color: 'text-emerald-500' },
   { name: 'Estado de Cuenta', href: '/estado-cuenta', icon: DocumentChartBarIcon, color: 'text-blue-600' },
   { name: 'Pagos Especiales', href: '/pagos-especiales', icon: CurrencyDollarIcon, color: 'text-yellow-500' },
