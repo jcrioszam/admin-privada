@@ -107,7 +107,7 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/viviendas" element={<Viviendas />} />
-          <Route path="/residentes" element={<Residentes />} />
+          <Route path="/residentes" element={<Viviendas />} />
           <Route path="/residentes-copia" element={<ResidentesCopia />} />
           <Route path="/pagos" element={<Pagos />} />
           <Route path="/gastos" element={<Gastos />} />
