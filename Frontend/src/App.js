@@ -8,6 +8,7 @@ import DashboardResidente from './pages/DashboardResidente';
 import Viviendas from './pages/Viviendas';
 import Residentes from './pages/Residentes';
 import ResidentesTest from './pages/ResidentesTest';
+import ResidentesCopia from './pages/ResidentesCopia';
 import Pagos from './pages/Pagos';
 import Gastos from './pages/Gastos';
 import HistorialPagos from './pages/HistorialPagos';
@@ -107,6 +108,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/viviendas" element={<Viviendas />} />
           <Route path="/residentes" element={<Residentes />} />
+          <Route path="/residentes-copia" element={<ResidentesCopia />} />
           <Route path="/pagos" element={<Pagos />} />
           <Route path="/gastos" element={<Gastos />} />
           <Route path="/historial" element={<HistorialPagos />} />
